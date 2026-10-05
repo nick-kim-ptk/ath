@@ -2145,6 +2145,20 @@ const App = (() => {
       b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
     });
   }
+  const isUuid = s => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(s));
+  /* '나도 봤어': DB에서 내가 누른 글을 불러와요. 글의 숫자(likes)는 '나 빼고 센 값'으로 맞춰서 화면의 +1과 겹치지 않게 해요 */
+  let seenDB = [];
+  function seenAdjust(ids, d) { ids.forEach(id => { const p = state.posts.find(x => x.id === id); if (p) p.likes = Math.max(0, (p.likes || 0) + d); }); }
+  async function loadSeen() {
+    if (!SBC || !state.user || !state.user.uid) return;
+    const { data, error } = await SBC.from('post_seen').select('post_id').eq('user_id', state.user.uid);
+    if (error) { console.warn('[seen]', error.message); return; }
+    seenClear();
+    seenDB = (data || []).map(r => r.post_id).filter(id => state.posts.some(p => p.id === id));
+    seenAdjust(seenDB, -1); seenDB.forEach(id => state.seen.add(id));
+    if (['discover', 'local', 'my'].includes(state.tab)) renderTab(state.tab);
+  }
+  function seenClear() { seenAdjust(seenDB, 1); seenDB.forEach(id => state.seen.delete(id)); seenDB = []; }
   function bumpKeepN(id, d) { if (typeof KEEP_N !== 'undefined' && KEEP_N.on) KEEP_N.n[id] = Math.max(0, (KEEP_N.n[id] || 0) + d); }
   /* 로그인 직후: DB의 Keep을 불러오고, 이 브라우저에만 있던 Keep은 DB로 합쳐요 */
   async function loadKeeps() {
@@ -2216,7 +2230,7 @@ const App = (() => {
     const btn = $('#shareForm [type=submit]'); if (btn) btn.disabled = true;
     const fail = m => { toast(m || '저장에 실패했어요. 잠시 후 다시 시도해 주세요'); if (btn) btn.disabled = false; };
     let photo = composer.photo;
-    if (SBC && photo && photo.startsWith('data:')) { try { photo = await uploadPhoto(photo); } catch (e) { return fail('사진을 올리지 못했어요. 다른 사진으로 해볼까요?'); } }
+    if (SBC && photo && photo.startsWith('data:')) { try { photo = await uploadPhoto(photo); } catch (e) { console.error('[photo]', e); return fail('사진 업로드 실패: ' + String((e && (e.message || e.error)) || e).slice(0, 80)); } }
     if (composer.edit) {
       const o = state.posts.find(x => x.id === composer.edit);
       if (o) {
@@ -2290,7 +2304,7 @@ const App = (() => {
     LS.set('posts', state.posts);
     const next = authFlow.after; authFlow.after = null;
     $('#auth').classList.remove('open'); renderNav(); if (state.tab === 'my' || state.tab === 'discover') renderTab(state.tab);
-    toast(`${nick}님, 환영해요`); loadKeeps();
+    toast(`${nick}님, 환영해요`); loadKeeps(); loadSeen();
     if (next) setTimeout(next, 350); else if (state.tab === 'home' && !state.detailId) Globe.start();
   }
   async function restoreSession() {
@@ -2298,13 +2312,13 @@ const App = (() => {
     const { data } = await SBC.auth.getSession(), s = data && data.session;
     if (!s) { if (state.user) { state.user = null; LS.set('user', null); renderNav(); } return; }
     const { data: pr } = await SBC.from('profiles').select('*').eq('user_id', s.user.id).maybeSingle();
-    if (pr) { state.user = { id: pr.username, nick: pr.nickname, provider: pr.provider, joined: String(pr.created_at).slice(0, 10), uid: s.user.id }; LS.set('user', state.user); renderNav(); if (state.tab === 'my' || state.tab === 'discover') renderTab(state.tab); loadKeeps(); }
+    if (pr) { state.user = { id: pr.username, nick: pr.nickname, provider: pr.provider, joined: String(pr.created_at).slice(0, 10), uid: s.user.id }; LS.set('user', state.user); renderNav(); if (state.tab === 'my' || state.tab === 'discover') renderTab(state.tab); loadKeeps(); loadSeen(); }
     else { state.user = null; LS.set('user', null); renderNav(); authFlow.provider = s.user.app_metadata.provider; authFlow.step = 'profile'; authFlow.reason = ''; authFlow.after = null; renderAuth(); $('#auth').classList.add('open'); Globe.stop(); }
   }
-  function logout() { if (SBC) { SBC.auth.signOut(); state.keep = new Set(); saveKeep(); } state.user = null; state.wd = false; LS.set('user', null); renderNav(); go('home'); toast('로그아웃했어요'); }
+  function logout() { if (SBC) { seenClear(); SBC.auth.signOut(); state.keep = new Set(); saveKeep(); } state.user = null; state.wd = false; LS.set('user', null); renderNav(); go('home'); toast('로그아웃했어요'); }
   async function withdraw() {
     const u = state.user; if (!u) return;
-    if (SBC) { const { error } = await SBC.rpc('delete_my_account'); if (error) { toast('탈퇴에 실패했어요. 잠시 후 다시 시도해 주세요'); return; } await SBC.auth.signOut(); }
+    if (SBC) { const { error } = await SBC.rpc('delete_my_account'); if (error) { toast('탈퇴에 실패했어요. 잠시 후 다시 시도해 주세요'); return; } seenClear(); await SBC.auth.signOut(); }
     state.posts.forEach(p => { if (p.uid === u.id) { p.withdrawn = true; p.uid = null; p.author = '@withdrawn'; p.nick = null; p.mine = false; } });
     LS.set('posts', state.posts);
     state.keep = new Set(); LS.set('keep', []); state.user = null; state.wd = false; LS.set('user', null);
@@ -2351,7 +2365,13 @@ const App = (() => {
         el.dataset.n = n + 6; break;
       }
       case 'seen': {
-        const id = d.id; state.seen.has(id) ? state.seen.delete(id) : state.seen.add(id); LS.set('seen', [...state.seen]);
+        const id = d.id, db = SBC && isUuid(id);
+        if (db && !(state.user && state.user.uid)) { openAuth('나도 봤어를 남기려면\n로그인이 필요해요', null); break; }
+        const was = state.seen.has(id); was ? state.seen.delete(id) : state.seen.add(id); LS.set('seen', [...state.seen].filter(x => !isUuid(x)));
+        if (db) {
+          const q = was ? SBC.from('post_seen').delete().match({ user_id: state.user.uid, post_id: id }) : SBC.from('post_seen').insert({ user_id: state.user.uid, post_id: id });
+          q.then(({ error }) => { if (!error) return; was ? state.seen.add(id) : state.seen.delete(id); $$(`.seen[data-id="${id}"]`).forEach(b => { b.classList.toggle('on', !was); const pp = state.posts.find(x => x.id === id); b.querySelector('b').textContent = (pp ? pp.likes || 0 : 0) + (!was ? 1 : 0); }); toast('저장에 실패했어요. 잠시 후 다시 시도해 주세요'); });
+        }
         const p = [...state.posts, ...PEOPLE, ...Object.values(SYN)].find(x => x.id === id), on = state.seen.has(id);
         el.classList.toggle('on', on); el.setAttribute('aria-pressed', on); el.querySelector('b').textContent = (p ? p.likes || 0 : 0) + (on ? 1 : 0);
         el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); break;
