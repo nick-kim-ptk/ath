@@ -675,6 +675,36 @@ body, .view, .sheet, .layer, .nav { word-break:keep-all; overflow-wrap:break-wor
 .sm-rank b { font:800 13px var(--f-mono); color:var(--ink); }
 .sm-up { font:500 10.5px var(--f-mono); letter-spacing:.06em; color:var(--mute); }
 
+/* MY: 설정 아이콘 · 보기 전환 · 목록 · 미리보기 */
+.my-top { display:flex; justify-content:space-between; align-items:center; }
+.gear { width:38px; height:38px; margin-right:-8px; border-radius:50%; display:grid; place-items:center; color:var(--ink); }
+.gear svg { width:22px; height:22px; }
+.sec h2 .eyebrow { margin-left:6px; vertical-align:middle; }
+.vseg { display:flex; gap:2px; padding:3px; border-radius:10px; background:var(--paper); }
+.vseg button { width:34px; height:28px; border-radius:7px; display:grid; place-items:center; color:var(--mute); }
+.vseg button svg { width:18px; height:18px; }
+.vseg button[aria-pressed="true"] { background:var(--bg); color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.12); }
+.my-list { margin-top:8px; border-top:1px solid var(--line); }
+.ml { display:grid; grid-template-columns:72px 1fr auto; gap:14px; align-items:center; width:100%; padding:12px 0; border-bottom:1px solid var(--line); text-align:left; }
+.ml-th { position:relative; width:72px; height:72px; border-radius:8px; overflow:hidden; background:var(--paper); }
+.ml-th svg, .ml-th img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+.ml-b { min-width:0; display:flex; flex-direction:column; gap:3px; }
+.ml-b b { font:800 15.5px/1.25 var(--f-body); letter-spacing:-.03em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ml-b span { font:500 13px/1.4 var(--f-body); color:var(--mute); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.ml-b small { font:500 10.5px var(--f-mono); letter-spacing:.04em; color:var(--mute); }
+.ml i { font:500 17px var(--f-mono); font-style:normal; color:var(--mute); }
+.pv-edit { height:34px; padding:0 16px; }
+.pv-img { position:relative; aspect-ratio:1; overflow:hidden; background:var(--paper); }
+.pv-img svg, .pv-img img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+.pv-body { padding:20px var(--gutter) 56px; display:flex; flex-direction:column; gap:12px; }
+.pv-title { font-size:clamp(28px,8vw,36px); line-height:1.1; margin:0; }
+.pv-text { font:500 16px/1.6 var(--f-body); letter-spacing:-.02em; white-space:pre-wrap; margin:0; }
+.pv-link { font:600 13px var(--f-mono); color:var(--ink); text-decoration:underline; text-underline-offset:3px; word-break:break-all; }
+.pv-seen { font:500 12px var(--f-mono); letter-spacing:.06em; color:var(--mute); }
+.pv-seen b { color:var(--ink); }
+.pv-del { align-self:flex-start; margin-top:18px; padding:10px 0; font:700 13.5px var(--f-body); color:var(--hot); }
+.pv-del.armed { font-weight:800; }
+
 </style></head><body>
 <div class="app" id="app">
   <main class="views">
@@ -725,6 +755,7 @@ body, .view, .sheet, .layer, .nav { word-break:keep-all; overflow-wrap:break-wor
   <nav class="nav" id="nav" aria-label="메인 메뉴"></nav>
 
   <div class="layer" id="detail" aria-label="트렌드 상세"></div>
+  <div class="layer" id="postview" aria-label="내가 올린 화제 미리보기"></div>
   <div class="layer up-from" id="composer" aria-label="트렌드 올리기"></div>
   <div class="layer up-from" id="auth" aria-label="로그인 · 회원가입"></div>
   <div class="layer" id="profile" aria-label="프로필 수정"></div>
@@ -1546,7 +1577,7 @@ const state = {
   keep: new Set(LS.get('keep', TRENDS.filter(t => t.isFollowing).map(t => t.kw)).map(kwKey)),
   posts: LS.get('posts', []),
   seen: new Set(LS.get('seen', [])),
-  fav: new Set(LS.get('favc', [])), myShown: 12, localShown: 5,
+  fav: new Set(LS.get('favc', [])), myShown: 12, myView: LS.get('myview', 'grid'), localShown: 5,
   visited: new Set(LS.get('visited', [])),
   city: LS.get('city', 'seoul'),
   theme: LS.get('theme', 'auto'),
@@ -1941,10 +1972,9 @@ function filterSheetHTML() {
     <button class="fs-done" data-act="fclose">결과 보기</button></div>`;
 }
 function discoverHTML() {
-  if (!state.user && state.feedTab === 'following') state.feedTab = 'discover';
+  state.feedTab = 'discover';
   const kn = state.user ? keepN() : 0;
   return `<div class="eyebrow">DISCOVER</div><h1 class="hd">${esc(COPY.discoverSub)}</h1><p class="upd">${esc(updCaption())}</p>
-    ${state.user ? `<div class="seg" role="tablist"><button role="tab" aria-selected="${state.feedTab === 'discover'}" data-act="feedtab" data-v="discover">Discover</button><button role="tab" aria-selected="${state.feedTab === 'following'}" data-act="feedtab" data-v="following">Following${kn ? ' · ' + kn : ''}</button></div>` : ''}
     ${state.feedTab === 'discover' ? `<label class="srch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/></svg><input id="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="나라, 도시, 키워드로 찾아보기" value="${esc(state.q || '')}"></label>` : ''}
     ${state.feedTab === 'discover' ? `<div class="fbar"><button class="fbtn" data-act="fopen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>필터</button><div id="fchips">${filterChips()}</div></div>` : ''}
     <div id="dl">${discoverList()}</div>`;
@@ -2013,7 +2043,9 @@ function keepHTML() {
     <div class="kp-in">
       <button class="kp-main" data-act="open" data-id="${lead.id}"><div class="kp-title">${esc(kwTitle(k))}</div><div class="kp-where">${kwChips(k)}</div></button>
       <button class="kp-x" data-act="unkeep" data-id="${k}" aria-label="${esc(kwTitle(k))} Keep 해제">×</button></div></div>`; }).join('') + `</div>`;
-  h += `<div class="note"><b>SOON</b><span>Keep한 키워드가 다른 나라에서 뜨기 시작하면 알려드릴게요. 옆으로 밀어서 뺄 수도 있어요.</span></div>`;
+  const kept = list.map(k => kwMembers(k)[0]).filter(Boolean), rel = [];
+  kept.forEach(t => related(t, 2).forEach(r => { if (!state.keep.has(r.kw) && !rel.includes(r)) rel.push(r); }));
+  if (rel.length) h += `<div class="divider"><span class="eyebrow">Keep한 화제와 비슷한 화제</span></div><div class="feed">${rel.slice(0, 3).map((t, i) => feedItem(t, i, false)).join('')}</div>`;
   return h;
 }
 
@@ -2086,16 +2118,33 @@ function myHTML() {
   const u = state.user;
   if (!u) return '';
   const mine = state.posts.filter(p => p.uid === u.id);
-  return `<div class="eyebrow">MY</div>
+  const view = state.myView === 'list' ? 'list' : 'grid', shown = mine.slice(0, state.myShown);
+  const thumb = p => p.photo ? `<img src="${p.photo}" alt="" loading="lazy">` : poster(p.pat || 0, CITY[p.city].cc, p.id);
+  const vbtn = (v, icon, label) => `<button data-act="myview" data-v="${v}" aria-pressed="${view === v}" aria-label="${label}">${icon}</button>`;
+  const gridIc = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1"/><rect x="13.500" y="4" width="6.500" height="6.500" rx="1"/><rect x="4" y="13.500" width="6.500" height="6.500" rx="1"/><rect x="13.500" y="13.500" width="6.500" height="6.500" rx="1"/></svg>';
+  const listIc = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.800" cy="6" r=".7"/><circle cx="4.800" cy="12" r=".7"/><circle cx="4.800" cy="18" r=".7"/></svg>';
+  const dateOf = p => p.date === todayISO() ? '방금' : fmtDate(p.date);
+  const body = view === 'grid'
+    ? `<div class="my-grid">${shown.map(p => `<div class="mg" data-act="viewpost" data-id="${p.id}" role="button" tabindex="0" aria-label="${esc(p.title)} 보기"><div class="mg-th">${thumb(p)}</div><span class="mg-t">${esc(p.title)}</span></div>`).join('')}</div>`
+    : `<div class="my-list">${shown.map(p => `<button class="ml" data-act="viewpost" data-id="${p.id}"><div class="ml-th">${thumb(p)}</div><div class="ml-b"><b>${esc(p.title)}</b><span>${esc(p.text)}</span><small>${esc(CITY[p.city].name)}${p.area ? ' · ' + esc(p.area) : ''} · ${dateOf(p)} · 나도 봤어 ${p.likes || 0}</small></div><i aria-hidden="true">→</i></button>`).join('')}</div>`;
+  return `<div class="my-top"><div class="eyebrow">MY</div><button class="gear" data-act="settings" aria-label="설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div>
     <div class="me"><div class="avatar">${avatarInner(u, u.avatar)}</div><div><b>${esc(u.nick)}<button class="edit-ic" data-act="profile" aria-label="프로필 수정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="m13.5 6.5 4 4"/></svg></button></b><span class="eyebrow" style="text-transform:none">@${esc(u.id)} <span style="text-transform:uppercase">· ${u.provider === 'kakao' ? 'KAKAO' : 'GOOGLE'}</span></span></div></div>
     <div class="stats"><div><strong>${keepN()}</strong><span class="eyebrow">Keep</span></div><div><strong>${mine.length}</strong><span class="eyebrow">올린 화제</span></div><div><strong>${state.visited.size}</strong><span class="eyebrow">가본 나라</span></div><div><strong>${state.fav.size}</strong><span class="eyebrow">관심 나라</span></div></div>
-    <div class="sec"><h2>내가 올린 화제</h2><span class="eyebrow">${mine.length}</span></div>
-    ${mine.length ? `<div class="my-grid">${mine.slice(0, state.myShown).map(p => `<div class="mg" data-act="editpost" data-id="${p.id}" role="button" tabindex="0" aria-label="${esc(p.title)} 수정">
-      <div class="mg-th">${p.photo ? `<img src="${p.photo}" alt="" loading="lazy">` : poster(p.pat || 0, CITY[p.city].cc, p.id)}</div>
-      <span class="mg-t">${esc(p.title)}</span><button class="mg-x" data-act="delpost" data-id="${p.id}" aria-label="삭제">×</button></div>`).join('')}</div>
+    <div class="sec"><h2>내가 올린 화제 <span class="eyebrow">${mine.length}</span></h2>${mine.length ? `<div class="vseg" role="group" aria-label="보기 방식">${vbtn('grid', gridIc, '썸네일로 보기')}${vbtn('list', listIc, '목록으로 보기')}</div>` : ''}</div>
+    ${mine.length ? `${body}
       ${mine.length > state.myShown ? `<button class="more" data-act="mymore">더 보기 · ${mine.length - state.myShown}</button>` : ''}`
-      : `<div class="empty" style="padding-top:18px"><p style="font-size:17px">우리 동네에서 요즘 보이는 걸 올려보세요.</p><button class="main" data-act="share">${esc(COPY.share)}</button></div>`}
-        <div class="acct"><button class="row" data-act="settings"><span>설정</span><i>→</i></button><button class="row" data-act="logout"><span>로그아웃</span><i>→</i></button></div>`;
+      : `<div class="empty" style="padding-top:18px"><p style="font-size:17px">우리 동네에서 요즘 보이는 걸 올려보세요.</p><button class="main" data-act="share">${esc(COPY.share)}</button></div>`}`;
+}
+/* 내가 올린 글 미리보기 (여기서 수정·삭제로 넘어가요) */
+function postViewHTML(p) {
+  const c = CITY[p.city], n = (p.likes || 0) + (state.seen.has(p.id) ? 1 : 0), ok = /^https?:\/\//.test(p.link || '');
+  return `<div class="d-bar"><button class="back" data-act="pvclose"><span aria-hidden="true">←</span> Back</button><button class="pill pv-edit" data-act="pvedit" data-id="${p.id}">수정</button></div>
+    <div class="pv"><div class="pv-img" style="${ccVars(c.cc)}">${p.photo ? `<img src="${p.photo}" alt="">` : poster(p.pat || 0, c.cc, p.id).replace("<svg", "<svg preserveAspectRatio=\"xMidYMid slice\"")}</div>
+      <div class="pv-body"><div class="eyebrow">${esc(CATEGORIES[p.category] || '')} · ${esc(c.name)}${p.area ? ' · ' + esc(p.area) : ''} · ${p.date === todayISO() ? '방금' : fmtDate(p.date)}</div>
+        <h1 class="hd pv-title">${esc(p.title)}</h1><p class="pv-text">${esc(p.text)}</p>
+        ${ok ? `<a class="pv-link" href="${esc(p.link)}" target="_blank" rel="noopener noreferrer">${esc(p.link.replace(/^https?:\/\//, '').slice(0, 40))} ↗</a>` : ''}
+        <div class="pv-seen">나도 봤어 <b>${n}</b></div>
+        <button class="pv-del" data-act="pvdel" data-id="${p.id}">이 글 삭제</button></div></div>`;
 }
 function settingsHTML() {
   const th = [['auto', '자동'], ['light', '라이트'], ['dark', '다크']];
@@ -2105,6 +2154,8 @@ function settingsHTML() {
       <div class="theme-seg">${th.map(([k, v]) => `<button class="pill${state.theme === k ? ' on' : ''}" data-act="theme" data-v="${k}">${v}</button>`).join('')}</div>
       <div class="sec"><h2>약관 · 정책</h2></div>
       <div class="acct"><button class="row" data-act="legal"><span>개인정보 처리방침</span><i>→</i></button></div>
+      <div class="sec"><h2>계정</h2></div>
+      <div class="acct"><button class="row" data-act="logout"><span>로그아웃</span><i>→</i></button></div>
     </div>`;
 }
 
@@ -2589,6 +2640,14 @@ const App = (() => {
     state.user = { ...u, nick, avatar: avatar || null }; LS.set('user', state.user);
     closeProfile(); renderNav(); if (state.tab === 'my') renderTab('my'); toast('프로필을 저장했어요');
   }
+  /* 내가 올린 글 미리보기 */
+  function openPostView(id) { const p = state.posts.find(x => x.id === id); if (!p) return; const el = $('#postview'); el.innerHTML = postViewHTML(p); el.scrollTop = 0; el.classList.add('open'); }
+  function closePostView() { $('#postview').classList.remove('open'); }
+  function removeMyPost(id) {
+    const done = () => { state.posts = state.posts.filter(p => p.id !== id); LS.set('posts', state.posts); closePostView(); renderTab('my'); toast('삭제했어요'); };
+    if (SBC) { const old = state.posts.find(p => p.id === id); SBC.from('posts').delete().eq('id', id).then(({ error }) => { if (error) { toast('삭제에 실패했어요. 잠시 후 다시 시도해 주세요'); return; } if (old) removePhoto(old.photo); done(); }); return; }
+    done();
+  }
   function openSettings() { const el = $('#settings'); el.innerHTML = settingsHTML(); el.scrollTop = 0; el.classList.add('open'); }
   function closeSettings() { $('#settings').classList.remove('open'); }
   function openLegal() { const el = $('#legal'); el.innerHTML = legalHTML(); el.scrollTop = 0; el.classList.add('open'); }
@@ -2632,7 +2691,7 @@ const App = (() => {
     if (pr) { state.user = { id: pr.username, nick: pr.nickname, provider: pr.provider, joined: String(pr.created_at).slice(0, 10), uid: s.user.id, avatar: pr.avatar_url || null }; LS.set('user', state.user); renderNav(); if (state.tab === 'my' || state.tab === 'discover') renderTab(state.tab); loadKeeps(); loadSeen(); loadFavs(); }
     else { state.user = null; LS.set('user', null); renderNav(); authFlow.provider = s.user.app_metadata.provider; authFlow.step = 'profile'; authFlow.reason = ''; authFlow.after = null; renderAuth(); $('#auth').classList.add('open'); Globe.stop(); }
   }
-  function logout() { if (SBC) { seenClear(); SBC.auth.signOut(); state.keep = new Set(); saveKeep(); state.fav = new Set(); LS.set('favc', []); } syncFav(); closeSettings(); closeProfile(); state.user = null; state.wd = false; LS.set('user', null); renderNav(); go('home'); toast('로그아웃했어요'); }
+  function logout() { if (SBC) { seenClear(); SBC.auth.signOut(); state.keep = new Set(); saveKeep(); state.fav = new Set(); LS.set('favc', []); } syncFav(); closeSettings(); closeProfile(); closePostView(); state.user = null; state.wd = false; LS.set('user', null); renderNav(); go('home'); toast('로그아웃했어요'); }
   async function withdraw() {
     const u = state.user; if (!u) return;
     if (SBC) { const { error } = await SBC.rpc('delete_my_account'); if (error) { toast('탈퇴에 실패했어요. 잠시 후 다시 시도해 주세요'); return; } seenClear(); await SBC.auth.signOut(); }
@@ -2715,6 +2774,13 @@ const App = (() => {
       case 'wdcancel': state.wd = false; renderProfile(); break;
       case 'withdraw': withdraw(); break;
       case 'editpost': openComposer(null, d.id); break;
+      case 'viewpost': openPostView(d.id); break;
+      case 'pvclose': closePostView(); break;
+      case 'pvedit': closePostView(); openComposer(null, d.id); break;
+      case 'pvdel':
+        if (!el.classList.contains('armed')) { el.classList.add('armed'); el.textContent = '정말 삭제할까요? 한 번 더 누르면 지워져요'; clearTimeout(el._t); el._t = setTimeout(() => { el.classList.remove('armed'); el.textContent = '이 글 삭제'; }, 3500); break; }
+        removeMyPost(d.id); break;
+      case 'myview': state.myView = d.v === 'list' ? 'list' : 'grid'; LS.set('myview', state.myView); renderTab('my'); break;
       case 'delpost':
         if (!el.classList.contains('armed')) { el.classList.add('armed'); el.textContent = '삭제'; clearTimeout(el._t); el._t = setTimeout(() => { el.classList.remove('armed'); el.textContent = '×'; }, 3000); break; }
         if (SBC) { const old = state.posts.find(p => p.id === d.id); SBC.from('posts').delete().eq('id', d.id).then(({ error }) => { if (error) { toast('삭제에 실패했어요. 잠시 후 다시 시도해 주세요'); return; } if (old) removePhoto(old.photo); state.posts = state.posts.filter(p => p.id !== d.id); renderTab('my'); toast('삭제했어요'); }); break; }
