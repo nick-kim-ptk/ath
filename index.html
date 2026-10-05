@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>지구 근황</title>
+<title>ath+</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Unbounded:wght@700;800;900&family=Outfit:wght@600;700&display=swap">
@@ -1040,7 +1040,7 @@ const COUNTRIES = [
 ];
 
 const CATEGORIES = { food:'푸드', tech:'테크', life:'라이프', culture:'컬처', fashion:'패션', wellness:'웰니스', travel:'여행' };
-const STATUS = { hot:'HOT', rising:'RISING', new:'NEW', talked:'TALKED ABOUT' };
+const STATUS = { hot:'HOT', rising:'RISING', new:'TODAY', talked:'ONGOING' };
 
 /* 아래 T()는 짧게 적은 항목을 앱이 쓰는 전체 필드(country, countryCode, trendTitle, ...)로 펼쳐줍니다. */
 const TRENDS = [];
@@ -1060,293 +1060,271 @@ function T(cc, o) {
 }
 
 /* ---------- KOREA ---------- */
-T('KR', { title:'팝업 문화', en:'Pop-up Culture', short:'한 달만 열리는 가게 앞에 줄이 서는 도시.', status:'hot', cat:'culture', city:'성수', pat:2, follow:true,
-  why:['한정이라서 더 궁금해요','브랜드가 체험을 먼저 팔아요','인증샷이 곧 홍보'],
-  what:[['성수·한남 중심으로 번지는 중','매달 새 팝업이 열리고, 끝나면 바로 다음 브랜드가 들어와요.'],
-        ['물건보다 분위기','제품을 사지 않아도 공간을 구경하고 사진을 남기는 것 자체가 목적이 돼요.'],
-        ['해외 브랜드도 서울 먼저','신제품 공개 전에 서울에서 먼저 반응을 보는 브랜드가 늘고 있어요.']],
-  news:[['성수동 골목, 이번 달 가장 긴 줄은 어디?','Metro Daily','2026-10-02','주말마다 대기 시간이 길어지는 팝업 세 곳을 둘러봤어요.'],
-        ['팝업이 끝난 자리에 남는 것들','Hanbit Magazine','2026-09-27','철거된 공간이 다음 브랜드의 무대로 이어지는 과정을 따라갔어요.']] });
+T('KR', { title:'연휴 여행 수요', en:'Holiday Trip Rush', short:'연휴를 앞두고 기차표와 숙소 검색이 몰리고 있어요.', status:'hot', cat:'travel', city:'제주', pat:2, follow:true,
+  why:['연휴가 길어서','표가 빨리 매진돼요','가까운 곳 여행 선호'],
+  what:[['예매 전쟁이 시작됐어요','인기 노선 기차표는 오픈하자마자 줄어든다는 얘기가 많아요.'],
+        ['가까운 도시가 인기','멀리 가기보다 2박 3일 국내 여행을 고르는 사람이 많아요.'],
+        ['숙소는 일찍 마감','바다 근처와 온천 지역 숙소가 먼저 찼어요.']],
+  news:[['연휴 앞두고 기차표 매진 행렬','Metro Daily','2026-10-03','주요 노선의 예매 상황을 짚어봤어요.'],
+        ['이번 연휴, 어디로 가세요?','Hanbit Magazine','2026-10-01','사람들이 많이 찾는 여행지를 모았어요.']] });
 
-T('KR', { title:'러닝 크루', en:'Run Crew', short:'퇴근하고 한강에 모이는 사람들.', status:'rising', cat:'wellness', city:'한강', pat:6,
-  why:['혼자보다 같이 뛰면 오래 가요','운동복이 곧 패션','러닝 후 맛집·카페 코스'],
-  what:[['크루마다 취향이 달라요','페이스가 느린 산책형부터 대회 준비형까지, 이름도 콘셉트도 다양해요.'],
-        ['달리고 나서가 진짜','완주 후 근처 가게에서 모이는 코스가 하나의 문화가 됐어요.'],
-        ['브랜드의 새 무대','러닝 브랜드가 크루 전용 클래스와 대여 이벤트를 열기 시작했어요.']],
-  news:[['한강 러닝 코스, 요즘 크루들이 고르는 곳','Metro Daily','2026-10-01','여의도와 반포 사이, 저녁 시간대 풍경을 담았어요.'],
-        ['가을 러닝 대회 접수, 마감이 빨라졌다','Hanbit Magazine','2026-09-24','접수 시작 몇 분 만에 마감되는 대회가 늘었어요.']] });
+T('KR', { title:'단풍 절정 소식', en:'Peak Foliage', short:'설악산부터 단풍이 내려오고 있다는 소식이 이어져요.', status:'rising', cat:'travel', city:'설악산', pat:4,
+  why:['첫 단풍 소식','주말 나들이 계획','사진 명소 공유'],
+  what:[['산부터 물들어요','높은 산은 이미 붉은 잎이 보인다는 후기가 올라와요.'],
+        ['주말 교통 걱정','단풍 명소로 가는 길이 막힐 거라는 예상이 많아요.'],
+        ['도심 단풍도 관심','공원과 은행나무길 개화 시기를 묻는 글이 늘었어요.']],
+  news:[['올가을 첫 단풍, 이번 주말부터','Metro Daily','2026-10-02','지역별 단풍 시기를 정리했어요.'],
+        ['단풍 보러 갈 때 알아두면 좋은 것','Hanbit Magazine','2026-09-30','주차와 대기 시간을 줄이는 방법이에요.']] });
 
-T('KR', { title:'제로슈거', en:'Zero Sugar', short:'달지 않은데 달다고 하는 음료들.', status:'talked', cat:'food', city:'서울', pat:3,
-  why:['건강을 챙기는 가벼운 방법','맛이 꽤 좋아졌어요','편의점 신상이 쉴 새 없이 나와요'],
-  what:[['음료 코너가 한 칸 늘었어요','탄산, 주스, 커피까지 제로 라인이 따로 진열돼요.'],
-        ['디저트로 번지는 중','제로 아이스크림과 베이커리가 카페 메뉴에 들어오고 있어요.'],
-        ['맛 논쟁도 계속','"이게 진짜 제로야?" 하는 후기 영상이 꾸준히 올라와요.']],
-  news:[['제로 음료, 이번 달 신상 모아보기','Metro Daily','2026-09-30','편의점 냉장고에서 새로 보이는 제품들을 정리했어요.'],
-        ['단맛을 줄이는 카페들','Hanbit Magazine','2026-09-22','당 줄이기 메뉴를 따로 만든 동네 카페를 찾아갔어요.']] });
-
-T('KR', { title:'필름 카메라', en:'Film Camera Comeback', short:'일부러 느리게 찍는 사진이 돌아왔어요.', status:'new', cat:'fashion', city:'을지로', pat:7,
-  why:['결과를 기다리는 재미','화면 속 사진이 너무 매끈해서','빈티지 소품과 잘 어울려요'],
-  what:[['현상소가 다시 바빠졌어요','을지로와 연남동 일대에서 필름 현상과 스캔 서비스가 늘고 있어요.'],
-        ['카메라가 액세서리','가방에 달아두는 작은 필름 카메라가 코디 아이템이 됐어요.'],
-        ['한 롤의 규칙','36장만 찍을 수 있다는 제한이 오히려 사진을 신중하게 만들어요.']],
-  news:[['필름 한 롤 값이 오른 이유','Metro Daily','2026-10-03','수요가 늘면서 인기 필름이 빨리 소진되고 있어요.'],
-        ['을지로 현상소 골목','Hanbit Magazine','2026-09-26','오래된 가게와 새로 생긴 가게가 나란히 이어지는 거리를 걸었어요.']] });
+T('KR', { title:'신제품 출시 줄서기', en:'Launch Day Queue', short:'새 스마트폰이 풀린 날, 매장 앞에 줄이 길어졌어요.', status:'new', cat:'tech', city:'강남', pat:6,
+  why:['한정 수량','첫 사용 후기','색상 인기'],
+  what:[['개장 전부터 대기','아침 일찍부터 매장 앞에 사람들이 모였어요.'],
+        ['색상별 반응','어떤 색이 먼저 동나는지 이야기가 오가요.'],
+        ['후기가 빠르게 올라와요','받자마자 올리는 사용기가 이어지고 있어요.']],
+  news:[['신제품 출시일, 매장 앞 풍경','Metro Daily','2026-10-04','첫날 분위기를 전해요.'],
+        ['사기 전에 확인할 점 세 가지','Hanbit Magazine','2026-10-03','가격과 구성품을 비교했어요.']] });
 
 /* ---------- JAPAN ---------- */
-T('JP', { title:'AI 편의점', en:'AI Convenience Store', short:'일본 편의점이 점점 AI와 친해지는 중.', status:'hot', cat:'tech', city:'도쿄', pat:5, follow:true,
-  why:['인력 부족','AI 기술 발전','무인 매장 확대'],
-  what:[['진열과 주문을 AI가 도와요','재고를 카메라로 읽고, 부족한 상품을 자동으로 채우도록 알려줘요.'],
-        ['계산대 없는 점포','들어가서 집고 나오면 결제까지 끝나는 매장이 도심 역 주변에 늘고 있어요.'],
-        ['야간은 더 똑똑하게','사람이 적은 시간대에는 안내와 결제를 화면이 맡는 점포도 생겼어요.']],
-  news:[['도쿄 역 안 편의점, 점원이 보이지 않는다','Kanto Journal','2026-10-02','출근길 역 안 점포에서 달라진 풍경을 취재했어요.'],
-        ['AI 발주, 폐기를 줄일 수 있을까','The Lantern','2026-09-25','발주를 예측하는 시스템이 음식 폐기에 미치는 영향을 살폈어요.']] });
+T('JP', { title:'곰 출몰 주의보', en:'Bear Sightings', short:'가을철 곰 출몰 소식에 주의를 당부하는 목소리가 커졌어요.', status:'hot', cat:'life', city:'도호쿠', pat:3,
+  why:['먹이가 부족한 해','마을 가까이 출몰','지자체 안내 강화'],
+  what:[['출몰 지도가 공유돼요','지역별 목격 정보를 모은 지도가 화제예요.'],
+        ['등산·산책 주의','산과 가까운 곳에서는 방울을 다는 사람이 늘었어요.'],
+        ['지자체의 안내','출몰 지역에 경고 방송과 안내문이 늘었어요.']],
+  news:[['가을 곰 출몰, 올해는 어떨까','Kanto Journal','2026-10-04','도토리 작황과 출몰 전망을 정리했어요.'],
+        ['산 가까운 동네의 대비','Harbour Notes','2026-10-02','주민들의 준비를 취재했어요.']] });
 
-T('JP', { title:'혼자 여행', en:'Solo Trip', short:'일정 없이 떠나는 하루짜리 혼자 여행.', status:'rising', cat:'travel', city:'교토', pat:3,
-  why:['혼자도 편한 숙소와 식당','당일치기 철도 패스','나만의 속도'],
-  what:[['1인석이 기본이 됐어요','카운터 좌석과 1인용 코스를 내세운 가게가 늘었어요.'],
-        ['짐 없는 여행','역 코인로커와 짐 배송 서비스 덕에 가볍게 다닐 수 있어요.'],
-        ['계획보다 기분','목적지만 정하고 나머지는 걷다가 정하는 여행이 인기예요.']],
-  news:[['교토 새벽 산책, 혼자 온 사람들','Kanto Journal','2026-09-29','관광객이 몰리기 전 시간대를 선택하는 여행자들을 만났어요.'],
-        ['혼자 가기 좋은 온천 마을','The Lantern','2026-09-21','1인 이용이 편한 숙소를 모아봤어요.']] });
+T('JP', { title:'가을 비 소식', en:'Autumn Rain', short:'맑던 날씨가 바뀌며 우산 지도와 기온 차 이야기가 늘었어요.', status:'rising', cat:'life', city:'도쿄', pat:1,
+  why:['날씨 급변','아침저녁 기온 차','우산 지도'],
+  what:[['우산 지도가 인기','시간대별 비 구름을 보여주는 지도를 많이 봐요.'],
+        ['옷차림 고민','낮과 밤 기온 차에 겉옷을 챙기는 사람이 늘었어요.'],
+        ['주말 약속 변경','비 예보에 야외 일정을 바꾸는 이야기가 보여요.']],
+  news:[['내일부터 흐리고 비','Kanto Journal','2026-10-04','지역별 날씨를 짚어봤어요.'],
+        ['환절기 옷차림 정리','Harbour Notes','2026-10-01','기온 차에 맞춰 입는 법이에요.']] });
 
-T('JP', { title:'새벽 라멘', en:'Dawn Ramen', short:'해 뜨기 전에 먹는 한 그릇.', status:'talked', cat:'food', city:'후쿠오카', pat:4,
-  why:['밤샘 뒤 해장 문화','새벽에 여는 가게 증가','가볍고 진한 국물'],
-  what:[['아침 5시에 줄 서는 가게','밤늦게 놀고 온 사람과 이른 출근길 사람이 같은 줄에 서요.'],
-        ['국물이 가벼워졌어요','새벽에 먹기 좋게 맑은 국물을 내는 가게가 눈에 띄어요.'],
-        ['지도 앱에 새벽 필터','영업 시작 시간으로 가게를 찾는 사람이 늘었어요.']],
-  news:[['후쿠오카 새벽 포장마차 거리','Kanto Journal','2026-10-01','해 뜨기 전 거리의 불빛을 따라 걸었어요.'],
-        ['라멘 가게가 새벽 영업을 시작한 이유','The Lantern','2026-09-23','영업 시간을 앞당긴 주인장들의 이야기예요.']] });
-
-T('JP', { title:'무인 매장', en:'Unmanned Shops', short:'사람 없는 가게가 동네 골목까지 들어왔어요.', status:'new', cat:'tech', city:'오사카', pat:1,
-  why:['24시간 영업','임대료 부담을 줄이려고','비대면이 편한 사람들'],
-  what:[['냉동 만두부터 옷까지','무인 판매점의 종류가 점점 다양해지고 있어요.'],
-        ['도난 방지는 카메라가','출입 인증과 영상 확인으로 관리하는 점포가 많아요.'],
-        ['동네의 새 간판','빈 점포 자리에 작은 무인 가게가 들어서는 모습이 보여요.']],
-  news:[['골목마다 생기는 무인 판매점','Kanto Journal','2026-09-28','오사카 주택가에서 늘어난 24시간 점포를 둘러봤어요.'],
-        ['무인 매장이 잘 되는 위치의 조건','The Lantern','2026-09-20','유동 인구와 접근성을 어떻게 보는지 정리했어요.']] });
+T('JP', { title:'프로야구 시즌 마무리', en:'Baseball Season Finale', short:'시즌 마지막 경기와 감독 인사 이야기에 관심이 몰려요.', status:'new', cat:'culture', city:'나고야', pat:5,
+  why:['마지막 경기','감독 거취','순위 확정'],
+  what:[['마지막 경기 분위기','팬들이 구장에서 한 해를 마무리하는 모습이 올라와요.'],
+        ['감독 소식','다음 시즌 감독 후보에 대한 이야기가 오가요.'],
+        ['응원 굿즈','마지막 경기 한정 굿즈가 화제예요.']],
+  news:[['시즌 최종전, 팬들의 하루','Kanto Journal','2026-10-04','경기장 안팎의 분위기를 전했어요.'],
+        ['다음 감독은 누구?','Harbour Notes','2026-10-03','후보 이름이 오르내리는 배경을 정리했어요.']] });
 
 /* ---------- CHINA ---------- */
-T('CN', { title:'시티워크', en:'City Walk', short:'도시를 천천히 걸으며 구경하는 산책 여행.', status:'hot', cat:'life', city:'상하이', pat:6,
-  why:['관광지 대신 골목','걷기 좋은 지도 공유','주말 가벼운 외출'],
-  what:[['코스를 공유해요','"오늘의 산책 루트"가 지도와 사진으로 올라와요.'],
-        ['오래된 동네가 주인공','골목 카페와 작은 서점이 있는 거리가 인기를 얻고 있어요.'],
-        ['걷기 모임도 생겼어요','가이드 없이 모여서 같이 걷는 동호회가 늘고 있어요.']],
-  news:[['상하이 골목 산책 코스 다섯 곳','Dragon Gate Review','2026-10-03','오래된 주택가를 따라 걷는 코스를 소개해요.'],
-        ['시티워크가 바꾼 주말 풍경','Harbour Notes','2026-09-26','주말 오후, 걷는 사람들로 달라진 거리를 담았어요.']] });
+T('CN', { title:'국경절 연휴 여행', en:'Golden Week Travel', short:'연휴 기간 이동 인구가 크게 늘며 관광지가 붐벼요.', status:'hot', cat:'travel', city:'베이징', pat:0,
+  why:['긴 연휴','가족 여행','기차·항공 수요'],
+  what:[['고속철은 만석','인기 노선은 일찍부터 표가 빠졌어요.'],
+        ['사람 없는 곳을 찾아요','붐비는 명소 대신 작은 도시를 고르는 사람이 늘었어요.'],
+        ['사진 인증 경쟁','명소마다 줄 선 풍경이 SNS에 올라와요.']],
+  news:[['연휴 첫날 이동 인파','Dragon Gate Review','2026-10-01','역과 공항의 모습을 전해요.'],
+        ['덜 붐비는 여행지 찾기','The Lantern','2026-10-03','사람이 적은 곳을 추천받아요.']] });
 
-T('CN', { title:'신중식 패션', en:'New Chinese Style', short:'전통 실루엣을 일상복으로 입는 흐름.', status:'rising', cat:'fashion', city:'항저우', pat:0,
-  why:['전통 요소를 새롭게','젊은 디자이너들의 등장','사진이 잘 받아요'],
-  what:[['매듭 단추와 맞깃','익숙한 디테일이 셔츠와 재킷에 들어가요.'],
-        ['소재는 가볍게','일상에서 입기 편한 천과 색을 쓰는 브랜드가 늘고 있어요.'],
-        ['공원과 찻집에서','전통 거리가 아닌 일상 공간에서 입고 나오는 사람이 늘었어요.']],
-  news:[['항저우 신진 디자이너 쇼룸','Dragon Gate Review','2026-09-30','작은 쇼룸에서 시작한 브랜드들을 만났어요.'],
-        ['전통 디테일, 어디까지 가져올까','Harbour Notes','2026-09-22','익숙한 디자인을 현대적으로 푸는 방법을 이야기해요.']] });
+T('CN', { title:'월병 신제품', en:'Mooncake Launch', short:'올해도 이색 맛 월병이 나와 후기가 쏟아져요.', status:'rising', cat:'food', city:'광저우', pat:3,
+  why:['명절 선물','이색 맛','디자인 포장'],
+  what:[['맛이 다양해졌어요','과일, 차, 매운맛까지 새로운 조합이 나왔어요.'],
+        ['포장도 경쟁','선물 상자 디자인을 비교하는 글이 많아요.'],
+        ['후기 공유','먹어본 맛 순위가 돌고 있어요.']],
+  news:[['올해 월병 맛 순위','The Lantern','2026-09-28','인기 맛을 비교했어요.'],
+        ['선물용 월병 고르는 법','Dragon Gate Review','2026-09-26','가격과 구성을 정리했어요.']] });
 
-T('CN', { title:'세로형 숏드라마', en:'Vertical Mini Drama', short:'1분짜리 세로 화면 드라마에 빠지는 중.', status:'new', cat:'culture', city:'선전', pat:7,
-  why:['짧아서 끊기 쉬워요','스마트폰에 맞는 화면','빠른 전개'],
-  what:[['한 편이 1~2분','출퇴근 길에 몇 편씩 이어서 보는 사람이 많아요.'],
-        ['전용 앱이 늘었어요','처음 몇 편은 무료, 이후는 결제하는 방식이 흔해요.'],
-        ['해외로 번지는 중','자막을 붙여 다른 나라에서도 보는 사람이 생기고 있어요.']],
-  news:[['숏드라마 제작 현장 들여다보기','Dragon Gate Review','2026-10-01','며칠 만에 한 시즌을 찍는 촬영 현장을 다녀왔어요.'],
-        ['왜 사람들은 세로 화면을 고를까','Harbour Notes','2026-09-24','이동 중 시청 습관과 화면 구성의 관계를 짚어봤어요.']] });
+T('CN', { title:'전기차 신모델 공개', en:'New EV Reveal', short:'새 전기차 공개 소식에 가격과 성능 이야기가 오가요.', status:'new', cat:'tech', city:'상하이', pat:7,
+  why:['가격 공개','주행거리','디자인 반응'],
+  what:[['가격에 관심 집중','경쟁 모델과 가격을 비교하는 글이 늘었어요.'],
+        ['주행거리 이야기','실주행 후기를 기다리는 반응이 많아요.'],
+        ['디자인 평가','외관이 마음에 드는지 의견이 갈려요.']],
+  news:[['신형 전기차 공개 현장','Dragon Gate Review','2026-10-03','주요 사양을 정리했어요.'],
+        ['비슷한 급 모델과 비교','The Lantern','2026-10-02','가격과 성능을 나란히 놓아봤어요.']] });
 
 /* ---------- USA ---------- */
-T('US', { title:'러닝 클럽', en:'Running Club', short:'동네 러닝 클럽이 새로운 사교 모임이 됐어요.', status:'hot', cat:'wellness', city:'뉴욕', pat:6, follow:true,
-  why:['운동하면서 사람을 만나요','누구나 참여할 수 있어요','가게와 연결되는 코스'],
-  what:[['출발지는 동네 가게','커피숍이나 매장 앞에 모여 함께 뛰고 돌아와요.'],
-        ['속도는 상관없어요','걷는 사람부터 빠른 사람까지 나눠서 달려요.'],
-        ['뛰고 나서 한잔','러닝 후 음료를 마시며 이야기하는 시간이 이어져요.']],
-  news:[['뉴욕의 저녁, 러닝 클럽이 도시를 채운다','Pacific Brief','2026-10-02','브루클린에서 시작한 러닝 모임을 따라 뛰어봤어요.'],
-        ['러닝 클럽이 새로운 데이트 코스?','Hudson Weekly','2026-09-26','운동으로 만나는 사람들의 이야기를 모았어요.']] });
+T('US', { title:'할로윈 준비', en:'Halloween Prep', short:'집 앞 장식과 코스튬을 준비하는 모습이 늘고 있어요.', status:'hot', cat:'culture', city:'뉴욕', pat:1,
+  why:['한 달 전부터 준비','집 꾸미기','코스튬 아이디어'],
+  what:[['집 장식이 커졌어요','현관과 마당을 꾸미는 집이 눈에 띄어요.'],
+        ['코스튬 고민','올해 인기 캐릭터가 무엇인지 이야기해요.'],
+        ['호박 가격','호박과 장식 용품 가격을 비교하는 글이 보여요.']],
+  news:[['올해 할로윈 장식, 이렇게 달라졌어요','Pacific Brief','2026-10-03','동네 풍경을 둘러봤어요.'],
+        ['코스튬 고르는 법','Hudson Weekly','2026-10-01','나이대별로 정리했어요.']] });
 
-T('US', { title:'덤폰 회귀', en:'Dumbphone Revival', short:'일부러 단순한 폰을 쓰는 사람들.', status:'rising', cat:'tech', city:'포틀랜드', pat:1,
-  why:['화면에서 잠깐 벗어나고 싶어서','알림이 너무 많아요','단순함이 멋이 됐어요'],
-  what:[['주말만 덤폰','평일엔 스마트폰, 주말엔 접는 폰으로 바꾸는 사람도 있어요.'],
-        ['앱을 줄이는 방식','기능을 최소로 둔 런처와 단순 폰 케이스가 인기예요.'],
-        ['모임이 생겼어요','폰을 맡기고 대화하는 저녁 모임을 여는 곳이 늘었어요.']],
-  news:[['접는 폰을 다시 꺼낸 사람들','Pacific Brief','2026-09-29','일상에서 화면 시간을 줄이는 방법을 소개해요.'],
-        ['폰 없는 저녁 모임 후기','Hudson Weekly','2026-09-21','알림 없이 보낸 세 시간은 어땠을까요.']] });
+T('US', { title:'미식축구 시즌', en:'Football Season', short:'주말마다 경기 결과와 응원 모임이 화제예요.', status:'rising', cat:'culture', city:'시카고', pat:4,
+  why:['주말 중계','응원 모임','순위 경쟁'],
+  what:[['경기날의 풍경','경기를 보며 모이는 모임이 늘어요.'],
+        ['먹거리도 한몫','경기날 메뉴 이야기가 자주 올라와요.'],
+        ['접전 소식','막판 역전 경기가 이야기돼요.']],
+  news:[['이번 주말 볼 만한 경기','Pacific Brief','2026-10-04','관전 포인트를 짚어요.'],
+        ['경기날 모임 준비','Hudson Weekly','2026-10-02','간단한 메뉴를 소개해요.']] });
 
-T('US', { title:'단백질 푸드', en:'Protein Everything', short:'커피에도 아이스크림에도 단백질이 들어가요.', status:'talked', cat:'food', city:'로스앤젤레스', pat:2,
-  why:['운동 인구 증가','간편한 한 끼 선호','신제품 경쟁'],
-  what:[['마트 진열대가 달라졌어요','스낵, 시리얼, 음료에 단백질 함량이 크게 적혀 있어요.'],
-        ['카페 메뉴에도','라테에 단백질 파우더를 추가하는 옵션이 보여요.'],
-        ['맛 경쟁','먹기 편한 맛과 식감을 만드는 데 브랜드가 집중하고 있어요.']],
-  news:[['단백질 라테를 마셔봤다','Pacific Brief','2026-10-01','LA 카페 세 곳의 단백질 메뉴를 비교했어요.'],
-        ['마트 진열대, 단백질이 차지한 자리','Hudson Weekly','2026-09-23','매대 구성이 어떻게 바뀌었는지 살펴봤어요.']] });
+T('US', { title:'신형 폰 후기', en:'New Phone Reviews', short:'새 스마트폰 사용 후기가 하루가 다르게 올라와요.', status:'talked', cat:'tech', city:'샌프란시스코', pat:6,
+  why:['첫 사용기','배터리 이야기','카메라 비교'],
+  what:[['후기가 이어져요','받은 지 며칠 된 사용자의 글이 모여요.'],
+        ['배터리 반응','하루 사용 시간 이야기가 많아요.'],
+        ['카메라 비교','이전 모델과 사진을 비교해요.']],
+  news:[['신형 폰 일주일 사용기','Pacific Brief','2026-10-02','장단점을 정리했어요.'],
+        ['바꿀까 말까','Hudson Weekly','2026-09-30','구입 전 체크 포인트예요.']] });
 
-T('US', { title:'피클볼 코트', en:'Pickleball Courts', short:'동네 주차장이 피클볼 코트로 바뀌고 있어요.', status:'new', cat:'wellness', city:'오스틴', pat:5,
-  why:['배우기 쉬워요','나이 상관없이 같이 해요','작은 공간에서도 가능'],
-  what:[['빈 공간이 코트로','테니스장과 주차장을 나눠 피클볼 코트로 쓰는 곳이 늘었어요.'],
-        ['소셜 스포츠','게임을 하고 음료를 마시는 클럽형 시설이 생기고 있어요.'],
-        ['장비도 가벼워졌어요','입문용 패들 세트가 인기 선물이 됐어요.']],
-  news:[['오스틴의 새 피클볼 클럽','Pacific Brief','2026-09-28','저녁마다 코트가 가득 차는 이유를 취재했어요.'],
-        ['처음 하는 피클볼, 이것만 알면 돼요','Hudson Weekly','2026-09-20','기본 규칙과 장비를 쉽게 정리했어요.']] });
 
 
 /* ---------- FRANCE ---------- */
-T('FR', { title:'논알콜 바', en:'Alcohol-free Bar', short:'술 없이도 밤이 즐거운 바가 늘고 있어요.', status:'hot', cat:'food', city:'파리', pat:3,
-  why:['술을 줄이는 사람들','칵테일 못지않은 메뉴','밤 문화의 선택지 확대'],
-  what:[['메뉴판이 달라졌어요','무알콜 칵테일을 메인으로 내세우는 가게가 생겼어요.'],
-        ['향과 재료로 승부','허브, 발효차, 과일 식초를 쓴 음료가 눈에 띄어요.'],
-        ['같이 마시는 분위기','술을 마시는 친구와 안 마시는 친구가 같은 테이블에 앉아요.']],
-  news:[['파리 무알콜 바 지도','Rive Gauche Notes','2026-10-02','저녁에 가볼 만한 새로운 바 다섯 곳을 모았어요.'],
-        ['술 없는 금요일 밤','Seine Quarterly','2026-09-25','알콜을 빼고도 즐거운 밤을 보낸 후기예요.']] });
+T('FR', { title:'패션위크 개막', en:'Fashion Week Opens', short:'파리 패션위크가 열리며 거리 패션 사진이 쏟아져요.', status:'hot', cat:'fashion', city:'파리', pat:3,
+  why:['시즌 컬렉션','거리 패션','SNS 사진'],
+  what:[['런웨이 밖이 더 화제','행사장 앞 사람들의 옷차림이 더 눈길을 끌어요.'],
+        ['색 조합 이야기','올가을 유행 색을 두고 의견이 오가요.'],
+        ['예약 어려운 카페','행사장 근처 카페는 자리 잡기가 어려워요.']],
+  news:[['패션위크 첫날 현장','Rive Gauche Notes','2026-10-03','행사장 분위기를 전해요.'],
+        ['거리에서 만난 옷차림','Seine Quarterly','2026-09-30','눈에 띄는 스타일을 모았어요.']] });
 
-T('FR', { title:'빈티지', en:'Vintage', short:'오래된 옷과 물건이 가장 새로운 취향.', status:'rising', cat:'fashion', city:'마레', pat:0,
-  why:['환경을 생각하는 소비','나만의 스타일','가격 부담 완화'],
-  what:[['벼룩시장은 주말 코스','생투앙과 마레 일대에서 빈티지 매장이 이어져요.'],
-        ['수선도 유행','헌 옷을 고쳐 입는 수선 가게가 인기를 얻고 있어요.'],
-        ['젊은 셀러의 등장','직접 고른 옷을 온라인으로 파는 소규모 셀러가 늘었어요.']],
-  news:[['마레 빈티지 숍 골목','Rive Gauche Notes','2026-09-29','손님이 줄 서는 작은 가게들을 찾아갔어요.'],
-        ['고쳐 입는 사람들','Seine Quarterly','2026-09-22','수선 가게가 다시 바빠지는 이유를 들어봤어요.']] });
+T('FR', { title:'포도 수확철', en:'Grape Harvest', short:'수확철을 맞아 와이너리 체험 후기가 올라와요.', status:'rising', cat:'food', city:'보르도', pat:0,
+  why:['수확 시기','와이너리 체험','신상 와인'],
+  what:[['수확 체험 인기','직접 포도를 따보는 프로그램이 인기예요.'],
+        ['올해 작황','날씨가 포도 맛에 어떤 영향을 줬는지 이야기해요.'],
+        ['축제도 열려요','마을마다 수확 축제가 이어져요.']],
+  news:[['올해 수확은 어떨까','Rive Gauche Notes','2026-10-01','작황 소식을 정리했어요.'],
+        ['와이너리 가을 나들이','Seine Quarterly','2026-09-28','체험 프로그램을 소개해요.']] });
 
-T('FR', { title:'새로운 카페 문화', en:'New Café Culture', short:'테라스에서 오래 앉아 있는 방식이 달라졌어요.', status:'new', cat:'culture', city:'파리', pat:4,
-  why:['스페셜티 커피 확산','작업하는 사람들','동네 단골 문화'],
-  what:[['에스프레소와 노트북','전통 카페 옆에 작업하기 좋은 카페가 늘어나요.'],
-        ['로스터리가 동네에','직접 원두를 볶는 작은 카페가 골목마다 생기고 있어요.'],
-        ['아침이 붐벼요','출근 전 서서 마시는 한 잔이 새로운 습관이 됐어요.']],
-  news:[['파리 로스터리 카페 지도','Rive Gauche Notes','2026-10-01','원두 향이 가득한 동네 카페를 소개해요.'],
-        ['테라스 의자의 변화','Seine Quarterly','2026-09-24','카페 테라스가 어떻게 달라지고 있는지 살펴봤어요.']] });
+T('FR', { title:'새 학기 물가', en:'Back-to-school Prices', short:'학용품과 점심 값 이야기가 늘어나요.', status:'talked', cat:'life', city:'리옹', pat:5,
+  why:['학용품 가격','급식 이야기','가계 부담'],
+  what:[['학용품 가격 비교','마트별 가격을 비교하는 글이 보여요.'],
+        ['점심 값','도시락을 싸는 가정이 늘었다는 얘기가 있어요.'],
+        ['중고 거래','교과서 중고 거래가 활발해요.']],
+  news:[['새 학기 장바구니','Rive Gauche Notes','2026-09-29','주요 품목 가격을 짚어요.'],
+        ['점심 값 아끼는 법','Seine Quarterly','2026-09-24','도시락 아이디어를 소개해요.']] });
 
 /* ---------- UK ---------- */
-T('UK', { title:'데이타임 디스코', en:'Daytime Disco', short:'해가 떠 있을 때 춤추고 집에 가요.', status:'rising', cat:'culture', city:'런던', pat:2,
-  why:['저녁 약속을 지키기 위해','숙취 없는 주말','건강한 밤 문화'],
-  what:[['오후 2시에 시작','클럽이 낮 시간에 문을 열고 일찍 끝나요.'],
-        ['가족과 함께 오기도','아이와 부모가 같이 춤추는 행사도 있어요.'],
-        ['음료는 가볍게','무알콜 음료와 간단한 먹거리가 함께 나와요.']],
-  news:[['런던 낮 파티 후기','Thames Review','2026-10-02','낮에 열린 파티에서 만난 사람들을 소개해요.'],
-        ['일찍 끝나는 파티가 인기','Borough Notes','2026-09-26','일정이 가벼운 모임이 늘어나는 이유를 짚어봤어요.']] });
+T('UK', { title:'프리미어리그 주말', en:'Premier League Weekend', short:'주말 경기 결과를 두고 팬들의 이야기가 이어져요.', status:'hot', cat:'culture', city:'런던', pat:2,
+  why:['접전 경기','순위 경쟁','펍에서 응원'],
+  what:[['경기 후 분위기','결과에 따라 펍 분위기가 갈려요.'],
+        ['선수 이적 이야기','다음 이적 시장 소문이 돌아요.'],
+        ['티켓 가격','경기 티켓값 이야기가 나와요.']],
+  news:[['주말 경기 돌아보기','Thames Review','2026-10-04','주요 경기 결과를 정리했어요.'],
+        ['펍에서 보는 경기','Borough Notes','2026-10-02','응원 문화를 소개해요.']] });
 
-T('UK', { title:'펍 퀴즈 나이트', en:'Pub Quiz Night', short:'퀴즈 한 판에 동네 사람이 다 모여요.', status:'talked', cat:'life', city:'맨체스터', pat:5,
-  why:['팀으로 노는 재미','저렴한 저녁 약속','동네 펍의 부활'],
-  what:[['요일마다 다른 테마','영화, 음악, 지역 상식까지 주제가 달라요.'],
-        ['팀 이름도 놀이','웃긴 팀 이름을 정하는 것부터 게임이 시작돼요.'],
-        ['젊은 층이 늘었어요','친구들과 가볍게 모이는 자리로 인기를 얻고 있어요.']],
-  news:[['맨체스터 펍 퀴즈 가이드','Thames Review','2026-09-30','요일별로 열리는 퀴즈 나이트를 모았어요.'],
-        ['펍이 다시 북적이는 이유','Borough Notes','2026-09-22','퀴즈와 라이브 음악이 손님을 불러오고 있어요.']] });
+T('UK', { title:'가을 폭풍 소식', en:'Autumn Storm', short:'바람과 비로 일정이 바뀌었다는 이야기가 많아요.', status:'rising', cat:'life', city:'맨체스터', pat:1,
+  why:['강한 바람','기차 지연','우산 구매'],
+  what:[['출근길 걱정','기차 지연 소식을 확인하는 사람이 늘었어요.'],
+        ['정원 단속','바람에 대비해 화분을 옮기는 모습이 보여요.'],
+        ['일정 취소','야외 모임이 실내로 바뀌었어요.']],
+  news:[['이번 주 날씨 정리','Thames Review','2026-10-03','지역별 바람과 비 예보예요.'],
+        ['폭풍 대비 체크리스트','Borough Notes','2026-10-01','집에서 챙길 것을 정리했어요.']] });
 
-T('UK', { title:'한식 레스토랑 붐', en:'Korean Food Boom', short:'런던 곳곳에 한식당이 늘어나는 중.', status:'new', cat:'food', city:'런던', pat:1,
-  why:['K-컬처에 대한 관심','다양한 메뉴','나눠 먹는 문화'],
-  what:[['메뉴가 넓어졌어요','불고기뿐 아니라 분식, 포차 스타일까지 등장해요.'],
-        ['현지 셰프의 해석','한식 재료로 새로운 요리를 만드는 현지 셰프가 늘었어요.'],
-        ['장보기도 쉬워졌어요','한국 식재료를 파는 마트가 곳곳에 생기고 있어요.']],
-  news:[['런던의 새 한식당 다섯 곳','Thames Review','2026-10-01','줄 서서 먹는 한식당을 찾아가 봤어요.'],
-        ['한식이 영국 식탁에 오르기까지','Borough Notes','2026-09-23','현지 식재료 시장의 변화를 정리했어요.']] });
+T('UK', { title:'할로윈 준비', en:'Halloween Prep', short:'가게마다 호박과 장식이 가득 진열됐어요.', status:'new', cat:'culture', city:'에든버러', pat:7,
+  why:['장식 시즌','아이들 코스튬','파티 준비'],
+  what:[['가게 진열대','할로윈 용품 코너가 커졌어요.'],
+        ['집 꾸미기','현관 장식 사진이 올라와요.'],
+        ['동네 행사','동네마다 작은 행사를 준비해요.']],
+  news:[['할로윈 장식 인기 품목','Thames Review','2026-10-02','올해 많이 팔리는 것을 소개해요.'],
+        ['아이와 함께하는 할로윈','Borough Notes','2026-09-29','안전하게 즐기는 방법이에요.']] });
 
 /* ---------- ITALY ---------- */
-T('IT', { title:'파델 열풍', en:'Padel Fever', short:'테니스와 스쿼시 사이, 모두가 라켓을 들어요.', status:'hot', cat:'wellness', city:'로마', pat:5,
-  why:['배우기 쉬워요','4명이 함께 해요','코트가 빠르게 늘어요'],
-  what:[['코트가 도시 곳곳에','옥상과 빈 공터에도 파델 코트가 생기고 있어요.'],
-        ['예약이 어려울 정도','퇴근 후 시간대는 일주일 전에 마감되기도 해요.'],
-        ['친구와 가족 스포츠','세대가 섞여서 즐기는 모습이 흔해졌어요.']],
-  news:[['로마 파델 코트 예약 전쟁','Via Piazza','2026-10-03','인기 코트의 예약 풍경을 취재했어요.'],
-        ['파델 입문 가이드','Tiber Daily','2026-09-27','처음 시작하는 사람을 위한 기본 규칙이에요.']] });
+T('IT', { title:'트러플 시즌', en:'Truffle Season', short:'가을 트러플 철이 시작되어 장터가 붐벼요.', status:'hot', cat:'food', city:'알바', pat:6,
+  why:['제철 식재료','장터 인기','요리 이야기'],
+  what:[['장터가 열려요','트러플을 사려는 사람들이 모여요.'],
+        ['가격 이야기','올해 가격이 어떨지 관심이 높아요.'],
+        ['요리법 공유','파스타와 달걀 요리가 많이 올라와요.']],
+  news:[['올해 트러플 장터','Tiber Daily','2026-10-03','시즌 시작 분위기를 전해요.'],
+        ['제철 요리 한 접시','Via Piazza','2026-09-30','간단한 요리법을 소개해요.']] });
 
-T('IT', { title:'아그리투리스모 휴가', en:'Agriturismo Stay', short:'농장에서 보내는 느린 휴가.', status:'rising', cat:'travel', city:'토스카나', pat:4,
-  why:['번잡한 도시를 피해서','직접 만든 음식','조용한 시간'],
-  what:[['농장에서 하룻밤','숙소가 올리브 농장이나 포도밭 안에 있어요.'],
-        ['식탁이 곧 체험','그 지역에서 키운 재료로 만든 식사를 먹어요.'],
-        ['걷는 여행과 연결','트레킹 코스와 함께 묶어 즐기는 사람이 늘었어요.']],
-  news:[['토스카나 농장 숙소 고르는 법','Via Piazza','2026-09-28','분위기와 식사를 기준으로 살펴봤어요.'],
-        ['올리브 수확철 체험','Tiber Daily','2026-09-21','가을에 참여할 수 있는 수확 체험을 소개해요.']] });
+T('IT', { title:'세리에A 더비', en:'Derby Day', short:'더비 경기 앞두고 도시 분위기가 달아올랐어요.', status:'rising', cat:'culture', city:'밀라노', pat:4,
+  why:['라이벌전','응원 열기','티켓 경쟁'],
+  what:[['티켓이 빨리 나가요','경기 전부터 좌석이 거의 찼어요.'],
+        ['응원 준비','서포터가 응원 준비를 해요.'],
+        ['도시 분위기','경기날 거리 풍경이 달라져요.']],
+  news:[['더비 관전 포인트','Tiber Daily','2026-10-04','양 팀 상황을 정리했어요.'],
+        ['경기날 도시 풍경','Via Piazza','2026-10-02','분위기를 전해요.']] });
 
-T('IT', { title:'서서 마시는 에스프레소', en:'Standing Espresso', short:'바 앞에서 짧게, 빠르게, 진하게.', status:'talked', cat:'food', city:'밀라노', pat:3,
-  why:['빠른 일상 리듬','저렴한 한 잔','바리스타와의 짧은 대화'],
-  what:[['카운터가 무대','바리스타와 몇 마디 나누고 바로 나가요.'],
-        ['한 잔의 규칙','아침엔 카푸치노, 오후엔 에스프레소 같은 암묵적 규칙이 있어요.'],
-        ['관광객도 따라해요','서서 마시는 방식이 여행 코스에 들어오고 있어요.']],
-  news:[['밀라노 에스프레소 바 순례','Via Piazza','2026-10-01','아침마다 사람이 모이는 바를 찾아가 봤어요.'],
-        ['한 잔의 값','Tiber Daily','2026-09-24','커피 한 잔의 가격이 가진 의미를 이야기해요.']] });
+T('IT', { title:'관광객 입장료 논의', en:'Visitor Fee Talk', short:'유명 관광지 입장료 이야기가 화제예요.', status:'talked', cat:'travel', city:'베네치아', pat:1,
+  why:['관광객 증가','입장료','현지인 의견'],
+  what:[['어떤 제도인가','일부 관광지에서 방문 요금을 받는 방식이에요.'],
+        ['현지인 반응','혼잡이 줄었다는 의견과 불편하다는 의견이 있어요.'],
+        ['여행자 준비','방문 전 예약 여부를 확인하라는 글이 많아요.']],
+  news:[['방문 요금, 어떻게 달라졌나','Tiber Daily','2026-09-30','제도를 정리했어요.'],
+        ['여행 전 확인할 것','Via Piazza','2026-09-26','예약 팁이에요.']] });
 
 /* ---------- BRAZIL ---------- */
-T('BR', { title:'스트리트 푸드 2.0', en:'Street Food 2.0', short:'길거리 음식이 한 단계 진화했어요.', status:'hot', cat:'food', city:'상파울루', pat:2,
-  why:['셰프들의 참여','합리적인 가격','도시 문화와 연결'],
-  what:[['푸드 트럭이 레스토랑급','유명 셰프가 트럭에서 새 메뉴를 선보여요.'],
-        ['전통과 퓨전','치즈빵과 튀김 요리가 새로운 방식으로 재해석돼요.'],
-        ['주말 푸드 마켓','거리 한 구역을 통째로 푸드 마켓으로 바꾸는 행사가 늘었어요.']],
-  news:[['상파울루 푸드 트럭 지도','Paulista Post','2026-10-02','주말마다 모이는 트럭들을 소개해요.'],
-        ['길거리 음식의 새 얼굴','Rio Notes','2026-09-26','셰프와 노점이 만나는 지점을 들여다봤어요.']] });
+T('BR', { title:'축구 대표팀 소집', en:'National Team Call-up', short:'대표팀 명단을 두고 팬들의 의견이 갈려요.', status:'hot', cat:'culture', city:'상파울루', pat:5,
+  why:['명단 발표','선수 컨디션','경기 일정'],
+  what:[['명단 논쟁','누가 빠졌는지 이야기가 많아요.'],
+        ['경기 기대감','다음 경기 상대에 관심이 모여요.'],
+        ['유니폼 판매','새 유니폼이 인기예요.']],
+  news:[['대표팀 명단 발표','Paulista Post','2026-10-03','주요 선수들을 정리했어요.'],
+        ['경기 일정 한눈에','Rio Notes','2026-10-01','경기 시간을 정리했어요.']] });
 
-T('BR', { title:'거리 파티 블로쿠', en:'Bloco Street Party', short:'카니발이 아니어도 거리에서 춤을 춰요.', status:'rising', cat:'culture', city:'리우', pat:6,
-  why:['음악과 사람','돈이 들지 않아요','지역 커뮤니티'],
-  what:[['한 해 내내 열려요','카니발 시즌이 아니어도 동네별로 블로쿠가 열려요.'],
-        ['악단이 이끌어요','타악기와 밴드가 길을 걸으며 사람들을 모아요.'],
-        ['젊은 층이 주도','동네 모임에서 시작해 큰 행사로 자라는 곳도 있어요.']],
-  news:[['리우 블로쿠 달력','Paulista Post','2026-09-30','주말에 갈 수 있는 거리 파티를 모았어요.'],
-        ['동네 악단의 하루','Rio Notes','2026-09-22','연습부터 행진까지 따라가 봤어요.']] });
+T('BR', { title:'봄 더위', en:'Spring Heat', short:'계절이 바뀌는데도 더운 날이 이어져요.', status:'rising', cat:'life', city:'리우', pat:2,
+  why:['이른 더위','해변 인파','냉방 수요'],
+  what:[['해변이 붐벼요','주말 해변에 사람이 몰려요.'],
+        ['에어컨 이야기','냉방 사용 이야기가 많아요.'],
+        ['물 챙기기','야외 활동에 물 챙기라는 안내가 나와요.']],
+  news:[['이번 주 더위 소식','Paulista Post','2026-10-02','지역별 기온을 정리했어요.'],
+        ['더울 때 하기 좋은 일','Rio Notes','2026-09-29','실내외 활동을 소개해요.']] });
 
-T('BR', { title:'푸치발리', en:'Footvolley', short:'발로 하는 비치발리볼.', status:'new', cat:'wellness', city:'리우', pat:3,
-  why:['해변에서 하기 좋아요','기술이 눈에 띄어요','관람하는 재미'],
-  what:[['해변마다 네트가 쳐져요','아침부터 저녁까지 경기가 이어져요.'],
-        ['기술이 볼거리','공을 다루는 기술로 구경하는 사람들이 모여요.'],
-        ['다른 나라로 번져요','해외에서도 배우고 싶어 하는 사람이 늘고 있어요.']],
-  news:[['코파카바나의 푸치발리','Paulista Post','2026-09-29','해변에서 열리는 아침 경기를 취재했어요.'],
-        ['처음 해보는 푸치발리','Rio Notes','2026-09-21','입문자를 위한 기본 동작을 소개해요.']] });
+T('BR', { title:'푸드트럭 페스티벌', en:'Food Truck Festival', short:'주말 푸드트럭 행사가 열려 먹거리 줄이 길어요.', status:'new', cat:'food', city:'상파울루', pat:3,
+  why:['다양한 메뉴','가족 나들이','야외 행사'],
+  what:[['메뉴가 다양해요','지역별 길거리 음식이 한 자리에 모여요.'],
+        ['줄이 길어요','인기 트럭 앞은 대기가 길어요.'],
+        ['음악과 함께','공연이 어우러져요.']],
+  news:[['페스티벌 다녀왔어요','Paulista Post','2026-10-04','분위기를 전해요.'],
+        ['꼭 먹어볼 메뉴','Rio Notes','2026-10-02','추천 메뉴를 모았어요.']] });
 
 /* ---------- AUSTRALIA ---------- */
-T('AU', { title:'얼리버드 서프 클럽', en:'Early-bird Surf Club', short:'출근 전에 파도를 타고 하루를 시작해요.', status:'rising', cat:'wellness', city:'시드니', pat:6,
-  why:['해가 일찍 떠요','운동과 출근을 같이','동네 커뮤니티'],
-  what:[['새벽 6시 해변','서핑 후 해변 카페에서 커피를 마시고 출근해요.'],
-        ['초보도 환영','강습과 장비 대여를 갖춘 클럽이 늘고 있어요.'],
-        ['클럽 문화','회원끼리 아침 식사를 하는 모임이 생겨요.']],
-  news:[['본다이의 아침','Harbour Lines','2026-10-02','해 뜨기 전 해변이 붐비는 이유를 취재했어요.'],
-        ['서핑 클럽 가입 가이드','Southern Cross Daily','2026-09-25','가입 전에 알아야 할 점을 정리했어요.']] });
+T('AU', { title:'럭비 결승 시즌', en:'Rugby Finals', short:'결승전을 앞두고 응원 열기가 달아올라요.', status:'hot', cat:'culture', city:'시드니', pat:4,
+  why:['결승전','응원 문화','티켓 경쟁'],
+  what:[['도시가 들썩여요','경기를 보려는 사람들이 모여요.'],
+        ['펍 예약','경기날 펍 자리가 빨리 차요.'],
+        ['선수 인터뷰','선수들의 한마디가 화제예요.']],
+  news:[['결승전 관전 가이드','Southern Cross Daily','2026-10-03','경기 일정을 정리했어요.'],
+        ['응원 모임 준비','Harbour Lines','2026-10-01','집에서 즐기는 방법이에요.']] });
 
-T('AU', { title:'스페셜티 로스터리', en:'Specialty Roasters', short:'동네마다 자기 원두를 볶는 가게가 있어요.', status:'talked', cat:'food', city:'멜버른', pat:4,
-  why:['커피에 대한 자부심','원두의 이력','골목 카페 문화'],
-  what:[['원두 이야기가 메뉴','산지와 로스팅 날짜를 적어두는 카페가 많아요.'],
-        ['플랫화이트의 진화','기본 메뉴를 더 정교하게 만드는 데 집중해요.'],
-        ['투어 코스','멜버른 골목을 도는 커피 투어가 인기예요.']],
-  news:[['멜버른 로스터리 골목','Harbour Lines','2026-09-30','골목마다 다른 향을 가진 카페를 찾아갔어요.'],
-        ['원두를 고르는 법','Southern Cross Daily','2026-09-23','처음 사는 사람을 위한 기본 가이드예요.']] });
+T('AU', { title:'봄 산불 주의', en:'Fire Season Alert', short:'건조한 날씨에 산불 대비 안내가 늘었어요.', status:'rising', cat:'life', city:'멜버른', pat:1,
+  why:['건조한 날씨','대비 안내','주민 준비'],
+  what:[['대비 안내 확인','지역 안내를 확인하라는 글이 많아요.'],
+        ['여행 일정 점검','캠핑 전 상황을 확인해요.'],
+        ['지역 소식','지역 소방 소식이 공유돼요.']],
+  news:[['산불 시즌 시작','Southern Cross Daily','2026-10-02','대비 방법을 정리했어요.'],
+        ['여행 전 확인할 것','Harbour Lines','2026-09-29','지역 정보를 확인하는 법이에요.']] });
 
-T('AU', { title:'로드트립 밴라이프', en:'Van Life Road Trip', short:'캠핑카 한 대로 호주 일주.', status:'hot', cat:'travel', city:'퀸즐랜드', pat:7,
-  why:['자유로운 일정','숙소 부담 감소','넓은 대륙'],
-  what:[['밴 개조가 취미','직접 침대와 주방을 꾸며서 여행을 떠나요.'],
-        ['캠핑장이 늘었어요','밴 전용 캠핑장과 샤워 시설이 곳곳에 생기고 있어요.'],
-        ['일과 여행을 같이','원격 근무를 하며 달리는 사람도 있어요.']],
-  news:[['퀸즐랜드 해안 로드트립','Harbour Lines','2026-10-01','해안선을 따라 달리는 코스를 소개해요.'],
-        ['밴 개조 비용 얼마나 들까','Southern Cross Daily','2026-09-24','구성별 예산을 정리했어요.']] });
+T('AU', { title:'연휴 로드트립', en:'Long Weekend Road Trip', short:'긴 연휴에 차로 떠나는 사람들이 늘었어요.', status:'new', cat:'travel', city:'브리즈번', pat:7,
+  why:['긴 연휴','차량 여행','캠핑'],
+  what:[['도로가 붐벼요','연휴 시작 날 고속도로가 막혀요.'],
+        ['캠핑장 예약','인기 캠핑장은 이미 만석이에요.'],
+        ['짧은 코스 인기','가까운 해안 코스가 인기예요.']],
+  news:[['연휴 로드트립 코스','Southern Cross Daily','2026-10-03','추천 코스를 소개해요.'],
+        ['캠핑장 예약 팁','Harbour Lines','2026-09-30','빈자리를 찾는 법이에요.']] });
 
 /* ---------- THAILAND ---------- */
-T('TH', { title:'스트리트 푸드 투어', en:'Street Food Tour', short:'방콕의 노점을 한 바퀴 도는 저녁.', status:'hot', cat:'food', city:'방콕', pat:2,
-  why:['저렴하고 맛있어요','다양한 메뉴','야시장 문화'],
-  what:[['밤이 되면 열려요','해가 지면 골목마다 노점이 불을 켜요.'],
-        ['한 입씩 맛보기','여러 가게를 돌며 조금씩 먹는 방식이 인기예요.'],
-        ['노점도 인정받아요','국제 가이드에 오르는 노점이 늘고 있어요.']],
-  news:[['방콕 야시장 지도','Siam Notebook','2026-10-02','밤마다 열리는 시장들을 소개해요.'],
-        ['노점 요리사의 하루','Chao Phraya Post','2026-09-26','새벽 준비부터 마감까지 따라가 봤어요.']] });
+T('TH', { title:'우기 끝자락 비', en:'Late Rainy Season', short:'비가 이어져 침수 대비 안내가 늘었어요.', status:'hot', cat:'life', city:'방콕', pat:1,
+  why:['잦은 비','도로 침수','배수 안내'],
+  what:[['출근길 걱정','비 오는 날 도로 상황을 확인해요.'],
+        ['우산과 장화','비 대비 용품이 인기예요.'],
+        ['안내 문자','지역 안내를 공유해요.']],
+  news:[['이번 주 비 예보','Siam Notebook','2026-10-03','지역별 상황을 정리했어요.'],
+        ['비 오는 날 이동 팁','Chao Phraya Post','2026-09-30','교통 정보를 소개해요.']] });
 
-T('TH', { title:'웰니스 리트릿', en:'Wellness Retreat', short:'치앙마이에서 며칠 쉬어가는 여행.', status:'rising', cat:'wellness', city:'치앙마이', pat:3,
-  why:['쉬는 여행 선호','요가와 명상','자연 속 숙소'],
-  what:[['프로그램이 있는 숙소','요가, 명상, 식사가 함께 구성돼 있어요.'],
-        ['혼자 오는 사람도 많아요','조용히 머물 수 있는 1인 프로그램이 늘었어요.'],
-        ['로컬 재료의 식사','지역에서 난 재료로 만든 식단이 나와요.']],
-  news:[['치앙마이 리트릿 고르는 법','Siam Notebook','2026-09-29','프로그램과 분위기를 비교해 봤어요.'],
-        ['3일의 느린 여행','Chao Phraya Post','2026-09-21','짧게 다녀온 후기를 소개해요.']] });
+T('TH', { title:'채식 축제', en:'Vegetarian Festival', short:'노란 깃발이 걸리며 채식 음식 거리가 열려요.', status:'rising', cat:'food', city:'푸껫', pat:0,
+  why:['축제 시작','채식 메뉴','거리 행사'],
+  what:[['노란 깃발','가게마다 노란 깃발이 걸려요.'],
+        ['메뉴가 다양해요','채식 재료로 만든 길거리 음식이 많아요.'],
+        ['여행자 관심','관광객도 많이 찾아요.']],
+  news:[['채식 축제 안내','Siam Notebook','2026-10-02','일정과 장소를 정리했어요.'],
+        ['꼭 먹어볼 채식 메뉴','Chao Phraya Post','2026-09-29','추천 음식을 소개해요.']] });
 
-T('TH', { title:'무에타이 체험', en:'Muay Thai Class', short:'여행 코스에 체육관이 들어왔어요.', status:'new', cat:'wellness', city:'방콕', pat:5,
-  why:['체험형 여행','운동 효과','현지 문화'],
-  what:[['당일 클래스가 있어요','초보자도 한 시간 정도 배울 수 있어요.'],
-        ['관람도 인기','현지 경기를 보러 가는 코스가 늘고 있어요.'],
-        ['장비 대여','글러브와 복장을 빌려주는 체육관이 많아요.']],
-  news:[['방콕 무에타이 체육관','Siam Notebook','2026-10-03','체험 수업이 있는 곳을 모았어요.'],
-        ['처음 맞는 킥','Chao Phraya Post','2026-09-27','한 시간 수업 후기를 전해요.']] });
+T('TH', { title:'여행자 입국 소식', en:'Travel Entry News', short:'입국 절차와 여행자 안내가 화제예요.', status:'new', cat:'travel', city:'방콕', pat:6,
+  why:['절차 변경','여행 준비','공항 안내'],
+  what:[['무엇이 달라졌나','입국 때 확인할 서류에 관심이 많아요.'],
+        ['공항 줄','입국 심사 대기 이야기가 보여요.'],
+        ['준비물 점검','출발 전에 확인할 목록이 공유돼요.']],
+  news:[['입국 안내 정리','Siam Notebook','2026-10-03','필요한 것을 정리했어요.'],
+        ['공항에서 시간 아끼기','Chao Phraya Post','2026-10-01','이동 팁을 소개해요.']] });
+
 
 
 /* ---------- 키워드(개념) 묶음 ----------
    같은 키워드가 여러 나라에서 뜰 수 있어서, Keep은 나라가 아니라 '키워드'에 건다.
-   여기에 없는 트렌드는 자기 자신이 하나의 키워드(id 그대로)다.
+   여기에 없는 화제는 자기 자신이 하나의 키워드(id 그대로)다.
    실제 데이터에서는 수집이 키워드를 묶어 keywords 테이블에 넣는다. */
 const KW_GROUPS = {
-  'running':     { title: '러닝', members: ['kr-2', 'us-1'] },
-  'street-food': { title: '스트리트 푸드', members: ['br-1', 'th-1'] },
-  'cafe':        { title: '카페 문화', members: ['fr-3', 'au-2'] }
+  'holiday-trip': { title: '연휴 여행', members: ['kr-1', 'cn-1', 'au-3'] },
+  'halloween':    { title: '할로윈 준비', members: ['us-1', 'uk-3'] },
+  'autumn-rain':  { title: '가을 날씨', members: ['jp-2', 'uk-2'] }
 };
 
 
-/* ---------- 지역(LOCAL)과 PEOPLE'S TREND 샘플 ---------- */
+/* ---------- 지역(LOCAL)과 PEOPLE'S BUZZ 샘플 ---------- */
 const CITIES = [
   { id:'seoul',    name:'SEOUL',     ko:'서울',     cc:'KR' },
   { id:'tokyo',    name:'TOKYO',     ko:'도쿄',     cc:'JP' },
@@ -1411,7 +1389,7 @@ const COPY = {
   heroLine1: '요즘 여기서',
   heroLine2: '뭐가 뜨고 있을까?',
   heroHint: '지구본을 돌려서 나라를 골라보세요',
-  ring: 'WHAT’S TRENDING ON EARTH  ·  요즘 지구에서 뭐가 뜨고 있을까  ·  ',
+  ring: 'WHAT’S BUZZING ON EARTH  ·  지금 지구에서 뭐가 화제일까  ·  ',
   surprise: 'Surprise Me',
   surpriseLead: n => `오늘은 ${n}로 가볼까요?`,
   surpriseCity: c => `지금 ${c}에서 뜨는 것`,
@@ -1419,11 +1397,11 @@ const COPY = {
   keepTitle: 'MY KEEP',
   keepSub: '내가 관심 있는 키워드',
   keepEmpty: '아직 Keep한 게 없어요. 지구본에서 마음에 드는 걸 골라볼까요?',
-  followingEmpty: '아직 Keep한 트렌드가 없어요. 하나만 Keep하면 새 이야기가 여기에 올라와요.',
+  followingEmpty: '아직 Keep한 화제가 없어요. 하나만 Keep하면 새 이야기가 여기에 올라와요.',
   discoverSub: '지금, 다른 나라 사람들은 뭐해?',
   localSub: '지금, 내 주변에서는?',
-  share: '우리 동네 트렌드 올리기',
-  shareTitle: 'Share a Trend',
+  share: '우리 동네 화제 올리기',
+  shareTitle: 'Share a Topic',
   sample: '샘플 콘텐츠',
   toastKeep: 'Keep에 담았어요',
   toastUnkeep: 'Keep에서 뺐어요',
@@ -1649,7 +1627,7 @@ const Globe = (() => {
   /* ---- 2. 나라 핀 (버튼) ---- */
   pinsEl.innerHTML = COUNTRIES.map(co => {
     const h = hotOf(co.cc);
-    return `<button class="pin" data-cc="${co.cc}" style="--pc:${{ blaze: '#AEFF1C', warm: '#8FD400', calm: '#BFC8B0' }[HEAT[co.cc].tier]}" aria-label="${esc(co.ko)} 트렌드 보기"><i></i><span class="pc">${HEAT[co.cc].tier === 'blaze' ? '🔥 ' : ''}${esc(co.name)}</span><span class="pn">${esc(co.name)}</span><span class="pk">${esc(h.trendTitle)} ↗</span></button>`;
+    return `<button class="pin" data-cc="${co.cc}" style="--pc:${{ blaze: '#AEFF1C', warm: '#8FD400', calm: '#BFC8B0' }[HEAT[co.cc].tier]}" aria-label="${esc(co.ko)} 화제 보기"><i></i><span class="pc">${HEAT[co.cc].tier === 'blaze' ? '🔥 ' : ''}${esc(co.name)}</span><span class="pn">${esc(co.name)}</span><span class="pk">${esc(h.trendTitle)} ↗</span></button>`;
   }).join('');
   const pins = $$('.pin', pinsEl); pins.forEach(el => el.classList.add('t-' + HEAT[el.dataset.cc].tier));
   const cvec = COUNTRIES.map(co => { const f = co.center[1] * D, l = co.center[0] * D; return [Math.cos(f) * Math.sin(l), Math.sin(f), Math.cos(f) * Math.cos(l)]; });
@@ -1936,8 +1914,8 @@ function discoverList() {
     h += '</div>';
     const dcPosts = state.dc && state.dc !== 'all' ? [...state.posts, ...PEOPLE].filter(p => CITY[p.city] && CITY[p.city].cc === state.dc) : [];
     if (list.length > state.shown) h += `<div class="sentinel" id="sentD" aria-hidden="true"><span></span><span></span><span></span></div>`;
-    if (!list.length) h += `<div class="empty"><p>${q ? `‘${esc(q)}’에 맞는 트렌드가 아직 없어요.` : '이 카테고리는 아직 비어 있어요.'}</p>${q ? '<button class="main" data-act="clearq">검색어 지우기</button>' : ''}</div>`;
-    if (dcPosts.length) h += `<div class="sec"><h2>People’s Trend</h2><span class="eyebrow">${esc(CO[state.dc].name)} · ${dcPosts.length}</span></div>${dcPosts.map(postHTML).join('')}`;
+    if (!list.length) h += `<div class="empty"><p>${q ? `‘${esc(q)}’에 맞는 화제가 아직 없어요.` : '이 카테고리는 아직 비어 있어요.'}</p>${q ? '<button class="main" data-act="clearq">검색어 지우기</button>' : ''}</div>`;
+    if (dcPosts.length) h += `<div class="sec"><h2>People’s Buzz</h2><span class="eyebrow">${esc(CO[state.dc].name)} · ${dcPosts.length}</span></div>${dcPosts.map(postHTML).join('')}`;
   } else {
     if (!state.user) return h + `<div class="empty"><p>로그인하면 Keep한 키워드의<br>새 이야기를 모아볼 수 있어요.</p><button class="main" data-act="login">로그인하기</button></div>`;
     const kept = [...state.keep].map(k => kwMembers(k)[0]).filter(Boolean).sort((a, b) => latest(b).localeCompare(latest(a)));
@@ -1948,7 +1926,7 @@ function discoverList() {
         <button class="up-card" data-act="open" data-id="${t.id}"><b>${esc(n.title)}</b><span>${esc(n.source)} · ${esc(CO[t.countryCode].name)} · ${fmtDate(n.date)}</span></button></div>`;
     }).join('') + `</div>`;
     const rel = []; kept.forEach(t => related(t, 2).forEach(r => { if (!state.keep.has(r.kw) && !rel.includes(r)) rel.push(r); }));
-    if (rel.length) h += `<div class="divider"><span class="eyebrow">비슷한 트렌드</span></div><div class="feed">${rel.slice(0, 3).map((t, i) => feedItem(t, i, false)).join('')}</div>`;
+    if (rel.length) h += `<div class="divider"><span class="eyebrow">비슷한 화제</span></div><div class="feed">${rel.slice(0, 3).map((t, i) => feedItem(t, i, false)).join('')}</div>`;
   }
   return h;
 }
@@ -1973,7 +1951,7 @@ function localHTML() {
   return `<div class="eyebrow">LOCAL · KOREA</div><h1 class="hd">${esc(COPY.localSub)}</h1>
     <div class="sec"><h2>KOREA NOW</h2><span class="eyebrow">${list.length} KEYWORDS</span></div>
     <div>${list.map(miniRow).join('')}</div>
-    <div class="sec"><h2>People’s Trend</h2><span class="eyebrow">우리 동네 · ${posts.length}</span></div>
+    <div class="sec"><h2>People’s Buzz</h2><span class="eyebrow">우리 동네 · ${posts.length}</span></div>
     ${posts.length ? `<div id="locList">${posts.slice(0, state.localShown).map(postHTML).join('')}</div>${posts.length > state.localShown ? '<div class="sentinel" id="sentL" aria-hidden="true"><span></span><span></span><span></span></div>' : ''}` : `<div class="empty"><p>우리 동네에서는 아직 올라온 게 없어요. 첫 번째로 올려볼까요?</p></div>`}
     <div class="fab-wrap"><button class="fab" data-act="share"><span aria-hidden="true">+</span>${esc(COPY.share)}</button></div>`;
 }
@@ -2064,8 +2042,8 @@ function myHTML() {
   const mine = state.posts.filter(p => p.uid === u.id);
   return `<div class="eyebrow">MY</div>
     <div class="me"><div class="avatar">${avatarInner(u, u.avatar)}</div><div><b>${esc(u.nick)}<button class="edit-ic" data-act="profile" aria-label="프로필 수정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="m13.5 6.5 4 4"/></svg></button></b><span class="eyebrow" style="text-transform:none">@${esc(u.id)} <span style="text-transform:uppercase">· ${u.provider === 'kakao' ? 'KAKAO' : 'GOOGLE'}</span></span></div></div>
-    <div class="stats"><div><strong>${state.keep.size}</strong><span class="eyebrow">Keep</span></div><div><strong>${mine.length}</strong><span class="eyebrow">올린 트렌드</span></div><div><strong>${state.visited.size}</strong><span class="eyebrow">가본 나라</span></div><div><strong>${state.fav.size}</strong><span class="eyebrow">관심 나라</span></div></div>
-    <div class="sec"><h2>내가 올린 트렌드</h2><span class="eyebrow">${mine.length}</span></div>
+    <div class="stats"><div><strong>${state.keep.size}</strong><span class="eyebrow">Keep</span></div><div><strong>${mine.length}</strong><span class="eyebrow">올린 화제</span></div><div><strong>${state.visited.size}</strong><span class="eyebrow">가본 나라</span></div><div><strong>${state.fav.size}</strong><span class="eyebrow">관심 나라</span></div></div>
+    <div class="sec"><h2>내가 올린 화제</h2><span class="eyebrow">${mine.length}</span></div>
     ${mine.length ? `<div class="my-grid">${mine.slice(0, state.myShown).map(p => `<div class="mg" data-act="editpost" data-id="${p.id}" role="button" tabindex="0" aria-label="${esc(p.title)} 수정">
       <div class="mg-th">${p.photo ? `<img src="${p.photo}" alt="" loading="lazy">` : poster(p.pat || 0, CITY[p.city].cc, p.id)}</div>
       <span class="mg-t">${esc(p.title)}</span><button class="mg-x" data-act="delpost" data-id="${p.id}" aria-label="삭제">×</button></div>`).join('')}</div>
@@ -2099,7 +2077,7 @@ function detailHTML(t) {
       <div class="d-meta"><span>${esc(co.name)}</span><span>·</span><span>${esc(t.city)}</span>${tag(t.status)}<span>${CATEGORIES[t.category]}</span></div>
       <h1 class="d-title">${esc(t.trendTitle)}</h1><div class="d-en">${esc(t.titleEn)}</div>
       <p class="d-short">${esc(t.shortDescription)}</p>
-      <div class="d-sec-row"><h2 class="d-sec">Why is this trending?</h2>${keepBtn(t.id)}</div>
+      <div class="d-sec-row"><h2 class="d-sec">Why is this buzzing?</h2>${keepBtn(t.id)}</div>
       <div class="why">${t.whyTrending.map(w => `<span>${esc(w)}</span>`).join('')}</div>
       <h2 class="d-sec">What’s happening</h2>
       <div class="what">${t.whatIsHappening.map(w => `<div><b>${esc(w.head)}</b><p>${esc(w.text)}</p></div>`).join('')}</div>
@@ -2124,10 +2102,10 @@ function composerHTML() {
   const tr = composer.trend ? byId[composer.trend] : null, cityId = ed ? ed.city : tr ? trendCity(tr).id : state.city;
   return `<div class="d-bar"><button class="back" data-act="closeComposer"><span aria-hidden="true">✕</span> Close</button></div>
     <form class="form" id="shareForm" autocomplete="off">
-      <div><div class="eyebrow">SHARE A TREND</div><h2 class="hd">${ed ? '올린 글 수정하기' : tr ? `‘${esc(tr.trendTitle)}’<br>이야기 올리기` : '지금, 무슨 일이<br>일어나고 있나요?'}</h2>${tr ? `<p class="cp-link">${esc(CO[tr.countryCode].name)} · 이 키워드의 피드에 함께 보여요</p>` : ''}</div>
+      <div><div class="eyebrow">SHARE A TOPIC</div><h2 class="hd">${ed ? '올린 글 수정하기' : tr ? `‘${esc(tr.trendTitle)}’<br>이야기 올리기` : '지금, 무슨 일이<br>일어나고 있나요?'}</h2>${tr ? `<p class="cp-link">${esc(CO[tr.countryCode].name)} · 이 키워드의 피드에 함께 보여요</p>` : ''}</div>
       <div class="fld"><label for="f-city">지역</label><select class="in" id="f-city">${CITIES.map(c => `<option value="${c.id}"${c.id === cityId ? ' selected' : ''}>${c.name} · ${c.ko}</option>`).join('')}</select></div>
       <div class="fld"><label for="f-area">동네 <span>선택</span></label><input class="in sm" id="f-area" maxlength="16" placeholder="예: 성수동"${ed ? ' value="' + esc(ed.area || '') + '"' : ''}></div>
-      <div class="fld"><label for="f-title">트렌드 제목</label><input class="in" id="f-title" maxlength="28" placeholder="요즘 이런 게 보여요"${ed ? ' value="' + esc(ed.title) + '"' : tr ? ' value="' + esc(tr.trendTitle) + '"' : ''}></div>
+      <div class="fld"><label for="f-title">화제 제목</label><input class="in" id="f-title" maxlength="28" placeholder="요즘 이런 게 보여요"${ed ? ' value="' + esc(ed.title) + '"' : tr ? ' value="' + esc(tr.trendTitle) + '"' : ''}></div>
       <div class="fld"><label for="f-text">한 줄 설명 <span id="f-count">0 / 60</span></label><textarea class="in" id="f-text" maxlength="60" placeholder="어디서 무엇이 어떻게 달라졌는지 짧게 적어주세요">${ed ? esc(ed.text) : ''}</textarea></div>
       <div class="fld"><span class="lab">카테고리</span><div class="cats">${Object.entries(CATEGORIES).map(([k, v]) => `<button type="button" class="pill${k === composer.cat ? ' on' : ''}" data-act="pickcat" data-v="${k}">${v}</button>`).join('')}</div></div>
       <div class="fld"><span class="lab">사진 <span>선택</span></span><label class="photo" id="f-photo"><input type="file" accept="image/*" id="f-file"><div><b>사진 올리기</b>직접 찍은 사진이면 더 좋아요</div></label></div>
@@ -2188,7 +2166,7 @@ function igFeed(cc) {
   const ids = CITIES.filter(c => c.cc === cc).map(c => c.id);
   const list = [...state.posts, ...PEOPLE].filter(p => ids.includes(p.city)).sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : (b.likes || 0) - (a.likes || 0)));
   if (!list.length) return '';
-  return `<div class="ig-head"><span>PEOPLE’S TREND</span><small>${esc(CO[cc].ko)}에서 사람들이 올린 글 · 샘플</small></div><div class="ig-list">${list.map(igHTML).join('')}</div>`;
+  return `<div class="ig-head"><span>PEOPLE’S BUZZ</span><small>${esc(CO[cc].ko)}에서 사람들이 올린 글 · 샘플</small></div><div class="ig-list">${list.map(igHTML).join('')}</div>`;
 }
 
 
