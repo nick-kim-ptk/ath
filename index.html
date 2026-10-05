@@ -584,6 +584,34 @@ body, .view, .sheet, .layer, .nav { word-break:keep-all; overflow-wrap:break-wor
 .fs-done { margin-top:22px; width:100%; height:50px; border-radius:999px; background:var(--ink); color:var(--bg); font:800 15px var(--f-body); }
 .fs-done { display:flex; align-items:center; justify-content:center; text-align:center; }
 
+/* 나라 시트: 펼치기 */
+.sheet { transition:transform .6s cubic-bezier(.2,.8,.2,1), top .5s cubic-bezier(.2,.8,.2,1), border-radius .5s; }
+#sheetCountry { touch-action:pan-x; }
+#sheetCountry .kw-list { overflow-y:hidden; touch-action:pan-x; }
+#sheetCountry.full { top:0; border-radius:0; z-index:6; }
+#sheetCountry.full .kw-list { overflow-y:auto; touch-action:pan-y; overscroll-behavior:contain; }
+#sheetCountry.full .sheet-head { padding-top:calc(16px + env(safe-area-inset-top,0px)); }
+.sheet-grip { display:flex; justify-content:center; width:100%; padding:10px 0 2px; flex:none; }
+.sheet-grip i { width:40px; height:4px; border-radius:2px; background:var(--line); }
+
+/* MY: 촘촘한 내 글 그리드, 설정 */
+.stats { grid-template-columns:repeat(4,1fr); }
+.stats div { min-width:0; }
+.stats div + div { padding-left:12px; }
+.stats strong { font-size:32px; }
+.stats .eyebrow { display:block; margin-top:6px; white-space:nowrap; font-size:10px; }
+.my-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:3px; margin:12px calc(var(--gutter) * -1) 0; padding:0 var(--gutter) 0; }
+.mg { position:relative; aspect-ratio:1; overflow:hidden; background:var(--paper); cursor:pointer; border-radius:4px; }
+.mg-th, .mg-th svg, .mg-th img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+.mg-t { position:absolute; left:0; right:0; bottom:0; padding:18px 7px 6px; background:linear-gradient(transparent, rgba(0,0,0,.62)); color:#fff; font:700 11px/1.25 var(--f-body); letter-spacing:-.03em; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.mg-x { position:absolute; top:5px; right:5px; min-width:24px; height:24px; padding:0 6px; border-radius:12px; background:rgba(0,0,0,.5); color:#fff; font:700 14px/24px var(--f-body); text-align:center; }
+.mg-x.armed { background:var(--hot); font-size:11px; }
+.my-grid + .more { margin-top:14px; }
+.set-body { padding:8px var(--gutter) 48px; }
+.set-body .sec { margin-top:28px; }
+.star { font-size:18px; line-height:1; }
+.star.on { background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+
 </style></head><body>
 <div class="app" id="app">
   <main class="views">
@@ -603,12 +631,14 @@ body, .view, .sheet, .layer, .nav { word-break:keep-all; overflow-wrap:break-wor
         </div>
 
         <section class="sheet" id="sheetCountry" aria-live="polite">
+          <button class="sheet-grip" data-act="sheetfull" aria-label="화면 가득 펼치기"><i></i></button>
           <div class="sheet-head">
             <div>
               <h2 class="sheet-title" id="shName"></h2>
               <div class="sheet-meta" id="shMeta"></div>
             </div>
             <div class="sheet-ctl">
+              <button class="round star" id="favBtn" data-act="favc" aria-label="관심 나라로 표시" aria-pressed="false">☆</button>
               <button class="round" data-act="prev" aria-label="이전 나라">←</button>
               <button class="round" data-act="next" aria-label="다음 나라">→</button>
               <button class="round" data-act="close" aria-label="닫기">×</button>
@@ -635,6 +665,7 @@ body, .view, .sheet, .layer, .nav { word-break:keep-all; overflow-wrap:break-wor
   <div class="layer" id="detail" aria-label="트렌드 상세"></div>
   <div class="layer up-from" id="composer" aria-label="트렌드 올리기"></div>
   <div class="layer up-from" id="auth" aria-label="로그인 · 회원가입"></div>
+  <div class="layer" id="settings" aria-label="설정"></div>
   <div class="layer" id="legal" aria-label="개인정보 처리방침"></div>
   <div class="fsheet" id="fsheet"></div>
   <div class="toast" id="toast" role="status"></div>
@@ -1378,6 +1409,7 @@ const state = {
   keep: new Set(LS.get('keep', TRENDS.filter(t => t.isFollowing).map(t => t.kw)).map(kwKey)),
   posts: LS.get('posts', []),
   seen: new Set(LS.get('seen', [])),
+  fav: new Set(LS.get('favc', [])), myShown: 12,
   visited: new Set(LS.get('visited', [])),
   city: LS.get('city', 'seoul'),
   theme: LS.get('theme', 'auto'),
@@ -1883,24 +1915,28 @@ function myHTML() {
   const u = state.user;
   if (!u) return '';
   const mine = state.posts.filter(p => p.uid === u.id);
-  const th = [['auto', '자동'], ['light', '라이트'], ['dark', '다크']];
   return `<div class="eyebrow">MY</div>
     <div class="me"><div class="avatar">${esc(u.nick.charAt(0))}</div><div><b>${esc(u.nick)}</b><span class="eyebrow" style="text-transform:none">@${esc(u.id)} <span style="text-transform:uppercase">· ${u.provider === 'kakao' ? 'KAKAO' : 'GOOGLE'}</span></span></div></div>
-    <div class="stats"><div><strong>${state.keep.size}</strong><span class="eyebrow">Keep</span></div><div><strong>${mine.length}</strong><span class="eyebrow">올린 트렌드</span></div><div><strong>${state.visited.size}<small style="font-size:16px;opacity:.5">/${COUNTRIES.length}</small></strong><span class="eyebrow">가본 나라</span></div></div>
-    <div class="visited">${COUNTRIES.map(c => `<span class="${state.visited.has(c.cc) ? 'on' : ''}" style="${ccVars(c.cc)}">${c.cc}</span>`).join('')}</div>
+    <div class="stats"><div><strong>${state.keep.size}</strong><span class="eyebrow">Keep</span></div><div><strong>${mine.length}</strong><span class="eyebrow">올린 트렌드</span></div><div><strong>${state.visited.size}</strong><span class="eyebrow">가본 나라</span></div><div><strong>${state.fav.size}</strong><span class="eyebrow">관심 나라</span></div></div>
     <div class="sec"><h2>내가 올린 것</h2><span class="eyebrow">${mine.length}</span></div>
-    ${mine.length ? mine.map(p => `<div class="my-post"><div class="th">${p.photo ? `<img src="${p.photo}" alt="">` : poster(p.pat || 0, CITY[p.city].cc, p.id)}</div>
-      <div><b>${esc(p.title)}</b>${p.trendId && byId[p.trendId] ? `<span class="eyebrow">↳ ${esc(byId[p.trendId].trendTitle)}</span>` : ''}<span class="eyebrow">${esc(CITY[p.city].name)} · ${p.date === todayISO() ? '방금' : fmtDate(p.date)}</span></div>
-      <div class="my-act"><button class="pill sm" data-act="editpost" data-id="${p.id}">수정</button><button class="kp-x" data-act="delpost" data-id="${p.id}" aria-label="삭제">×</button></div></div>`).join('')
+    ${mine.length ? `<div class="my-grid">${mine.slice(0, state.myShown).map(p => `<div class="mg" data-act="editpost" data-id="${p.id}" role="button" tabindex="0" aria-label="${esc(p.title)} 수정">
+      <div class="mg-th">${p.photo ? `<img src="${p.photo}" alt="" loading="lazy">` : poster(p.pat || 0, CITY[p.city].cc, p.id)}</div>
+      <span class="mg-t">${esc(p.title)}</span><button class="mg-x" data-act="delpost" data-id="${p.id}" aria-label="삭제">×</button></div>`).join('')}</div>
+      ${mine.length > state.myShown ? `<button class="more" data-act="mymore">더 보기 · ${mine.length - state.myShown}</button>` : ''}`
       : `<div class="empty" style="padding-top:18px"><p style="font-size:17px">우리 동네에서 요즘 보이는 걸 올려보세요.</p><button class="main" data-act="share">${esc(COPY.share)}</button></div>`}
-    <div class="sec"><h2>Settings</h2></div>
-    <div class="eyebrow">화면 모드</div>
-    <div class="theme-seg">${th.map(([k, v]) => `<button class="pill${state.theme === k ? ' on' : ''}" data-act="theme" data-v="${k}">${v}</button>`).join('')}</div>
     <div class="sec"><h2>Account</h2></div>
-    <div class="acct"><button class="row" data-act="legal"><span>개인정보 처리방침</span><i>→</i></button><button class="row" data-act="logout"><span>로그아웃</span><i>→</i></button></div>
-    ${state.wd ? `<div class="wd"><b>정말 탈퇴할까요?</b><ul><li>아이디, 닉네임, Keep 기록이 삭제돼요.</li><li>올린 글 ${mine.length}개는 “탈퇴한 사용자”로 남아요. 지우려면 먼저 직접 삭제해 주세요.</li><li>탈퇴 후에는 되돌릴 수 없어요.</li></ul><div class="wd-btns"><button class="pill" data-act="wdcancel">취소</button><button class="wd-go" data-act="withdraw">탈퇴하기</button></div></div>` : `<button class="danger" data-act="wdask">회원 탈퇴</button>`}
-    <button class="danger" data-act="reset" style="margin-left:8px">처음 상태로 되돌리기</button>
-    <div class="note"><b>PROTOTYPE</b><span>지금은 샘플 데이터로 동작해요. 뉴스와 사진은 실제 기사가 아니라 예시예요.</span></div>`;
+    <div class="acct"><button class="row" data-act="settings"><span>설정</span><i>→</i></button><button class="row" data-act="logout"><span>로그아웃</span><i>→</i></button></div>
+    ${state.wd ? `<div class="wd"><b>정말 탈퇴할까요?</b><ul><li>아이디, 닉네임, Keep 기록이 삭제돼요.</li><li>올린 글 ${mine.length}개는 “탈퇴한 사용자”로 남아요. 지우려면 먼저 직접 삭제해 주세요.</li><li>탈퇴 후에는 되돌릴 수 없어요.</li></ul><div class="wd-btns"><button class="pill" data-act="wdcancel">취소</button><button class="wd-go" data-act="withdraw">탈퇴하기</button></div></div>` : `<button class="danger" data-act="wdask">회원 탈퇴</button>`}`;
+}
+function settingsHTML() {
+  const th = [['auto', '자동'], ['light', '라이트'], ['dark', '다크']];
+  return `<div class="d-bar"><button class="back" data-act="settingsclose"><span aria-hidden="true">←</span> Back</button><span class="eyebrow">SETTINGS</span></div>
+    <div class="set-body"><h1 class="hd">설정</h1>
+      <div class="sec"><h2>화면 모드</h2></div>
+      <div class="theme-seg">${th.map(([k, v]) => `<button class="pill${state.theme === k ? ' on' : ''}" data-act="theme" data-v="${k}">${v}</button>`).join('')}</div>
+      <div class="sec"><h2>약관 · 정책</h2></div>
+      <div class="acct"><button class="row" data-act="legal"><span>개인정보 처리방침</span><i>→</i></button></div>
+    </div>`;
 }
 
 /* ---------- 상세 ---------- */
@@ -2090,12 +2126,61 @@ const App = (() => {
     const co = CO[cc]; state.sel = cc; state.mode = 'country'; markVisited(cc);
     $('#shName').textContent = co.name;
     $('#shMeta').innerHTML = `<span>${flag(cc)} ${cc}</span><span>${esc(co.ko)}</span><span class="heat heat-${HEAT[cc].tier}">${HEAT_LABEL[HEAT[cc].tier]} · ${HEAT[cc].rank}/${COUNTRIES.length}위</span><span>LOCAL <b id="shTime">${localTime(co.tz)}</b></span><span>${fmtLL(co.center[0], co.center[1])}</span>`;
-    $('#kwList').innerHTML = sheetHTML(cc); $('#kwList').scrollTop = 0;
+    $('#kwList').innerHTML = sheetHTML(cc); $('#kwList').scrollTop = 0; syncFav();
     $('#sheetSurprise').classList.remove('open'); $('#sheetCountry').classList.add('open');
     home.classList.add('has-sel'); Globe.setSel(true);
     Globe.rotateTo(co.center, { dur: 950 });
   }
+  /* 나라 시트: 위로 끌면 화면 가득, 가득 찬 상태에서 아래로 끌면 원래대로 */
+  let sheetFull = false;
+  function setSheetFull(v) {
+    if (sheetFull === v) return; sheetFull = v;
+    const s = $('#sheetCountry'); s.classList.toggle('full', v); s.querySelector('.sheet-grip').setAttribute('aria-label', v ? '지구본으로 돌아가기' : '화면 가득 펼치기');
+    if (v) Globe.stop(); else { if (state.tab === 'home') Globe.start(); $('#kwList').scrollTop = 0; }
+  }
+  (() => {
+    const s = $('#sheetCountry'), list = $('#kwList'); let t0 = null;
+    s.addEventListener('touchstart', e => { if (e.touches.length !== 1) { t0 = null; return; } const t = e.touches[0]; t0 = { x: t.clientX, y: t.clientY, top: list.scrollTop, dir: '' }; }, { passive: true });
+    s.addEventListener('touchmove', e => {
+      if (!t0) return; const t = e.touches[0], dx = t.clientX - t0.x, dy = t.clientY - t0.y;
+      if (!t0.dir && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) t0.dir = Math.abs(dy) > Math.abs(dx) * 1.3 ? 'v' : 'h';
+      if (t0.dir !== 'v') return;
+      if (!sheetFull) { if (e.cancelable) e.preventDefault(); if (dy < -40) { setSheetFull(true); t0 = null; } }
+      else if (t0.top <= 0 && list.scrollTop <= 0 && dy > 0) { if (e.cancelable) e.preventDefault(); if (dy > 70) { setSheetFull(false); t0 = null; } }
+    }, { passive: false });
+    s.addEventListener('touchend', () => { t0 = null; }, { passive: true });
+    s.addEventListener('wheel', e => {
+      if (Math.abs(e.deltaY) < 6) return;
+      if (!sheetFull && e.deltaY > 0) { e.preventDefault(); setSheetFull(true); }
+      else if (sheetFull && e.deltaY < 0 && list.scrollTop <= 0) { e.preventDefault(); setSheetFull(false); }
+    }, { passive: false });
+  })();
+  /* 관심 나라(별표) */
+  function syncFav() {
+    const b = $('#favBtn'); if (!b) return; const on = !!(state.user && state.sel && state.fav.has(state.sel));
+    b.textContent = on ? '★' : '☆'; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
+  }
+  function toggleFav(cc) {
+    if (!cc) return;
+    if (!state.user) { openAuth('관심 나라를 표시하려면\n로그인이 필요해요', () => toggleFav(cc)); return; }
+    const was = state.fav.has(cc); was ? state.fav.delete(cc) : state.fav.add(cc); LS.set('favc', [...state.fav]); syncFav();
+    if (SBC && state.user.uid) {
+      const q = was ? SBC.from('country_favs').delete().match({ user_id: state.user.uid, cc }) : SBC.from('country_favs').insert({ user_id: state.user.uid, cc });
+      q.then(({ error }) => { if (error) { was ? state.fav.add(cc) : state.fav.delete(cc); LS.set('favc', [...state.fav]); syncFav(); toast('저장에 실패했어요. 잠시 후 다시 시도해 주세요'); } });
+    }
+    toast(was ? `${CO[cc].name} 관심 해제` : `${CO[cc].name}을(를) 관심 나라로 표시했어요`);
+  }
+  async function loadFavs() {
+    if (!SBC || !state.user || !state.user.uid) return;
+    const { data, error } = await SBC.from('country_favs').select('cc').eq('user_id', state.user.uid);
+    if (error) { console.warn('[favs]', error.message); return; }
+    const remote = new Set((data || []).map(r => r.cc)), add = [...state.fav].filter(c => CO[c] && !remote.has(c));
+    if (add.length) await SBC.from('country_favs').insert(add.map(c => ({ user_id: state.user.uid, cc: c })));
+    state.fav = new Set([...remote, ...add]); LS.set('favc', [...state.fav]); syncFav();
+    if (state.tab === 'my') renderTab('my');
+  }
   function closeSheet() {
+    setSheetFull(false);
     state.sel = null; state.mode = null;
     $$('.sheet').forEach(s => s.classList.remove('open')); home.classList.remove('has-sel'); Globe.setSel(false); Globe.redraw();
   }
@@ -2274,6 +2359,8 @@ const App = (() => {
   }
   function renderAuth() { const el = $('#auth'); el.innerHTML = authHTML(); el.scrollTop = 0; }
   function closeAuth() { $('#auth').classList.remove('open'); authFlow.after = null; if (state.tab === 'home' && !state.detailId && !$('#composer').classList.contains('open')) Globe.start(); }
+  function openSettings() { const el = $('#settings'); el.innerHTML = settingsHTML(); el.scrollTop = 0; el.classList.add('open'); }
+  function closeSettings() { $('#settings').classList.remove('open'); }
   function openLegal() { const el = $('#legal'); el.innerHTML = legalHTML(); el.scrollTop = 0; el.classList.add('open'); }
   function validSignup() {
     const id = $('#s-id').value, nick = $('#s-nick').value;
@@ -2304,7 +2391,7 @@ const App = (() => {
     LS.set('posts', state.posts);
     const next = authFlow.after; authFlow.after = null;
     $('#auth').classList.remove('open'); renderNav(); if (state.tab === 'my' || state.tab === 'discover') renderTab(state.tab);
-    toast(`${nick}님, 환영해요`); loadKeeps(); loadSeen();
+    toast(`${nick}님, 환영해요`); loadKeeps(); loadSeen(); loadFavs();
     if (next) setTimeout(next, 350); else if (state.tab === 'home' && !state.detailId) Globe.start();
   }
   async function restoreSession() {
@@ -2312,16 +2399,16 @@ const App = (() => {
     const { data } = await SBC.auth.getSession(), s = data && data.session;
     if (!s) { if (state.user) { state.user = null; LS.set('user', null); renderNav(); } return; }
     const { data: pr } = await SBC.from('profiles').select('*').eq('user_id', s.user.id).maybeSingle();
-    if (pr) { state.user = { id: pr.username, nick: pr.nickname, provider: pr.provider, joined: String(pr.created_at).slice(0, 10), uid: s.user.id }; LS.set('user', state.user); renderNav(); if (state.tab === 'my' || state.tab === 'discover') renderTab(state.tab); loadKeeps(); loadSeen(); }
+    if (pr) { state.user = { id: pr.username, nick: pr.nickname, provider: pr.provider, joined: String(pr.created_at).slice(0, 10), uid: s.user.id }; LS.set('user', state.user); renderNav(); if (state.tab === 'my' || state.tab === 'discover') renderTab(state.tab); loadKeeps(); loadSeen(); loadFavs(); }
     else { state.user = null; LS.set('user', null); renderNav(); authFlow.provider = s.user.app_metadata.provider; authFlow.step = 'profile'; authFlow.reason = ''; authFlow.after = null; renderAuth(); $('#auth').classList.add('open'); Globe.stop(); }
   }
-  function logout() { if (SBC) { seenClear(); SBC.auth.signOut(); state.keep = new Set(); saveKeep(); } state.user = null; state.wd = false; LS.set('user', null); renderNav(); go('home'); toast('로그아웃했어요'); }
+  function logout() { if (SBC) { seenClear(); SBC.auth.signOut(); state.keep = new Set(); saveKeep(); state.fav = new Set(); LS.set('favc', []); } syncFav(); closeSettings(); state.user = null; state.wd = false; LS.set('user', null); renderNav(); go('home'); toast('로그아웃했어요'); }
   async function withdraw() {
     const u = state.user; if (!u) return;
     if (SBC) { const { error } = await SBC.rpc('delete_my_account'); if (error) { toast('탈퇴에 실패했어요. 잠시 후 다시 시도해 주세요'); return; } seenClear(); await SBC.auth.signOut(); }
     state.posts.forEach(p => { if (p.uid === u.id) { p.withdrawn = true; p.uid = null; p.author = '@withdrawn'; p.nick = null; p.mine = false; } });
     LS.set('posts', state.posts);
-    state.keep = new Set(); LS.set('keep', []); state.user = null; state.wd = false; LS.set('user', null);
+    state.keep = new Set(); LS.set('keep', []); state.fav = new Set(); LS.set('favc', []); syncFav(); closeSettings(); state.user = null; state.wd = false; LS.set('user', null);
     renderNav(); go('home'); toast('탈퇴가 완료됐어요');
   }
 
@@ -2377,8 +2464,12 @@ const App = (() => {
         el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); break;
       }
       case 'sample': toast(COPY.toastSample); break;
-      case 'theme': applyTheme(d.v); renderTab('my'); break;
-      case 'reset': resetAll(); break;
+      case 'theme': applyTheme(d.v); if ($('#settings').classList.contains('open')) { const sc = $('#settings').scrollTop; $('#settings').innerHTML = settingsHTML(); $('#settings').scrollTop = sc; } break;
+      case 'settings': openSettings(); break;
+      case 'settingsclose': closeSettings(); break;
+      case 'favc': toggleFav(state.sel); break;
+      case 'mymore': state.myShown += 12; renderTab('my'); break;
+      case 'sheetfull': setSheetFull(!sheetFull); break;
       case 'sns':
         if (SBC) { if (d.v === 'google') SBC.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } }); else toast('카카오 로그인은 곧 열려요'); break; }
         authFlow.provider = d.v; authFlow.step = 'profile'; if (!$('#auth').classList.contains('open')) { $('#auth').classList.add('open'); if (state.tab === 'home') Globe.stop(); } renderAuth(); break;
@@ -2439,7 +2530,7 @@ const App = (() => {
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
       if ($('#fsheet').classList.contains('open')) { $('#fsheet').classList.remove('open'); return; }
-      if ($('#legal').classList.contains('open')) $('#legal').classList.remove('open'); else if ($('#auth').classList.contains('open')) closeAuth(); else if ($('#composer').classList.contains('open')) closeComposer(); else if (state.detailId) closeDetail(); else if (state.sel) closeSheet();
+      if ($('#legal').classList.contains('open')) $('#legal').classList.remove('open'); else if ($('#settings').classList.contains('open')) closeSettings(); else if ($('#auth').classList.contains('open')) closeAuth(); else if ($('#composer').classList.contains('open')) closeComposer(); else if (state.detailId) closeDetail(); else if (state.sel) closeSheet();
     }
     if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[role="link"]')) { e.preventDefault(); e.target.click(); }
   });
