@@ -92,11 +92,16 @@ async function buildCountry(cc, prevSlugs) {
       const src = items[a]?.news?.[b];
       return src && n.title && n.summary ? { title: String(n.title).slice(0, 120), source: src.source || '출처', url: src.url || null, summary: String(n.summary).slice(0, 160) } : null;
     }).filter(Boolean);
-    const what = (t.what || []).filter(w => w && w.head && w.text).slice(0, 3);
-    const why = (t.why || []).filter(Boolean).map(s => String(s).slice(0, 40)).slice(0, 3);
+    /* Claude가 모양을 조금 다르게 줘도 읽어요: 글자만 / [제목,글] / {head|title, text|body} */
+    const what = (Array.isArray(t.what) ? t.what : []).map(w => {
+      if (typeof w === 'string') return { head: '무슨 일이에요', text: w };
+      if (Array.isArray(w)) return { head: String(w[0] || ''), text: String(w[1] || '') };
+      return w ? { head: String(w.head || w.title || ''), text: String(w.text || w.body || w.desc || '') } : null;
+    }).filter(w => w && w.text).map(w => ({ head: (w.head || '무슨 일이에요').slice(0, 30), text: w.text.slice(0, 160) })).slice(0, 3);
+    const why = (Array.isArray(t.why) ? t.why : []).map(x => typeof x === 'string' ? x : (x && (x.text || x.reason || x.head)) || '').filter(Boolean).map(x => String(x).slice(0, 40)).slice(0, 3);
     if (!idx.length || !t.title || !t.short) { rej.근거부족++; continue; }   // 근거가 부족하면 버려요
     if (!news.length) { rej.뉴스없음++; continue; }
-    if (what.length < 2 || why.length < 2) { rej.내용부족++; continue; }
+    if (!what.length || !why.length) { rej.내용부족++; if (!rej.예시) rej.예시 = `${Object.keys(t).join(',')} | what=${JSON.stringify(t.what).slice(0, 80)} | why=${JSON.stringify(t.why).slice(0, 60)}`; continue; }
     const slug = String(t.slug || '').toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
     if (!slug) { rej.slug없음++; continue; }
     topics.push({
