@@ -7,7 +7,7 @@ import { appendFileSync } from 'node:fs';
 const DRY = process.env.DRY_RUN === '1';
 const MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
 const ONLY = (process.env.ONLY || '').split(',').map(s => s.trim()).filter(Boolean);   // 예: ONLY=JP,KR (시험용)
-const { ANTHROPIC_API_KEY, SUPABASE_SECRET_KEY } = process.env;
+const { ANTHROPIC_API_KEY, SUPABASE_SECRET_KEY, PEXELS_API_KEY } = process.env;
 /* 주소 뒤에 /rest/v1 같은 경로가 붙어 있어도 https://….supabase.co 부분만 써요 */
 let SUPABASE_URL = (process.env.SUPABASE_URL || '').trim();
 try { if (SUPABASE_URL) SUPABASE_URL = new URL(SUPABASE_URL).origin; } catch { throw new Error('SUPABASE_URL 이 주소 모양이 아니에요: https://xxxx.supabase.co 형태로 넣어주세요'); }
@@ -77,7 +77,8 @@ const SYSTEM = `너는 '지구 근황' 앱의 에디터야. 나라별 구글 트
 - 기사 문장을 그대로 옮기지 말고 네 말로 짧게 요약해. 한국어, 부드러운 '~요' 체.
 - 글 안에서는 큰따옴표(\")를 쓰지 말고 작은따옴표(')를 써. 줄바꿈도 넣지 마.
 - 각 화제는 이런 JSON 모양이야 (JSON만 출력, 다른 말 금지):
-{"topics":[{"items":[입력 항목 번호들],"keyword":"한국어 키워드 2~8자","slug":"english-kebab-case","title":"화제 이름 12자 안팎","en":"English Title","short":"한 줄 요약 40자 이내","status":"hot|rising|new","category":"food|tech|life|culture|fashion|wellness|travel","area":"지역(모르면 빈 문자열)","why":["왜 화제인지 짧은 구 3개"],"what":[{"head":"소제목","text":"한두 문장"},{"head":"","text":""},{"head":"","text":""}],"news":[{"ref":"항목번호:뉴스번호","title":"기사 제목을 한국어로 옮긴 것","summary":"한 줄 요약"}]}]}
+{"topics":[{"items":[입력 항목 번호들],"keyword":"한국어 키워드 2~8자","slug":"english-kebab-case","title":"화제 이름 12자 안팎","en":"English Title","short":"한 줄 요약 40자 이내","status":"hot|rising|new","category":"food|tech|life|culture|fashion|wellness|travel","area":"그 나라 안의 도시나 지역 이름(나라 이름은 쓰지 말고, 모르면 빈 문자열)","photo":"사진 검색어(영어 2~4단어) 또는 빈 문자열","why":["왜 화제인지 짧은 구 3개"],"what":[{"head":"소제목","text":"한두 문장"},{"head":"","text":""},{"head":"","text":""}],"news":[{"ref":"항목번호:뉴스번호","title":"기사 제목을 한국어로 옮긴 것","summary":"한 줄 요약"}]}]}
+- photo: 이 화제의 분위기를 보여주는 일반적인 장면을 영어 검색어로 (예: 'autumn forest', 'stock market screen', 'tennis court'). 실존 인물 이름, 특정 팀·브랜드·사건 이름은 쓰지 마. 인물·정치·사건이 중심이면 빈 문자열.
 - status: 검색량이 가장 크거나 가장 큰 화제는 hot, 나머지는 rising 또는 new. category는 어울리는 걸 고르되 스포츠·사회·날씨는 culture 또는 life.
 - news는 화제당 2개(없으면 1개). ref는 입력에 있는 번호만 써.`;
 
@@ -114,7 +115,7 @@ async function buildCountry(cc, prevSlugs) {
     topics.push({
       slug, keyword: String(t.keyword || t.title).slice(0, 16), title: String(t.title).slice(0, 30), en: String(t.en || t.title).slice(0, 40), short: String(t.short).slice(0, 60),
       status: STATUSES.includes(t.status) ? t.status : 'rising', category: CATS.includes(t.category) ? t.category : 'life',
-      area: String(t.area || '').slice(0, 12), why, what, news,
+      area: (a => (Object.values(COUNTRIES).some(c => c[1] === a) ? '' : a))(String(t.area || '').trim().slice(0, 12)), photoQuery: String(t.photo || '').replace(/[^\w\s-]/g, ' ').trim().slice(0, 40), why, what, news,
       traffic: Math.max(...idx.map(i => items[i].traffic))
     });
   }
@@ -122,6 +123,22 @@ async function buildCountry(cc, prevSlugs) {
   topics.sort((a, b) => b.traffic - a.traffic);
   topics.slice(0, 4).forEach((t, i) => { if (i === 0) t.status = 'hot'; else if (t.status === 'hot') t.status = 'rising'; if (prevSlugs.has(t.slug) && i > 0) t.status = 'talked'; });
   return topics.slice(0, 4);
+}
+
+
+/* ---------- 사진 (Pexels 무료 스톡 사진) ---------- */
+const usedPhotos = new Set();
+async function findPhoto(query) {
+  if (!PEXELS_API_KEY || !query) return null;
+  try {
+    const r = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=8&orientation=landscape`, { headers: { Authorization: PEXELS_API_KEY } });
+    if (!r.ok) return null;
+    const j = await r.json();
+    const p = (j.photos || []).find(x => !usedPhotos.has(x.id) && x.width >= 1000);
+    if (!p) return null;
+    usedPhotos.add(p.id);
+    return { url: p.src.large, credit: String(p.photographer || '').slice(0, 40), link: p.url };
+  } catch { return null; }
 }
 
 /* ---------- 3. Supabase ---------- */
@@ -164,6 +181,9 @@ export async function main() {
     }
   } catch (e) { log('묶기 단계 건너뜀:', e.message); }
 
+  /* 사진 찾기 (키가 없으면 건너뛰어요) */
+  for (const cc of done) for (const t of results[cc]) { t.photo = await findPhoto(t.photoQuery); await sleep(300); }
+
   if (DRY) {
     console.log(JSON.stringify(Object.fromEntries(done.map(cc => [cc, results[cc]])), null, 1));
   } else {
@@ -175,7 +195,7 @@ export async function main() {
       const rows = results[cc].map((t, i) => ({
         id: `${cc.toLowerCase()}-${STAMP}-${i + 1}`, keyword_id: t.slug, cc, city_id: COUNTRIES[cc][2], area: t.area || null,
         title: t.title, title_en: t.en, short_desc: t.short, status: t.status, category: t.category, pattern: hash(t.title) % 8,
-        why: t.why, what: t.what, heat: Math.round(Math.log10(Math.max(t.traffic, 10)) * 100) / 100, is_sample: false,
+        why: t.why, what: t.what, heat: Math.round(Math.log10(Math.max(t.traffic, 10)) * 100) / 100, is_sample: false, image_url: t.photo ? t.photo.url : null, image_credit: t.photo ? t.photo.credit : null, image_link: t.photo ? t.photo.link : null,
         published_at: new Date().toISOString(), expires_at: new Date(Date.now() + 36 * 3600e3).toISOString()
       }));
       await sb('POST', 'trends?on_conflict=id', rows, 'resolution=merge-duplicates,return=minimal');
@@ -193,7 +213,7 @@ export async function main() {
   }
 
   const summary = `## 수집 결과 (${TODAY}${DRY ? ', 시험 실행: 저장 안 함' : ''})\n성공 ${done.length}개국 / 실패 ${failed.length}개국\n\n` +
-    done.map(cc => `- **${cc}** ${results[cc].map(t => `${t.title}(${t.status})`).join(', ')}`).join('\n') + (failed.length ? `\n\n실패:\n${failed.map(f => '- ' + f).join('\n')}` : '') + '\n';
+    done.map(cc => `- **${cc}** ${results[cc].map(t => `${t.title}(${t.status}${t.photo ? ', 사진 있음' : ''})`).join(', ')}`).join('\n') + (failed.length ? `\n\n실패:\n${failed.map(f => '- ' + f).join('\n')}` : '') + '\n';
   console.log(summary);
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
 }
