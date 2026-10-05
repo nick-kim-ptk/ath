@@ -1290,7 +1290,15 @@ const SUPABASE_KEY = 'sb_publishable_J8EkuZW7bpB1MGXbHkz8WA_Yl26qAQX';
    실패하면(오프라인, 미리보기 등) 샘플 데이터를 그대로 씁니다.
    ===================================================================== */
 const DATA_SOURCE = { kind: 'sample' };
+const REMOTE_POSTS = { on: false, list: [] };   /* DB의 사용자 글 */
 const KEEP_N = { on: false, n: {} };   /* 키워드별 Keep한 사람 수 (DB에서 읽은 경우) */
+/* DB 글 한 줄 -> 앱이 쓰는 글 모양 */
+function postFromRow(r) {
+  const wd = !!r.withdrawn;
+  return { id: r.id, city: r.city_id, area: r.area || '', title: r.title, text: r.body, category: r.category, link: r.link || '', photo: r.photo_url || null,
+    trendId: r.trend_id || undefined, author: wd ? '@withdrawn' : '@' + r.username, nick: wd ? null : r.author_name, uid: wd ? null : r.username, withdrawn: wd,
+    likes: Number(r.seen_count) || 0, date: String(r.created_at).slice(0, 10), pat: [...String(r.title)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % 8, mine: false };
+}
 async function loadRemote() {
   if (typeof SUPABASE_URL === 'undefined' || !SUPABASE_URL) return;
   const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 6000);
@@ -1322,6 +1330,10 @@ async function loadRemote() {
     Object.keys(KW_GROUPS).forEach(k => delete KW_GROUPS[k]);
     Object.entries(groups).forEach(([k, ids]) => { { const kw = kws.find(z => z.id === k); KW_GROUPS[k] = { title: kw ? kw.title : k, members: ids }; } });
     TRENDS.length = 0; next.forEach(t => TRENDS.push(t));
+    try {
+      const pr = await get('posts_feed?select=*&order=created_at.desc&limit=300');
+      REMOTE_POSTS.list = pr.map(postFromRow); REMOTE_POSTS.on = true;
+    } catch (e) { console.warn('[remote] 글을 못 읽었어요:', e && e.message); }
     try {
       const kc = await get('keep_counts?select=*');
       kc.forEach(r => { KEEP_N.n[r.keyword_id] = Number(r.n) || 0; }); KEEP_N.on = true;
@@ -1789,7 +1801,7 @@ function postHTML(p, i) {
   const c = CITY[p.city], on = state.seen.has(p.id), n = (p.likes || 0) + (on ? 1 : 0);
   const link = p.link ? `<a href="${esc(p.link)}" target="_blank" rel="noopener noreferrer" style="color:inherit">LINK ↗</a>` : '';
   return `<article class="pp" style="--i:${i}"><div class="pp-img">${p.photo ? `<img src="${p.photo}" alt="">` : poster(p.pat || 0, c.cc, p.id)}</div>
-    <div class="pp-meta"><span>${esc(c.name)}${p.area ? ' · ' + esc(p.area) : ''}</span><span>${CATEGORIES[p.category] || ''}</span>${p.mine ? '<span class="you">YOU</span>' : ''}${link}</div>
+    <div class="pp-meta"><span>${esc(c.name)}${p.area ? ' · ' + esc(p.area) : ''}</span><span>${CATEGORIES[p.category] || ''}</span>${p.mine || (state.user && p.uid === state.user.id) ? '<span class="you">YOU</span>' : ''}${link}</div>
     <h3 class="pp-title">${esc(p.title)}</h3><p class="pp-text">${esc(p.text)}</p>
     <div class="pp-foot"><span>${esc(authorOf(p).name)} · ${p.date === todayISO() ? '방금' : fmtDate(p.date)}</span><button class="seen${on ? ' on' : ''}" data-act="seen" data-id="${p.id}" aria-pressed="${on}">나도 봤어 <b>${n}</b></button></div></article>`;
 }
@@ -2186,22 +2198,33 @@ const App = (() => {
     fr.onerror = () => cb(null); fr.readAsDataURL(file);
   }
   function validateForm() { const ok = $('#f-title').value.trim() && $('#f-text').value.trim(); $('#f-go').disabled = !ok; $('#f-count').textContent = `${$('#f-text').value.length} / 60`; }
-  function submitPost() {
+  async function submitPost() {
     const title = $('#f-title').value.trim(), text = $('#f-text').value.trim(); if (!title || !text) return;
     let link = $('#f-link').value.trim();
     if (link) { if (!/^https?:\/\//i.test(link)) link = 'https://' + link; try { new URL(link); } catch (e) { link = ''; } }
+    const city = $('#f-city').value, area = $('#f-area').value.trim();
+    const btn = $('#shareForm [type=submit]'); if (btn) btn.disabled = true;
+    const fail = m => { toast(m || '저장에 실패했어요. 잠시 후 다시 시도해 주세요'); if (btn) btn.disabled = false; };
     if (composer.edit) {
       const o = state.posts.find(x => x.id === composer.edit);
-      if (o) { Object.assign(o, { city: $('#f-city').value, area: $('#f-area').value.trim(), title, text, category: composer.cat, link, photo: composer.photo }); LS.set('posts', state.posts); }
+      if (o) {
+        if (SBC) { const { error } = await SBC.from('posts').update({ city_id: city, area: area || null, title, body: text, category: composer.cat, link: link || null }).eq('id', o.id); if (error) return fail(); }
+        Object.assign(o, { city, area, title, text, category: composer.cat, link, photo: SBC ? null : composer.photo }); if (!SBC) LS.set('posts', state.posts);
+      }
       closeComposer(); toast('수정했어요'); if (state.tab === 'my') renderTab('my'); return;
     }
-    const p = { id: 'u' + Date.now(), city: $('#f-city').value, area: $('#f-area').value.trim(), title, text, category: composer.cat, link, photo: composer.photo, author: '@' + state.user.id, nick: state.user.nick, uid: state.user.id, likes: 0, date: todayISO(), pat: hash(title) % 8, mine: true, trendId: composer.trend || undefined };
+    let id = 'u' + Date.now(), date = todayISO();
+    if (SBC) {
+      const { data, error } = await SBC.from('posts').insert({ user_id: state.user.uid, city_id: city, trend_id: composer.trend || null, area: area || null, title, body: text, category: composer.cat, link: link || null }).select('id,created_at').single();
+      if (error || !data) return fail(); id = data.id; date = String(data.created_at).slice(0, 10);
+    }
+    const p = { id, city, area, title, text, category: composer.cat, link, photo: SBC ? null : composer.photo, author: '@' + state.user.id, nick: state.user.nick, uid: state.user.id, likes: 0, date, pat: hash(title) % 8, mine: true, trendId: composer.trend || undefined };
     state.posts.unshift(p);
-    if (!LS.set('posts', state.posts)) { p.photo = null; LS.set('posts', state.posts); }
+    if (!SBC && !LS.set('posts', state.posts)) { p.photo = null; LS.set('posts', state.posts); }
     state.city = p.city; LS.set('city', state.city);
     if (composer.trend) {
-      const id = composer.trend; closeComposer(); toast('올렸어요. 이 키워드의 피드에서 보여요');
-      const el = $('#detail'); el.innerHTML = detailHTML(byId[id]); const f = $('#pfList'); if (f) el.scrollTop = Math.max(0, f.offsetTop - 120);
+      const tid = composer.trend; closeComposer(); toast('올렸어요. 이 키워드의 피드에서 보여요');
+      const el = $('#detail'); el.innerHTML = detailHTML(byId[tid]); const f = $('#pfList'); if (f) el.scrollTop = Math.max(0, f.offsetTop - 120);
       return;
     }
     closeComposer(); go('local'); toast(COPY.toastPosted);
@@ -2216,6 +2239,7 @@ const App = (() => {
   /* ---------- 로그인 · 가입 · 탈퇴 (프로토타입: 실제 소셜 연결 없음) ---------- */
   /* 실제 로그인(Supabase). 호스팅 빌드에서 데이터 연결에 성공했을 때만 켜져요. 미리보기에서는 예전처럼 연습용 로그인이에요. */
   const SBC = (typeof supabase !== 'undefined' && typeof DATA_SOURCE !== 'undefined' && DATA_SOURCE.kind === 'supabase') ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+  if (SBC && REMOTE_POSTS.on) state.posts = REMOTE_POSTS.list;
   let idChk = { id: '', ok: false }, idTm = 0;
   const TAKEN = ['admin', 'test', 'earth', 'kakao', 'google', 'guest'];
   function openAuth(reason, after) {
@@ -2337,6 +2361,7 @@ const App = (() => {
       case 'editpost': openComposer(null, d.id); break;
       case 'delpost':
         if (!el.classList.contains('armed')) { el.classList.add('armed'); el.textContent = '삭제'; clearTimeout(el._t); el._t = setTimeout(() => { el.classList.remove('armed'); el.textContent = '×'; }, 3000); break; }
+        if (SBC) { SBC.from('posts').delete().eq('id', d.id).then(({ error }) => { if (error) { toast('삭제에 실패했어요. 잠시 후 다시 시도해 주세요'); return; } state.posts = state.posts.filter(p => p.id !== d.id); renderTab('my'); toast('삭제했어요'); }); break; }
         state.posts = state.posts.filter(p => p.id !== d.id); LS.set('posts', state.posts); renderTab('my'); toast('삭제했어요'); break;
       case 'clearq': state.q = ''; renderTab('discover'); break;
     }
