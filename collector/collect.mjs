@@ -7,7 +7,10 @@ import { appendFileSync } from 'node:fs';
 const DRY = process.env.DRY_RUN === '1';
 const MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
 const ONLY = (process.env.ONLY || '').split(',').map(s => s.trim()).filter(Boolean);   // 예: ONLY=JP,KR (시험용)
-const { ANTHROPIC_API_KEY, SUPABASE_URL, SUPABASE_SECRET_KEY } = process.env;
+const { ANTHROPIC_API_KEY, SUPABASE_SECRET_KEY } = process.env;
+/* 주소 뒤에 /rest/v1 같은 경로가 붙어 있어도 https://….supabase.co 부분만 써요 */
+let SUPABASE_URL = (process.env.SUPABASE_URL || '').trim();
+try { if (SUPABASE_URL) SUPABASE_URL = new URL(SUPABASE_URL).origin; } catch { throw new Error('SUPABASE_URL 이 주소 모양이 아니에요: https://xxxx.supabase.co 형태로 넣어주세요'); }
 if (!ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY 가 없어요 (GitHub Secrets 확인)');
 if (!DRY && (!SUPABASE_URL || !SUPABASE_SECRET_KEY)) throw new Error('SUPABASE_URL / SUPABASE_SECRET_KEY 가 없어요 (GitHub Secrets 확인)');
 
@@ -124,7 +127,7 @@ async function buildCountry(cc, prevSlugs) {
 /* ---------- 3. Supabase ---------- */
 const H = { apikey: SUPABASE_SECRET_KEY, Authorization: 'Bearer ' + SUPABASE_SECRET_KEY, 'content-type': 'application/json' };
 async function sb(method, path, body, prefer) {
-  const r = await fetch(SUPABASE_URL.replace(/\/$/, '') + '/rest/v1/' + path, { method, headers: { ...H, ...(prefer ? { Prefer: prefer } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  const r = await fetch(SUPABASE_URL + '/rest/v1/' + path, { method, headers: { ...H, ...(prefer ? { Prefer: prefer } : {}) }, body: body ? JSON.stringify(body) : undefined });
   if (!r.ok) throw new Error(`Supabase ${method} ${path.split('?')[0]} ${r.status} ${(await r.text()).slice(0, 200)}`);
   return r.status === 204 ? null : r.json().catch(() => null);
 }
