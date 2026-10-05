@@ -612,6 +612,20 @@ body, .view, .sheet, .layer, .nav { word-break:keep-all; overflow-wrap:break-wor
 .star { font-size:18px; line-height:1; }
 .star.on { background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
 
+/* 프로필 */
+.avatar { overflow:hidden; flex:none; }
+.avatar img { width:100%; height:100%; object-fit:cover; display:block; }
+.avatar.big { width:104px; height:104px; font-size:44px; }
+.edit-ic { display:inline-grid; place-items:center; vertical-align:middle; width:28px; height:28px; margin-left:6px; border-radius:50%; color:var(--mute); }
+.edit-ic svg { width:16px; height:16px; }
+.pf-av-wrap { display:flex; align-items:center; gap:14px; margin-top:22px; }
+.pf-av { position:relative; cursor:pointer; display:block; }
+.pf-av input { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+.pf-cam { position:absolute; right:-4px; bottom:2px; padding:5px 9px; border-radius:999px; background:var(--accent); color:var(--on-accent); font:800 11px var(--f-body); }
+.pf-id { font:600 16px var(--f-body); color:var(--mute); padding:6px 0 8px; border-bottom:1px solid var(--line); }
+#pf-msg.bad { color:var(--hot); }
+.go-btn:disabled { opacity:.35; }
+
 </style></head><body>
 <div class="app" id="app">
   <main class="views">
@@ -665,6 +679,7 @@ body, .view, .sheet, .layer, .nav { word-break:keep-all; overflow-wrap:break-wor
   <div class="layer" id="detail" aria-label="트렌드 상세"></div>
   <div class="layer up-from" id="composer" aria-label="트렌드 올리기"></div>
   <div class="layer up-from" id="auth" aria-label="로그인 · 회원가입"></div>
+  <div class="layer" id="profile" aria-label="프로필 수정"></div>
   <div class="layer" id="settings" aria-label="설정"></div>
   <div class="layer" id="legal" aria-label="개인정보 처리방침"></div>
   <div class="fsheet" id="fsheet"></div>
@@ -1911,12 +1926,30 @@ function legalHTML() {
 }
 const authFlow = { step: 'login', provider: null, reason: '', after: null };
 
+const pfDraft = { avatar: null, nick: '', changed: false };
+const avatarInner = (u, avatar) => (avatar ? `<img src="${avatar}" alt="">` : esc((u.nick || '?').charAt(0)));
+function profileHTML() {
+  const u = state.user; if (!u) return '';
+  const nickOk = pfDraft.nick.trim().length >= 2 && pfDraft.nick.trim().length <= 12;
+  const dirty = pfDraft.nick.trim() !== u.nick || pfDraft.avatar !== (u.avatar || null);
+  const mineN = state.posts.filter(p => p.uid === u.id).length;
+  return `<div class="d-bar"><button class="back" data-act="profileclose"><span aria-hidden="true">←</span> Back</button><span class="eyebrow">PROFILE</span></div>
+    <div class="set-body"><h1 class="hd">프로필 수정</h1>
+      <div class="pf-av-wrap"><label class="pf-av" aria-label="프로필 사진 바꾸기"><div class="avatar big">${avatarInner({ nick: pfDraft.nick || u.nick }, pfDraft.avatar)}</div><span class="pf-cam">변경</span><input type="file" accept="image/*" id="pf-file"></label>
+        ${pfDraft.avatar ? `<button class="pill sm" data-act="pfavdel">사진 삭제</button>` : ''}</div>
+      <div class="fld" style="margin-top:26px"><label for="pf-nick">닉네임 <span id="pf-msg" class="${pfDraft.nick && !nickOk ? 'bad' : ''}">${pfDraft.nick && !nickOk ? '2~12자로 써주세요' : '2~12자'}</span></label><input class="in" id="pf-nick" maxlength="12" value="${esc(pfDraft.nick)}" autocomplete="off"></div>
+      <div class="fld" style="margin-top:22px"><span class="lab">아이디 <span>변경할 수 없어요</span></span><div class="pf-id">@${esc(u.id)}</div></div>
+      <button class="go-btn" id="pf-save" data-act="pfsave" style="width:100%;margin-top:30px"${dirty && nickOk ? '' : ' disabled'}>저장</button>
+      <div class="sec"><h2>회원 탈퇴</h2></div>
+      ${state.wd ? `<div class="wd"><b>정말 탈퇴할까요?</b><ul><li>아이디, 닉네임, Keep 기록이 삭제돼요.</li><li>올린 글 ${mineN}개는 “탈퇴한 사용자”로 남아요. 지우려면 먼저 직접 삭제해 주세요.</li><li>탈퇴 후에는 되돌릴 수 없어요.</li></ul><div class="wd-btns"><button class="pill" data-act="wdcancel">취소</button><button class="wd-go" data-act="withdraw">탈퇴하기</button></div></div>` : `<button class="danger" data-act="wdask" style="margin-top:12px">회원 탈퇴</button>`}
+    </div>`;
+}
 function myHTML() {
   const u = state.user;
   if (!u) return '';
   const mine = state.posts.filter(p => p.uid === u.id);
   return `<div class="eyebrow">MY</div>
-    <div class="me"><div class="avatar">${esc(u.nick.charAt(0))}</div><div><b>${esc(u.nick)}</b><span class="eyebrow" style="text-transform:none">@${esc(u.id)} <span style="text-transform:uppercase">· ${u.provider === 'kakao' ? 'KAKAO' : 'GOOGLE'}</span></span></div></div>
+    <div class="me"><div class="avatar">${avatarInner(u, u.avatar)}</div><div><b>${esc(u.nick)}<button class="edit-ic" data-act="profile" aria-label="프로필 수정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="m13.5 6.5 4 4"/></svg></button></b><span class="eyebrow" style="text-transform:none">@${esc(u.id)} <span style="text-transform:uppercase">· ${u.provider === 'kakao' ? 'KAKAO' : 'GOOGLE'}</span></span></div></div>
     <div class="stats"><div><strong>${state.keep.size}</strong><span class="eyebrow">Keep</span></div><div><strong>${mine.length}</strong><span class="eyebrow">올린 트렌드</span></div><div><strong>${state.visited.size}</strong><span class="eyebrow">가본 나라</span></div><div><strong>${state.fav.size}</strong><span class="eyebrow">관심 나라</span></div></div>
     <div class="sec"><h2>내가 올린 것</h2><span class="eyebrow">${mine.length}</span></div>
     ${mine.length ? `<div class="my-grid">${mine.slice(0, state.myShown).map(p => `<div class="mg" data-act="editpost" data-id="${p.id}" role="button" tabindex="0" aria-label="${esc(p.title)} 수정">
@@ -1925,8 +1958,7 @@ function myHTML() {
       ${mine.length > state.myShown ? `<button class="more" data-act="mymore">더 보기 · ${mine.length - state.myShown}</button>` : ''}`
       : `<div class="empty" style="padding-top:18px"><p style="font-size:17px">우리 동네에서 요즘 보이는 걸 올려보세요.</p><button class="main" data-act="share">${esc(COPY.share)}</button></div>`}
     <div class="sec"><h2>Account</h2></div>
-    <div class="acct"><button class="row" data-act="settings"><span>설정</span><i>→</i></button><button class="row" data-act="logout"><span>로그아웃</span><i>→</i></button></div>
-    ${state.wd ? `<div class="wd"><b>정말 탈퇴할까요?</b><ul><li>아이디, 닉네임, Keep 기록이 삭제돼요.</li><li>올린 글 ${mine.length}개는 “탈퇴한 사용자”로 남아요. 지우려면 먼저 직접 삭제해 주세요.</li><li>탈퇴 후에는 되돌릴 수 없어요.</li></ul><div class="wd-btns"><button class="pill" data-act="wdcancel">취소</button><button class="wd-go" data-act="withdraw">탈퇴하기</button></div></div>` : `<button class="danger" data-act="wdask">회원 탈퇴</button>`}`;
+    <div class="acct"><button class="row" data-act="settings"><span>설정</span><i>→</i></button><button class="row" data-act="logout"><span>로그아웃</span><i>→</i></button></div>`;
 }
 function settingsHTML() {
   const th = [['auto', '자동'], ['light', '라이트'], ['dark', '다크']];
@@ -2359,6 +2391,41 @@ const App = (() => {
   }
   function renderAuth() { const el = $('#auth'); el.innerHTML = authHTML(); el.scrollTop = 0; }
   function closeAuth() { $('#auth').classList.remove('open'); authFlow.after = null; if (state.tab === 'home' && !state.detailId && !$('#composer').classList.contains('open')) Globe.start(); }
+  /* 프로필 수정 */
+  function resizeAvatar(file, cb) {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const s = Math.min(img.width, img.height), c = document.createElement('canvas'); c.width = c.height = 320;
+        c.getContext('2d').drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, 320, 320); cb(c.toDataURL('image/jpeg', .82));
+      };
+      img.onerror = () => cb(null); img.src = fr.result;
+    };
+    fr.onerror = () => cb(null); fr.readAsDataURL(file);
+  }
+  function renderProfile() { const el = $('#profile'), sc = el.scrollTop; el.innerHTML = profileHTML(); el.scrollTop = sc; }
+  function openProfile() { pfDraft.avatar = state.user.avatar || null; pfDraft.nick = state.user.nick; state.wd = false; const el = $('#profile'); renderProfile(); el.scrollTop = 0; el.classList.add('open'); }
+  function closeProfile() { $('#profile').classList.remove('open'); state.wd = false; }
+  async function saveProfile() {
+    const u = state.user, nick = pfDraft.nick.trim(); if (!u || nick.length < 2) return;
+    const btn = $('#pf-save'); if (btn) btn.disabled = true;
+    let avatar = pfDraft.avatar;
+    try {
+      if (SBC && u.uid) {
+        if (avatar && avatar.startsWith('data:')) {
+          const blob = await (await fetch(avatar)).blob(), path = `${u.uid}/avatar-${Date.now()}.jpg`;
+          const up = await SBC.storage.from('post-photos').upload(path, blob, { contentType: 'image/jpeg', cacheControl: '31536000' }); if (up.error) throw up.error;
+          avatar = SBC.storage.from('post-photos').getPublicUrl(path).data.publicUrl;
+        }
+        const { error } = await SBC.from('profiles').update({ nickname: nick, avatar_url: avatar || null }).eq('user_id', u.uid); if (error) throw error;
+        if (u.avatar && u.avatar !== avatar) removePhoto(u.avatar);
+      }
+    } catch (e) { console.error('[profile]', e); toast('저장에 실패했어요: ' + String((e && e.message) || e).slice(0, 60)); if (btn) btn.disabled = false; return; }
+    state.posts.forEach(p => { if (p.uid === u.id && !p.withdrawn) p.nick = nick; });
+    state.user = { ...u, nick, avatar: avatar || null }; LS.set('user', state.user);
+    closeProfile(); renderNav(); if (state.tab === 'my') renderTab('my'); toast('프로필을 저장했어요');
+  }
   function openSettings() { const el = $('#settings'); el.innerHTML = settingsHTML(); el.scrollTop = 0; el.classList.add('open'); }
   function closeSettings() { $('#settings').classList.remove('open'); }
   function openLegal() { const el = $('#legal'); el.innerHTML = legalHTML(); el.scrollTop = 0; el.classList.add('open'); }
@@ -2399,16 +2466,16 @@ const App = (() => {
     const { data } = await SBC.auth.getSession(), s = data && data.session;
     if (!s) { if (state.user) { state.user = null; LS.set('user', null); renderNav(); } return; }
     const { data: pr } = await SBC.from('profiles').select('*').eq('user_id', s.user.id).maybeSingle();
-    if (pr) { state.user = { id: pr.username, nick: pr.nickname, provider: pr.provider, joined: String(pr.created_at).slice(0, 10), uid: s.user.id }; LS.set('user', state.user); renderNav(); if (state.tab === 'my' || state.tab === 'discover') renderTab(state.tab); loadKeeps(); loadSeen(); loadFavs(); }
+    if (pr) { state.user = { id: pr.username, nick: pr.nickname, provider: pr.provider, joined: String(pr.created_at).slice(0, 10), uid: s.user.id, avatar: pr.avatar_url || null }; LS.set('user', state.user); renderNav(); if (state.tab === 'my' || state.tab === 'discover') renderTab(state.tab); loadKeeps(); loadSeen(); loadFavs(); }
     else { state.user = null; LS.set('user', null); renderNav(); authFlow.provider = s.user.app_metadata.provider; authFlow.step = 'profile'; authFlow.reason = ''; authFlow.after = null; renderAuth(); $('#auth').classList.add('open'); Globe.stop(); }
   }
-  function logout() { if (SBC) { seenClear(); SBC.auth.signOut(); state.keep = new Set(); saveKeep(); state.fav = new Set(); LS.set('favc', []); } syncFav(); closeSettings(); state.user = null; state.wd = false; LS.set('user', null); renderNav(); go('home'); toast('로그아웃했어요'); }
+  function logout() { if (SBC) { seenClear(); SBC.auth.signOut(); state.keep = new Set(); saveKeep(); state.fav = new Set(); LS.set('favc', []); } syncFav(); closeSettings(); closeProfile(); state.user = null; state.wd = false; LS.set('user', null); renderNav(); go('home'); toast('로그아웃했어요'); }
   async function withdraw() {
     const u = state.user; if (!u) return;
     if (SBC) { const { error } = await SBC.rpc('delete_my_account'); if (error) { toast('탈퇴에 실패했어요. 잠시 후 다시 시도해 주세요'); return; } seenClear(); await SBC.auth.signOut(); }
     state.posts.forEach(p => { if (p.uid === u.id) { p.withdrawn = true; p.uid = null; p.author = '@withdrawn'; p.nick = null; p.mine = false; } });
     LS.set('posts', state.posts);
-    state.keep = new Set(); LS.set('keep', []); state.fav = new Set(); LS.set('favc', []); syncFav(); closeSettings(); state.user = null; state.wd = false; LS.set('user', null);
+    state.keep = new Set(); LS.set('keep', []); state.fav = new Set(); LS.set('favc', []); syncFav(); closeSettings(); closeProfile(); state.user = null; state.wd = false; LS.set('user', null);
     renderNav(); go('home'); toast('탈퇴가 완료됐어요');
   }
 
@@ -2465,6 +2532,10 @@ const App = (() => {
       }
       case 'sample': toast(COPY.toastSample); break;
       case 'theme': applyTheme(d.v); if ($('#settings').classList.contains('open')) { const sc = $('#settings').scrollTop; $('#settings').innerHTML = settingsHTML(); $('#settings').scrollTop = sc; } break;
+      case 'profile': openProfile(); break;
+      case 'profileclose': closeProfile(); break;
+      case 'pfsave': saveProfile(); break;
+      case 'pfavdel': pfDraft.avatar = null; renderProfile(); break;
       case 'settings': openSettings(); break;
       case 'settingsclose': closeSettings(); break;
       case 'favc': toggleFav(state.sel); break;
@@ -2478,8 +2549,8 @@ const App = (() => {
       case 'legal': openLegal(); break;
       case 'legalclose': $('#legal').classList.remove('open'); break;
       case 'logout': logout(); break;
-      case 'wdask': state.wd = true; renderTab('my'); break;
-      case 'wdcancel': state.wd = false; renderTab('my'); break;
+      case 'wdask': state.wd = true; renderProfile(); break;
+      case 'wdcancel': state.wd = false; renderProfile(); break;
       case 'withdraw': withdraw(); break;
       case 'editpost': openComposer(null, d.id); break;
       case 'delpost':
@@ -2497,6 +2568,16 @@ const App = (() => {
   $('#composer').addEventListener('input', e => { if (e.target.closest('#shareForm')) validateForm(); });
   $('#auth').addEventListener('input', e => { if (e.target.closest('#signupForm')) { if (e.target.id === 's-all') $$('#signupForm .req').forEach(c => { c.checked = e.target.checked; }); validSignup(); } });
   $('#auth').addEventListener('submit', e => { e.preventDefault(); if (!$('#s-go').disabled) finishSignup(); });
+  $('#profile').addEventListener('input', e => {
+    if (e.target.id !== 'pf-nick') return; pfDraft.nick = e.target.value;
+    const n = pfDraft.nick.trim().length, ok = n >= 2 && n <= 12, u = state.user, dirty = pfDraft.nick.trim() !== u.nick || pfDraft.avatar !== (u.avatar || null);
+    $('#pf-msg').textContent = pfDraft.nick && !ok ? '2~12자로 써주세요' : '2~12자'; $('#pf-msg').className = pfDraft.nick && !ok ? 'bad' : '';
+    $('#pf-save').disabled = !(ok && dirty);
+  });
+  $('#profile').addEventListener('change', e => {
+    if (e.target.id !== 'pf-file' || !e.target.files[0]) return;
+    resizeAvatar(e.target.files[0], url => { if (!url) { toast('사진을 불러오지 못했어요. 다른 사진으로 해볼까요?'); return; } pfDraft.avatar = url; renderProfile(); });
+  });
   $('#composer').addEventListener('submit', e => { e.preventDefault(); submitPost(); });
   $('#composer').addEventListener('change', e => {
     if (e.target.id !== 'f-file' || !e.target.files[0]) return;
@@ -2530,7 +2611,7 @@ const App = (() => {
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
       if ($('#fsheet').classList.contains('open')) { $('#fsheet').classList.remove('open'); return; }
-      if ($('#legal').classList.contains('open')) $('#legal').classList.remove('open'); else if ($('#settings').classList.contains('open')) closeSettings(); else if ($('#auth').classList.contains('open')) closeAuth(); else if ($('#composer').classList.contains('open')) closeComposer(); else if (state.detailId) closeDetail(); else if (state.sel) closeSheet();
+      if ($('#legal').classList.contains('open')) $('#legal').classList.remove('open'); else if ($('#settings').classList.contains('open')) closeSettings(); else if ($('#profile').classList.contains('open')) closeProfile(); else if ($('#auth').classList.contains('open')) closeAuth(); else if ($('#composer').classList.contains('open')) closeComposer(); else if (state.detailId) closeDetail(); else if (state.sel) closeSheet();
     }
     if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[role="link"]')) { e.preventDefault(); e.target.click(); }
   });
