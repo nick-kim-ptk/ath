@@ -626,6 +626,17 @@ body, .view, .sheet, .layer, .nav { word-break:keep-all; overflow-wrap:break-wor
 #pf-msg.bad { color:var(--hot); }
 .go-btn:disabled { opacity:.35; }
 
+/* 자동 불러오기 */
+.sentinel { display:flex; justify-content:center; gap:6px; padding:26px 0 34px; }
+.sentinel span { width:7px; height:7px; border-radius:50%; background:var(--mute); opacity:.35; animation:sdot 1s ease-in-out infinite; }
+.sentinel span:nth-child(2) { animation-delay:.15s; } .sentinel span:nth-child(3) { animation-delay:.3s; }
+@keyframes sdot { 0%,100% { opacity:.25; transform:translateY(0); } 50% { opacity:.8; transform:translateY(-4px); } }
+@media (prefers-reduced-motion: reduce) { .sentinel span { animation:none; } }
+/* 글 카드 작성자 아바타 */
+.pp-by { display:inline-flex; align-items:center; gap:7px; min-width:0; }
+.pp-av { width:20px; height:20px; border-radius:50%; flex:none; overflow:hidden; display:inline-grid; place-items:center; background:var(--ink); color:var(--bg); font:800 10px/1 var(--f-body); font-style:normal; }
+.pp-av img { width:100%; height:100%; object-fit:cover; display:block; }
+
 </style></head><body>
 <div class="app" id="app">
   <main class="views">
@@ -1342,7 +1353,7 @@ const KEEP_N = { on: false, n: {} };   /* 키워드별 Keep한 사람 수 (DB에
 function postFromRow(r) {
   const wd = !!r.withdrawn;
   return { id: r.id, city: r.city_id, area: r.area || '', title: r.title, text: r.body, category: r.category, link: r.link || '', photo: r.photo_url || null,
-    trendId: r.trend_id || undefined, author: wd ? '@withdrawn' : '@' + r.username, nick: wd ? null : r.author_name, uid: wd ? null : r.username, withdrawn: wd,
+    trendId: r.trend_id || undefined, avatar: wd ? null : (r.author_avatar || null), author: wd ? '@withdrawn' : '@' + r.username, nick: wd ? null : r.author_name, uid: wd ? null : r.username, withdrawn: wd,
     likes: Number(r.seen_count) || 0, date: String(r.created_at).slice(0, 10), pat: [...String(r.title)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % 8, mine: false };
 }
 async function loadRemote() {
@@ -1424,7 +1435,7 @@ const state = {
   keep: new Set(LS.get('keep', TRENDS.filter(t => t.isFollowing).map(t => t.kw)).map(kwKey)),
   posts: LS.get('posts', []),
   seen: new Set(LS.get('seen', [])),
-  fav: new Set(LS.get('favc', [])), myShown: 12,
+  fav: new Set(LS.get('favc', [])), myShown: 12, localShown: 5,
   visited: new Set(LS.get('visited', [])),
   city: LS.get('city', 'seoul'),
   theme: LS.get('theme', 'auto'),
@@ -1816,16 +1827,18 @@ function discoverHTML() {
     ${state.feedTab === 'discover' ? `<div class="fbar"><button class="fbtn" data-act="fopen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>필터</button><div id="fchips">${filterChips()}</div></div>` : ''}
     <div id="dl">${discoverList()}</div>`;
 }
+const discoverFiltered = () => { const q = (state.q || '').trim(); return feedOrder.filter(t => t.countryCode !== 'KR' && (!state.dc || state.dc === 'all' || t.countryCode === state.dc) && (state.cat === 'all' || t.category === state.cat) && (!q || matchQ(t, q))); };
+const localPosts = () => [...state.posts.filter(p => CITY[p.city] && CITY[p.city].cc === 'KR'), ...PEOPLE.filter(p => CITY[p.city] && CITY[p.city].cc === 'KR')];
 function discoverList() {
   const kn = state.user ? state.keep.size : 0;
   let h = '';
   if (state.feedTab === 'discover') {
-    const q = (state.q || '').trim(), list = feedOrder.filter(t => t.countryCode !== 'KR' && (!state.dc || state.dc === 'all' || t.countryCode === state.dc) && (state.cat === 'all' || t.category === state.cat) && (!q || matchQ(t, q)));
+    const q = (state.q || '').trim(), list = discoverFiltered();
     h += `<div class="feed">`;
     h += list.slice(0, state.shown).map((t, i) => feedItem(t, i % 8, i % 3 === 0)).join('');
     h += '</div>';
     const dcPosts = state.dc && state.dc !== 'all' ? [...state.posts, ...PEOPLE].filter(p => CITY[p.city] && CITY[p.city].cc === state.dc) : [];
-    if (list.length > state.shown) h += `<button class="more" data-act="more">더 보기 · ${list.length - state.shown}</button>`;
+    if (list.length > state.shown) h += `<div class="sentinel" id="sentD" aria-hidden="true"><span></span><span></span><span></span></div>`;
     if (!list.length) h += `<div class="empty"><p>${q ? `‘${esc(q)}’에 맞는 트렌드가 아직 없어요.` : '이 카테고리는 아직 비어 있어요.'}</p>${q ? '<button class="main" data-act="clearq">검색어 지우기</button>' : ''}</div>`;
     if (dcPosts.length) h += `<div class="sec"><h2>People’s Trend</h2><span class="eyebrow">${esc(CO[state.dc].name)} · ${dcPosts.length}</span></div>${dcPosts.map(postHTML).join('')}`;
   } else {
@@ -1844,23 +1857,27 @@ function discoverList() {
 }
 
 /* ---------- LOCAL ---------- */
+function ppAvatar(p) {
+  const a = authorOf(p), mine = state.user && p.uid === state.user.id, src = mine ? state.user.avatar : p.avatar;
+  return `<i class="pp-av">${src ? `<img src="${esc(src)}" alt="" loading="lazy">` : esc(String(a.init || a.name || '?').charAt(0).toUpperCase())}</i>`;
+}
 function postHTML(p, i) {
   const c = CITY[p.city], on = state.seen.has(p.id), n = (p.likes || 0) + (on ? 1 : 0);
   const link = p.link ? `<a href="${esc(p.link)}" target="_blank" rel="noopener noreferrer" style="color:inherit">LINK ↗</a>` : '';
   return `<article class="pp" style="--i:${i}"><div class="pp-img">${p.photo ? `<img src="${p.photo}" alt="">` : poster(p.pat || 0, c.cc, p.id)}</div>
     <div class="pp-meta"><span>${esc(c.name)}${p.area ? ' · ' + esc(p.area) : ''}</span><span>${CATEGORIES[p.category] || ''}</span>${p.mine || (state.user && p.uid === state.user.id) ? '<span class="you">YOU</span>' : ''}${link}</div>
     <h3 class="pp-title">${esc(p.title)}</h3><p class="pp-text">${esc(p.text)}</p>
-    <div class="pp-foot"><span>${esc(authorOf(p).name)} · ${p.date === todayISO() ? '방금' : fmtDate(p.date)}</span><button class="seen${on ? ' on' : ''}" data-act="seen" data-id="${p.id}" aria-pressed="${on}">나도 봤어 <b>${n}</b></button></div></article>`;
+    <div class="pp-foot"><span class="pp-by">${ppAvatar(p)}<span>${esc(authorOf(p).name)} · ${p.date === todayISO() ? '방금' : fmtDate(p.date)}</span></span><button class="seen${on ? ' on' : ''}" data-act="seen" data-id="${p.id}" aria-pressed="${on}">나도 봤어 <b>${n}</b></button></div></article>`;
 }
 function localHTML() {
   const city = CITY.seoul, co = CO.KR;
-  const posts = [...state.posts.filter(p => CITY[p.city] && CITY[p.city].cc === 'KR'), ...PEOPLE.filter(p => CITY[p.city] && CITY[p.city].cc === 'KR')];
+  const posts = localPosts();
   const list = TRENDS.filter(t => t.countryCode === 'KR');
   return `<div class="eyebrow">LOCAL · KOREA</div><h1 class="hd">${esc(COPY.localSub)}</h1>
     <div class="sec"><h2>KOREA NOW</h2><span class="eyebrow">${list.length} KEYWORDS</span></div>
     <div>${list.map(miniRow).join('')}</div>
     <div class="sec"><h2>People’s Trend</h2><span class="eyebrow">우리 동네 · ${posts.length}</span></div>
-    ${posts.length ? posts.map(postHTML).join('') : `<div class="empty"><p>우리 동네에서는 아직 올라온 게 없어요. 첫 번째로 올려볼까요?</p></div>`}
+    ${posts.length ? `<div id="locList">${posts.slice(0, state.localShown).map(postHTML).join('')}</div>${posts.length > state.localShown ? '<div class="sentinel" id="sentL" aria-hidden="true"><span></span><span></span><span></span></div>' : ''}` : `<div class="empty"><p>우리 동네에서는 아직 올라온 게 없어요. 첫 번째로 올려볼까요?</p></div>`}
     <div class="fab-wrap"><button class="fab" data-act="share"><span aria-hidden="true">+</span>${esc(COPY.share)}</button></div>`;
 }
 
@@ -2107,14 +2124,34 @@ const App = (() => {
     $$('.chip', rail).forEach(c => c.classList.toggle('on', c.dataset.cc === cc));
     const on = $('.chip.on', rail); if (on && !state.sel) rail.scrollTo({ left: on.offsetLeft - (rail.clientWidth - on.offsetWidth) / 2, behavior: 'smooth' });
   }
-  const renderTab = tab => { if (bodies[tab]) bodies[tab].innerHTML = renderers[tab](); };
+  const renderTab = tab => { if (bodies[tab]) { bodies[tab].innerHTML = renderers[tab](); watchSentinels(); } };
+  /* 아래까지 내려가면 5건씩 자동으로 더 불러와요 */
+  const PAGE = 5;
+  const io = ('IntersectionObserver' in window) ? new IntersectionObserver(es => es.forEach(en => {
+    if (!en.isIntersecting) return;
+    if (en.target.id === 'sentD') loadMoreD(); else if (en.target.id === 'sentL') loadMoreL();
+  }), { rootMargin: '300px 0px' }) : null;
+  function watchSentinels() { if (!io) return; io.disconnect(); $$('.sentinel').forEach(s => io.observe(s)); }
+  function rewatch(el) { if (el && io) { io.unobserve(el); io.observe(el); } }
+  function loadMoreD() {
+    const list = discoverFiltered(), from = state.shown, feed = $('#dl .feed'), s = $('#sentD'); if (!feed || !s) return;
+    const next = list.slice(from, from + PAGE); state.shown = from + next.length;
+    feed.insertAdjacentHTML('beforeend', next.map((t, k) => feedItem(t, (from + k) % 8, (from + k) % 3 === 0)).join(''));
+    if (state.shown >= list.length) { io.unobserve(s); s.remove(); } else rewatch(s);
+  }
+  function loadMoreL() {
+    const list = localPosts(), from = state.localShown, box = $('#locList'), s = $('#sentL'); if (!box || !s) return;
+    const next = list.slice(from, from + PAGE); state.localShown = from + next.length;
+    box.insertAdjacentHTML('beforeend', next.map((p, k) => postHTML(p, k)).join(''));
+    if (state.localShown >= list.length) { io.unobserve(s); s.remove(); } else rewatch(s);
+  }
   function go(tab) {
     if ((tab === 'my' || tab === 'keep') && !state.user) { openAuth('', null); return; }
     state.tab = tab;
     $$('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + tab));
     renderNav();
     if (tab === 'home') { requestAnimationFrame(() => { layoutHome(); if (!state.detailId) Globe.start(); }); }
-    else { Globe.stop(); renderTab(tab); }
+    else { Globe.stop(); if (tab === 'local') state.localShown = PAGE; if (tab === 'discover') state.shown = 8; renderTab(tab); }
   }
 
  /* ---------- Surprise 버튼: 슬쩍 말을 걸고, 누르면 나라를 슬롯머신처럼 돌린다 ---------- */
@@ -2508,7 +2545,6 @@ const App = (() => {
       case 'fclose': $('#fsheet').classList.remove('open'); break;
       case 'freset': state.dc = 'all'; state.cat = 'all'; state.shown = 8; renderTab('discover'); refreshFs(); break;
       case 'fclear': if (d.v === 'dc') state.dc = 'all'; else state.cat = 'all'; state.shown = 8; renderTab('discover'); break;
-      case 'more': state.shown += 8; renderTab('discover'); break;
       case 'city': state.city = d.v; LS.set('city', d.v); renderTab('local'); break;
       case 'share': openComposer(d.id); break;
       case 'closeComposer': closeComposer(); break;
@@ -2563,7 +2599,7 @@ const App = (() => {
   /* 폼 */
   $('#v-discover').addEventListener('input', e => {
     if (e.target.id !== 'q') return;
-    state.q = e.target.value; state.shown = 8; $('#dl').innerHTML = discoverList();
+    state.q = e.target.value; state.shown = 8; $('#dl').innerHTML = discoverList(); watchSentinels();
   });
   $('#composer').addEventListener('input', e => { if (e.target.closest('#shareForm')) validateForm(); });
   $('#auth').addEventListener('input', e => { if (e.target.closest('#signupForm')) { if (e.target.id === 's-all') $$('#signupForm .req').forEach(c => { c.checked = e.target.checked; }); validSignup(); } });
