@@ -1499,7 +1499,7 @@ const KEEP_N = { on: false, n: {} };   /* 키워드별 Keep한 사람 수 (DB에
 function postFromRow(r) {
   const wd = !!r.withdrawn;
   return { id: r.id, city: r.city_id, area: r.area || '', title: r.title, text: r.body, category: r.category, link: r.link || '', photo: r.photo_url || null,
-    trendId: r.trend_id || undefined, avatar: wd ? null : (r.author_avatar || null), author: wd ? '@withdrawn' : '@' + r.username, nick: wd ? null : r.author_name, uid: wd ? null : r.username, withdrawn: wd,
+    trendId: r.trend_id || undefined, kw: r.keyword_id || undefined, avatar: wd ? null : (r.author_avatar || null), author: wd ? '@withdrawn' : '@' + r.username, nick: wd ? null : r.author_name, uid: wd ? null : r.username, withdrawn: wd,
     likes: Number(r.seen_count) || 0, date: String(r.created_at).slice(0, 10), pat: [...String(r.title)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % 8, mine: false };
 }
 /* 지역 칸에 나라 이름(특히 다른 나라)이 들어오면 버려요 */
@@ -2226,7 +2226,7 @@ const HANDLES = ['daily', 'walk', 'log', 'note', 'roll', 'now', 'lately', 'spot'
 const trendCity = t => CITIES.find(c => c.name.toLowerCase() === String(t.city).toLowerCase()) || CITIES.find(c => c.cc === t.countryCode);
 /* 이 화제(와 같은 키워드로 묶인 화제)에 사람들이 올린 글. 더미는 만들지 않아요. */
 function trendPosts(t) {
-  return state.posts.filter(p => p.trendId && (p.trendId === t.id || kwKey(p.trendId) === t.kw))
+  return state.posts.filter(p => (p.kw && p.kw === t.kw) || (p.trendId && (p.trendId === t.id || kwKey(p.trendId) === t.kw)))
     .sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : (b.likes || 0) - (a.likes || 0)));
 }
 function kfCard(p, t) {
@@ -2528,7 +2528,7 @@ const App = (() => {
     openComposerNow(trendId, editId);
   }
   function openComposerNow(trendId, editId) {
-    const ed = editId ? state.posts.find(p => p.id === editId) : null, tr = ed ? (ed.trendId ? byId[ed.trendId] : null) : trendId ? byId[trendId] : null;
+    const ed = editId ? state.posts.find(p => p.id === editId) : null, tr = ed ? (ed.trendId && byId[ed.trendId] ? byId[ed.trendId] : ed.kw ? TRENDS.find(t => t.kw === ed.kw) || null : null) : trendId ? byId[trendId] : null;
     composer.edit = ed ? ed.id : null; composer.trend = tr ? tr.id : null; composer.cat = ed ? ed.category : tr ? tr.category : 'life'; composer.photo = ed ? ed.photo || null : null;
     const el = $('#composer'); el.innerHTML = composerHTML(); el.scrollTop = 0; el.classList.add('open'); if (tr || ed) validateForm();
     if (state.tab === 'home') Globe.stop();
@@ -2577,10 +2577,10 @@ const App = (() => {
     }
     let id = 'u' + Date.now(), date = todayISO();
     if (SBC) {
-      const { data, error } = await SBC.from('posts').insert({ user_id: state.user.uid, city_id: city, trend_id: composer.trend || null, area: area || null, title, body: text, category: composer.cat, link: link || null, photo_url: photo || null }).select('id,created_at').single();
+      const { data, error } = await SBC.from('posts').insert({ user_id: state.user.uid, city_id: city, trend_id: composer.trend || null, keyword_id: composer.trend ? kwKey(composer.trend) : null, area: area || null, title, body: text, category: composer.cat, link: link || null, photo_url: photo || null }).select('id,created_at').single();
       if (error || !data) return fail(); id = data.id; date = String(data.created_at).slice(0, 10);
     }
-    const p = { id, city, area, title, text, category: composer.cat, link, photo, author: '@' + state.user.id, nick: state.user.nick, uid: state.user.id, likes: 0, date, pat: hash(title) % 8, mine: true, trendId: composer.trend || undefined };
+    const p = { id, city, area, title, text, category: composer.cat, link, photo, author: '@' + state.user.id, nick: state.user.nick, uid: state.user.id, likes: 0, date, pat: hash(title) % 8, mine: true, trendId: composer.trend || undefined, kw: composer.trend ? kwKey(composer.trend) : undefined };
     state.posts.unshift(p);
     if (!SBC && !LS.set('posts', state.posts)) { p.photo = null; LS.set('posts', state.posts); }
     state.city = p.city; LS.set('city', state.city);
