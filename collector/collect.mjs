@@ -44,6 +44,7 @@ async function fetchTrends(geo) {
 
 /* ---------- 2. Claude ---------- */
 async function claude(system, user, maxTokens = 3500) {
+  let lastErr = null;
   for (let attempt = 1; attempt <= 3; attempt++) {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -55,10 +56,12 @@ async function claude(system, user, maxTokens = 3500) {
     const j = await r.json();
     const text = (j.content || []).map(c => c.text || '').join('');
     const m = text.match(/\{[\s\S]*\}/);
-    if (!m) throw new Error('JSON 없음');
-    return JSON.parse(m[0]);
+    try {
+      if (!m) throw new Error('JSON 없음');
+      return JSON.parse(m[0]);
+    } catch (e) { lastErr = e; await sleep(1500); continue; }   // 모양이 깨졌으면 같은 요청을 다시 보내요
   }
-  throw new Error('Claude 재시도 초과');
+  throw new Error('Claude 재시도 초과' + (lastErr ? ': ' + lastErr.message : ''));
 }
 
 const SYSTEM = `너는 '지구 근황' 앱의 에디터야. 나라별 구글 트렌드 급상승 검색어와 관련 뉴스 제목을 받아서, 한국 사용자가 "지금 그 나라에서 뭐가 화제인지" 한눈에 알 수 있게 정리해.
@@ -69,6 +72,7 @@ const SYSTEM = `너는 '지구 근황' 앱의 에디터야. 나라별 구글 트
 - title은 뉴스 헤드라인이 아니라 '화제의 이름'이야. 12자 안팎의 명사형으로 짧게 (예: '스테이블코인 확산', '가을 곰 출몰'). 사건의 세부 내용은 short와 what에 써.
 - 오직 입력으로 받은 뉴스 제목에 담긴 사실만 써. 모르는 건 지어내지 말고, 근거가 부족한 항목은 고르지 마. 숫자·날짜·이름을 새로 만들지 마.
 - 기사 문장을 그대로 옮기지 말고 네 말로 짧게 요약해. 한국어, 부드러운 '~요' 체.
+- 글 안에서는 큰따옴표(\")를 쓰지 말고 작은따옴표(')를 써. 줄바꿈도 넣지 마.
 - 각 화제는 이런 JSON 모양이야 (JSON만 출력, 다른 말 금지):
 {"topics":[{"items":[입력 항목 번호들],"keyword":"한국어 키워드 2~8자","slug":"english-kebab-case","title":"화제 이름 12자 안팎","en":"English Title","short":"한 줄 요약 40자 이내","status":"hot|rising|new","category":"food|tech|life|culture|fashion|wellness|travel","area":"지역(모르면 빈 문자열)","why":["왜 화제인지 짧은 구 3개"],"what":[{"head":"소제목","text":"한두 문장"},{"head":"","text":""},{"head":"","text":""}],"news":[{"ref":"항목번호:뉴스번호","title":"기사 제목을 한국어로 옮긴 것","summary":"한 줄 요약"}]}]}
 - status: 검색량이 가장 크거나 가장 큰 화제는 hot, 나머지는 rising 또는 new. category는 어울리는 걸 고르되 스포츠·사회·날씨는 culture 또는 life.
