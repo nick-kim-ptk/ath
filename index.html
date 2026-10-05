@@ -651,6 +651,30 @@ body, .view, .sheet, .layer, .nav { word-break:keep-all; overflow-wrap:break-wor
 .sp-more .kwb { opacity:1; animation:none; padding-bottom:0; border-top:0; }
 .sp-more .kw { opacity:1; animation:none; }
 
+/* 서프라이즈 시트도 나라 시트처럼 위아래로 늘리고 줄여요 */
+#sheetSurprise { touch-action:pan-x; }
+#sheetSurprise .sp { overflow-y:hidden; touch-action:pan-x; }
+#sheetSurprise.full { top:0; border-radius:0; z-index:6; }
+#sheetSurprise.full .sp { overflow-y:auto; touch-action:pan-y; overscroll-behavior:contain; padding-top:calc(12px + env(safe-area-inset-top,0px)); }
+
+/* 나라 시트 위쪽 정보 정돈 */
+.upd { margin-top:8px; font:500 11px var(--f-mono); letter-spacing:.04em; color:var(--mute); }
+.sheet-head { align-items:flex-start; }
+.sheet-head .sheet-ctl { padding-top:4px; }
+.sheet-meta { margin-top:12px; display:flex; flex-direction:column; align-items:flex-start; gap:9px; font:500 11px var(--f-mono); letter-spacing:.06em; color:var(--mute); }
+.sm-id { display:flex; align-items:center; gap:8px; }
+.sm-id b { font-weight:800; color:var(--ink); }
+.sm-id i { width:3px; height:3px; border-radius:50%; background:var(--mute); opacity:.6; }
+.sm-flag { font-size:15px; line-height:1; }
+.sm-heat { display:flex; align-items:center; gap:10px; }
+.heat-pill { display:inline-flex; align-items:center; padding:5px 11px; border-radius:999px; font:800 12px/1 var(--f-body); letter-spacing:-.02em; background:rgba(0,0,0,.06); color:var(--mute); }
+.heat-pill.heat-blaze { background:rgba(255,77,31,.12); color:var(--hot); }
+.heat-pill.heat-warm { background:rgba(214,138,0,.14); color:#9A6100; }
+.heat-pill.heat-calm { background:rgba(60,120,70,.12); color:#3A6B45; }
+.sm-rank { font:500 11px var(--f-mono); color:var(--mute); }
+.sm-rank b { font:800 13px var(--f-mono); color:var(--ink); }
+.sm-up { font:500 10.5px var(--f-mono); letter-spacing:.06em; color:var(--mute); }
+
 </style></head><body>
 <div class="app" id="app">
   <main class="views">
@@ -685,6 +709,7 @@ body, .view, .sheet, .layer, .nav { word-break:keep-all; overflow-wrap:break-wor
         </section>
 
         <section class="sheet" id="sheetSurprise" aria-live="polite">
+          <button class="sheet-grip" data-act="sheetfull" data-s="sp" aria-label="화면 가득 펼치기"><i></i></button>
           <div class="sp" id="spBody"></div>
         </section>
       </div>
@@ -1408,7 +1433,7 @@ const COPY = {
   keepEmpty: '아직 Keep한 게 없어요. 지구본에서 마음에 드는 걸 골라볼까요?',
   followingEmpty: '아직 Keep한 화제가 없어요. 하나만 Keep하면 새 이야기가 여기에 올라와요.',
   discoverSub: '지금, 다른 나라 사람들은 뭐해?',
-  localSub: '지금, 내 주변에서는?',
+  localSub: '지금, 한국에서는?',
   share: '우리 동네 화제 올리기',
   shareTitle: 'Share a Topic',
   sample: '샘플 콘텐츠',
@@ -1464,7 +1489,7 @@ async function loadRemote() {
         whyTrending: x.why || [],
         whatIsHappening: (x.what || []).map(w => ({ head: w.head, text: w.text })),
         news: (x.trend_news || []).sort((a, b) => String(b.published_on).localeCompare(String(a.published_on))).map(n => ({ title: n.title, source: n.source, date: n.published_on, summary: n.summary, url: n.url || '' })),
-        isFollowing: false, sample: !!x.is_sample, _kw: x.keyword_id
+        isFollowing: false, sample: !!x.is_sample, publishedAt: x.published_at || '', _kw: x.keyword_id
       };
     }).filter(t => COUNTRIES.some(c => c.cc === t.countryCode));
     /* 같은 키워드가 2곳 이상이면 묶음으로 */
@@ -1558,6 +1583,11 @@ const authorOf = p => {
   if (p.nick) return { name: p.nick, init: p.nick.charAt(0), sub: '@' + String(p.author).replace('@', '') };
   const h = String(p.author).replace('@', ''); return { name: h, init: h.charAt(0).toUpperCase() };
 };
+/* 업데이트 시각 (한국 시간 기준으로 보여줘요) */
+const kstOf = iso => new Date(new Date(iso).getTime() + 9 * 3600e3);
+const updAt = list => list.map(t => t.publishedAt).filter(Boolean).sort().pop() || '';
+const fmtUpd = iso => { const d = kstOf(iso), p = n => String(n).padStart(2, '0'); return `${p(d.getUTCMonth() + 1)}.${p(d.getUTCDate())} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`; };
+const updCaption = () => { const u = updAt(TRENDS); return (u ? `${kstOf(u).getUTCMonth() + 1}월 ${kstOf(u).getUTCDate()}일 기준 · ` : '') + '매일 밤 12시 업데이트'; };
 const latest = t => t.news.reduce((m, n) => n.date > m ? n.date : m, '');
 
 /* ---------- 포스터: 사진 대신 쓰는 평면 그래픽 8종 ---------- */
@@ -1913,7 +1943,7 @@ function filterSheetHTML() {
 function discoverHTML() {
   if (!state.user && state.feedTab === 'following') state.feedTab = 'discover';
   const kn = state.user ? keepN() : 0;
-  return `<div class="eyebrow">DISCOVER</div><h1 class="hd">${esc(COPY.discoverSub)}</h1>
+  return `<div class="eyebrow">DISCOVER</div><h1 class="hd">${esc(COPY.discoverSub)}</h1><p class="upd">${esc(updCaption())}</p>
     ${state.user ? `<div class="seg" role="tablist"><button role="tab" aria-selected="${state.feedTab === 'discover'}" data-act="feedtab" data-v="discover">Discover</button><button role="tab" aria-selected="${state.feedTab === 'following'}" data-act="feedtab" data-v="following">Following${kn ? ' · ' + kn : ''}</button></div>` : ''}
     ${state.feedTab === 'discover' ? `<label class="srch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/></svg><input id="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="나라, 도시, 키워드로 찾아보기" value="${esc(state.q || '')}"></label>` : ''}
     ${state.feedTab === 'discover' ? `<div class="fbar"><button class="fbtn" data-act="fopen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>필터</button><div id="fchips">${filterChips()}</div></div>` : ''}
@@ -1965,7 +1995,7 @@ function localHTML() {
   const city = CITY.seoul, co = CO.KR;
   const posts = localPosts();
   const list = TRENDS.filter(t => t.countryCode === 'KR');
-  return `<div class="eyebrow">LOCAL · KOREA</div><h1 class="hd">${esc(COPY.localSub)}</h1>
+  return `<div class="eyebrow">LOCAL · KOREA</div><h1 class="hd">${esc(COPY.localSub)}</h1><p class="upd">${esc(updCaption())}</p>
     <div class="sec"><h2>KOREA NOW</h2><span class="eyebrow">${list.length} KEYWORDS</span></div>
     <div>${list.map(miniRow).join('')}</div>
     <div class="sec"><h2>People’s Buzz</h2><span class="eyebrow">우리 동네 · ${posts.length}</span></div>
@@ -2110,7 +2140,7 @@ function detailHTML(t) {
       <div>${related(t, 3).map(miniRow).join('')}</div>
       <button class="next" data-act="open" data-id="${nx.id}"><span><small>Next in ${esc(co.name)}</small><b>${esc(nx.trendTitle)}</b></span><span class="arrow">→</span></button>
     </div>
-    <div class="fab-wrap"><button class="fab" data-act="share" data-id="${t.id}"><span aria-hidden="true">+</span>이 이야기, 나도 올리기</button></div>`;
+    <div class="fab-wrap"><button class="fab" data-act="share" data-id="${t.id}"><span aria-hidden="true">+</span>이 이야기, 나도 할 말 있어요</button></div>`;
 }
 
 /* ---------- 올리기 ---------- */
@@ -2283,36 +2313,43 @@ const App = (() => {
   function selectCountry(cc) {
     const co = CO[cc]; state.sel = cc; state.mode = 'country'; markVisited(cc);
     $('#shName').textContent = co.name;
-    $('#shMeta').innerHTML = `<span>${flag(cc)} ${cc}</span><span>${esc(co.ko)}</span><span class="heat heat-${HEAT[cc].tier}">${HEAT_LABEL[HEAT[cc].tier]} · ${HEAT[cc].rank}/${COUNTRIES.length}위</span><span>LOCAL <b id="shTime">${localTime(co.tz)}</b></span><span>${fmtLL(co.center[0], co.center[1])}</span>`;
+    const list = TRENDS.filter(t => t.countryCode === cc), up = updAt(list), H = HEAT[cc];
+    $('#shMeta').innerHTML = `<div class="sm-id"><span class="sm-flag">${flag(cc)}</span><b>${cc}</b><i aria-hidden="true"></i><span>LOCAL <b id="shTime">${localTime(co.tz)}</b></span></div>` +
+      (list.length
+        ? `<div class="sm-heat"><span class="heat-pill heat-${H.tier}">${HEAT_LABEL[H.tier]}</span><span class="sm-rank"><b>${H.rank}</b>/${COUNTRIES.length}위</span></div>
+           <div class="sm-up">${up ? 'UPDATED ' + fmtUpd(up) : '샘플 데이터'} · 화제 ${list.length}개</div>`
+        : `<div class="sm-heat"><span class="heat-pill heat-calm">🌱 수집 준비 중</span></div>`);
     $('#kwList').innerHTML = sheetHTML(cc); $('#kwList').scrollTop = 0; syncFav();
     $('#sheetSurprise').classList.remove('open'); $('#sheetCountry').classList.add('open');
     home.classList.add('has-sel'); Globe.setSel(true);
     Globe.rotateTo(co.center, { dur: 950 });
   }
-  /* 나라 시트: 위로 끌면 화면 가득, 가득 찬 상태에서 아래로 끌면 원래대로 */
-  let sheetFull = false;
-  function setSheetFull(v) {
-    if (sheetFull === v) return; sheetFull = v;
-    const s = $('#sheetCountry'); s.classList.toggle('full', v); s.querySelector('.sheet-grip').setAttribute('aria-label', v ? '지구본으로 돌아가기' : '화면 가득 펼치기');
-    if (v) Globe.stop(); else { if (state.tab === 'home') Globe.start(); $('#kwList').scrollTop = 0; }
-  }
-  (() => {
-    const s = $('#sheetCountry'), list = $('#kwList'); let t0 = null;
+  /* 시트(나라·서프라이즈): 위로 끌면 화면 가득, 가득 찬 상태에서 아래로 끌면 원래대로 */
+  function bindSheet(sel, scrollSel) {
+    const s = $(sel), list = $(scrollSel), grip = s.querySelector('.sheet-grip'); let full = false, t0 = null;
+    function set(v) {
+      if (full === v) return; full = v;
+      s.classList.toggle('full', v); grip.setAttribute('aria-label', v ? '지구본으로 돌아가기' : '화면 가득 펼치기');
+      if (v) Globe.stop(); else { if (state.tab === 'home') Globe.start(); list.scrollTop = 0; }
+    }
     s.addEventListener('touchstart', e => { if (e.touches.length !== 1) { t0 = null; return; } const t = e.touches[0]; t0 = { x: t.clientX, y: t.clientY, top: list.scrollTop, dir: '' }; }, { passive: true });
     s.addEventListener('touchmove', e => {
       if (!t0) return; const t = e.touches[0], dx = t.clientX - t0.x, dy = t.clientY - t0.y;
       if (!t0.dir && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) t0.dir = Math.abs(dy) > Math.abs(dx) * 1.3 ? 'v' : 'h';
       if (t0.dir !== 'v') return;
-      if (!sheetFull) { if (e.cancelable) e.preventDefault(); if (dy < -40) { setSheetFull(true); t0 = null; } }
-      else if (t0.top <= 0 && list.scrollTop <= 0 && dy > 0) { if (e.cancelable) e.preventDefault(); if (dy > 70) { setSheetFull(false); t0 = null; } }
+      if (!full) { if (e.cancelable) e.preventDefault(); if (dy < -40) { set(true); t0 = null; } }
+      else if (t0.top <= 0 && list.scrollTop <= 0 && dy > 0) { if (e.cancelable) e.preventDefault(); if (dy > 70) { set(false); t0 = null; } }
     }, { passive: false });
     s.addEventListener('touchend', () => { t0 = null; }, { passive: true });
     s.addEventListener('wheel', e => {
       if (Math.abs(e.deltaY) < 6) return;
-      if (!sheetFull && e.deltaY > 0) { e.preventDefault(); setSheetFull(true); }
-      else if (sheetFull && e.deltaY < 0 && list.scrollTop <= 0) { e.preventDefault(); setSheetFull(false); }
+      if (!full && e.deltaY > 0) { e.preventDefault(); set(true); }
+      else if (full && e.deltaY < 0 && list.scrollTop <= 0) { e.preventDefault(); set(false); }
     }, { passive: false });
-  })();
+    return { set, toggle: () => set(!full), get full() { return full; } };
+  }
+  const SHEET_C = bindSheet('#sheetCountry', '#kwList'), SHEET_S = bindSheet('#sheetSurprise', '#spBody');
+  const setSheetFull = v => { SHEET_C.set(v); SHEET_S.set(v); };
   /* 관심 나라(별표) */
   function syncFav() {
     const b = $('#favBtn'); if (!b) return; const on = !!(state.user && state.sel && state.fav.has(state.sel));
@@ -2355,7 +2392,7 @@ const App = (() => {
   /* ---------- Surprise Me ---------- */
   function surprise() {
     const pool = TRENDS.filter(t => t.countryCode !== state.lastCc), t = pool[Math.floor(Math.random() * pool.length)];
-    state.lastCc = t.countryCode; state.sel = null; state.mode = null;
+    state.lastCc = t.countryCode; state.sel = null; state.mode = null; setSheetFull(false);
     $$('.sheet').forEach(s => s.classList.remove('open')); home.classList.remove('has-sel'); Globe.setSel(false); Globe.redraw();
     startRoll();
     Globe.rotateTo(CO[t.countryCode].center, { turns: 1, dur: 2100, fast: true, done: () => { stopRoll(t.countryCode); openSurprise(t); } });
@@ -2665,7 +2702,7 @@ const App = (() => {
       case 'settingsclose': closeSettings(); break;
       case 'favc': toggleFav(state.sel); break;
       case 'mymore': state.myShown += 12; renderTab('my'); break;
-      case 'sheetfull': setSheetFull(!sheetFull); break;
+      case 'sheetfull': (d.s === 'sp' ? SHEET_S : SHEET_C).toggle(); break;
       case 'sns':
         if (SBC) { if (d.v === 'google') SBC.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } }); else toast('카카오 로그인은 곧 열려요'); break; }
         authFlow.provider = d.v; authFlow.step = 'profile'; if (!$('#auth').classList.contains('open')) { $('#auth').classList.add('open'); if (state.tab === 'home') Globe.stop(); } renderAuth(); break;
