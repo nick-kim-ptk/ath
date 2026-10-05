@@ -1290,6 +1290,7 @@ const SUPABASE_KEY = 'sb_publishable_J8EkuZW7bpB1MGXbHkz8WA_Yl26qAQX';
    실패하면(오프라인, 미리보기 등) 샘플 데이터를 그대로 씁니다.
    ===================================================================== */
 const DATA_SOURCE = { kind: 'sample' };
+const KEEP_N = { on: false, n: {} };   /* 키워드별 Keep한 사람 수 (DB에서 읽은 경우) */
 async function loadRemote() {
   if (typeof SUPABASE_URL === 'undefined' || !SUPABASE_URL) return;
   const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 6000);
@@ -1319,8 +1320,12 @@ async function loadRemote() {
     const groups = {};
     next.forEach(t => { (groups[t._kw] = groups[t._kw] || []).push(t.id); });
     Object.keys(KW_GROUPS).forEach(k => delete KW_GROUPS[k]);
-    Object.entries(groups).forEach(([k, ids]) => { if (ids.length > 1) { const kw = kws.find(z => z.id === k); KW_GROUPS[k] = { title: kw ? kw.title : k, members: ids }; } });
+    Object.entries(groups).forEach(([k, ids]) => { { const kw = kws.find(z => z.id === k); KW_GROUPS[k] = { title: kw ? kw.title : k, members: ids }; } });
     TRENDS.length = 0; next.forEach(t => TRENDS.push(t));
+    try {
+      const kc = await get('keep_counts?select=*');
+      kc.forEach(r => { KEEP_N.n[r.keyword_id] = Number(r.n) || 0; }); KEEP_N.on = true;
+    } catch (e) { console.warn('[remote] keep_counts 없음(05_keeps.sql 실행 필요)'); }
     DATA_SOURCE.kind = 'supabase';
   } catch (e) {
     console.warn('[remote] 샘플 데이터로 시작해요:', e && e.message);
@@ -1691,7 +1696,8 @@ const Globe = (() => {
 /* =====================================================================
    RENDER · 화면별 HTML 만들기 (데이터 → 문자열)
    ===================================================================== */
-const keepCount = key => { let h = 7; for (const c of String(key)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return 18 + (h % 460) + (state.user && state.keep.has(key) ? 1 : 0); };
+const keepCount = key => {
+  if (typeof KEEP_N !== 'undefined' && KEEP_N.on) return KEEP_N.n[key] || 0; let h = 7; for (const c of String(key)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return 18 + (h % 460) + (state.user && state.keep.has(key) ? 1 : 0); };
 const keepBtn = (id, sm) => {
   const on = state.keep.has(kwKey(id));
   return `<button class="keep-btn${on ? ' on' : ''}${sm ? ' sm' : ''}" data-act="keep" data-id="${id}" aria-pressed="${on}"><span class="plus">+</span><span class="lab">${on ? 'Kept' : 'Keep'}</span><span class="kc">${keepCount(kwKey(id))}</span></button>`;
@@ -2127,10 +2133,28 @@ const App = (() => {
       b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
     });
   }
+  function bumpKeepN(id, d) { if (typeof KEEP_N !== 'undefined' && KEEP_N.on) KEEP_N.n[id] = Math.max(0, (KEEP_N.n[id] || 0) + d); }
+  /* 로그인 직후: DB의 Keep을 불러오고, 이 브라우저에만 있던 Keep은 DB로 합쳐요 */
+  async function loadKeeps() {
+    if (!SBC || !state.user || !state.user.uid) return;
+    const { data, error } = await SBC.from('keeps').select('keyword_id').eq('user_id', state.user.uid);
+    if (error) { console.warn('[keeps]', error.message); return; }
+    const remote = new Set((data || []).map(r => r.keyword_id)), valid = new Set(TRENDS.map(t => t.kw));
+    const add = [...state.keep].filter(k => valid.has(k) && !remote.has(k));
+    if (add.length) { const { error: e2 } = await SBC.from('keeps').insert(add.map(k => ({ user_id: state.user.uid, keyword_id: k }))); if (!e2) add.forEach(k => bumpKeepN(k, 1)); }
+    state.keep = new Set([...remote, ...add]); saveKeep(); renderNav(); syncAllKeeps();
+    if (['keep', 'my', 'discover'].includes(state.tab)) renderTab(state.tab);
+  }
+  function syncAllKeeps() { $$('.keep-btn').forEach(b => syncKeep(b.dataset.id)); }
   function toggleKeep(id, quiet) {
     if (!state.user) { const k = id; openAuth('Keep하려면\n로그인이 필요해요', () => toggleKeep(k, quiet)); return; }
     id = kwKey(id);
     const was = state.keep.has(id); was ? state.keep.delete(id) : state.keep.add(id); saveKeep();
+    bumpKeepN(id, was ? -1 : 1);
+    if (SBC && state.user.uid) {
+      const q = was ? SBC.from('keeps').delete().match({ user_id: state.user.uid, keyword_id: id }) : SBC.from('keeps').insert({ user_id: state.user.uid, keyword_id: id });
+      q.then(({ error }) => { if (error) { was ? state.keep.add(id) : state.keep.delete(id); saveKeep(); bumpKeepN(id, was ? 1 : -1); syncKeep(id); renderNav(); toast('Keep 저장에 실패했어요. 잠시 후 다시 시도해 주세요'); } });
+    }
     syncKeep(id); renderNav();
     if (state.tab === 'keep' || state.tab === 'my' || (state.tab === 'discover' && state.feedTab === 'following')) renderTab(state.tab);
     if (!quiet) toast(was ? COPY.toastUnkeep : COPY.toastKeep, '취소', () => toggleKeep(id, true));
@@ -2230,7 +2254,7 @@ const App = (() => {
     LS.set('posts', state.posts);
     const next = authFlow.after; authFlow.after = null;
     $('#auth').classList.remove('open'); renderNav(); if (state.tab === 'my' || state.tab === 'discover') renderTab(state.tab);
-    toast(`${nick}님, 환영해요`);
+    toast(`${nick}님, 환영해요`); loadKeeps();
     if (next) setTimeout(next, 350); else if (state.tab === 'home' && !state.detailId) Globe.start();
   }
   async function restoreSession() {
@@ -2238,10 +2262,10 @@ const App = (() => {
     const { data } = await SBC.auth.getSession(), s = data && data.session;
     if (!s) { if (state.user) { state.user = null; LS.set('user', null); renderNav(); } return; }
     const { data: pr } = await SBC.from('profiles').select('*').eq('user_id', s.user.id).maybeSingle();
-    if (pr) { state.user = { id: pr.username, nick: pr.nickname, provider: pr.provider, joined: String(pr.created_at).slice(0, 10), uid: s.user.id }; LS.set('user', state.user); renderNav(); if (state.tab === 'my' || state.tab === 'discover') renderTab(state.tab); }
+    if (pr) { state.user = { id: pr.username, nick: pr.nickname, provider: pr.provider, joined: String(pr.created_at).slice(0, 10), uid: s.user.id }; LS.set('user', state.user); renderNav(); if (state.tab === 'my' || state.tab === 'discover') renderTab(state.tab); loadKeeps(); }
     else { state.user = null; LS.set('user', null); renderNav(); authFlow.provider = s.user.app_metadata.provider; authFlow.step = 'profile'; authFlow.reason = ''; authFlow.after = null; renderAuth(); $('#auth').classList.add('open'); Globe.stop(); }
   }
-  function logout() { if (SBC) SBC.auth.signOut(); state.user = null; state.wd = false; LS.set('user', null); renderNav(); go('home'); toast('로그아웃했어요'); }
+  function logout() { if (SBC) { SBC.auth.signOut(); state.keep = new Set(); saveKeep(); } state.user = null; state.wd = false; LS.set('user', null); renderNav(); go('home'); toast('로그아웃했어요'); }
   async function withdraw() {
     const u = state.user; if (!u) return;
     if (SBC) { const { error } = await SBC.rpc('delete_my_account'); if (error) { toast('탈퇴에 실패했어요. 잠시 후 다시 시도해 주세요'); return; } await SBC.auth.signOut(); }
