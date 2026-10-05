@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>지구 근황</title>
+<title>ath+</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Unbounded:wght@700;800;900&family=Outfit:wght@600;700&display=swap">
@@ -674,8 +674,6 @@ body, .view, .sheet, .layer, .nav { word-break:keep-all; overflow-wrap:break-wor
             </div>
             <div class="sheet-ctl">
               <button class="round star" id="favBtn" data-act="favc" aria-label="관심 나라로 표시" aria-pressed="false">☆</button>
-              <button class="round" data-act="prev" aria-label="이전 나라">←</button>
-              <button class="round" data-act="next" aria-label="다음 나라">→</button>
               <button class="round" data-act="close" aria-label="닫기">×</button>
             </div>
           </div>
@@ -1848,6 +1846,8 @@ const Globe = (() => {
 /* =====================================================================
    RENDER · 화면별 HTML 만들기 (데이터 → 문자열)
    ===================================================================== */
+/* 지금 앱에 있는 키워드만 센 내 Keep 수 (예전에 저장된 지난 키워드는 세지 않아요) */
+const keepN = () => [...state.keep].filter(k => kwMembers(k).length).length;
 const keepCount = key => {
   if (typeof KEEP_N !== 'undefined' && KEEP_N.on) return KEEP_N.n[key] || 0; let h = 7; for (const c of String(key)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return 18 + (h % 460) + (state.user && state.keep.has(key) ? 1 : 0); };
 const keepBtn = (id, sm) => {
@@ -1906,7 +1906,7 @@ function filterSheetHTML() {
 }
 function discoverHTML() {
   if (!state.user && state.feedTab === 'following') state.feedTab = 'discover';
-  const kn = state.user ? state.keep.size : 0;
+  const kn = state.user ? keepN() : 0;
   return `<div class="eyebrow">DISCOVER</div><h1 class="hd">${esc(COPY.discoverSub)}</h1>
     ${state.user ? `<div class="seg" role="tablist"><button role="tab" aria-selected="${state.feedTab === 'discover'}" data-act="feedtab" data-v="discover">Discover</button><button role="tab" aria-selected="${state.feedTab === 'following'}" data-act="feedtab" data-v="following">Following${kn ? ' · ' + kn : ''}</button></div>` : ''}
     ${state.feedTab === 'discover' ? `<label class="srch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/></svg><input id="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="나라, 도시, 키워드로 찾아보기" value="${esc(state.q || '')}"></label>` : ''}
@@ -1916,7 +1916,7 @@ function discoverHTML() {
 const discoverFiltered = () => { const q = (state.q || '').trim(); return feedOrder.filter(t => t.countryCode !== 'KR' && (!state.dc || state.dc === 'all' || t.countryCode === state.dc) && (state.cat === 'all' || t.category === state.cat) && (!q || matchQ(t, q))); };
 const localPosts = () => [...state.posts.filter(p => CITY[p.city] && CITY[p.city].cc === 'KR'), ...PEOPLE.filter(p => CITY[p.city] && CITY[p.city].cc === 'KR')];
 function discoverList() {
-  const kn = state.user ? state.keep.size : 0;
+  const kn = state.user ? keepN() : 0;
   let h = '';
   if (state.feedTab === 'discover') {
     const q = (state.q || '').trim(), list = discoverFiltered();
@@ -2053,7 +2053,7 @@ function myHTML() {
   const mine = state.posts.filter(p => p.uid === u.id);
   return `<div class="eyebrow">MY</div>
     <div class="me"><div class="avatar">${avatarInner(u, u.avatar)}</div><div><b>${esc(u.nick)}<button class="edit-ic" data-act="profile" aria-label="프로필 수정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="m13.5 6.5 4 4"/></svg></button></b><span class="eyebrow" style="text-transform:none">@${esc(u.id)} <span style="text-transform:uppercase">· ${u.provider === 'kakao' ? 'KAKAO' : 'GOOGLE'}</span></span></div></div>
-    <div class="stats"><div><strong>${state.keep.size}</strong><span class="eyebrow">Keep</span></div><div><strong>${mine.length}</strong><span class="eyebrow">올린 화제</span></div><div><strong>${state.visited.size}</strong><span class="eyebrow">가본 나라</span></div><div><strong>${state.fav.size}</strong><span class="eyebrow">관심 나라</span></div></div>
+    <div class="stats"><div><strong>${keepN()}</strong><span class="eyebrow">Keep</span></div><div><strong>${mine.length}</strong><span class="eyebrow">올린 화제</span></div><div><strong>${state.visited.size}</strong><span class="eyebrow">가본 나라</span></div><div><strong>${state.fav.size}</strong><span class="eyebrow">관심 나라</span></div></div>
     <div class="sec"><h2>내가 올린 화제</h2><span class="eyebrow">${mine.length}</span></div>
     ${mine.length ? `<div class="my-grid">${mine.slice(0, state.myShown).map(p => `<div class="mg" data-act="editpost" data-id="${p.id}" role="button" tabindex="0" aria-label="${esc(p.title)} 수정">
       <div class="mg-th">${p.photo ? `<img src="${p.photo}" alt="" loading="lazy">` : poster(p.pat || 0, CITY[p.city].cc, p.id)}</div>
@@ -2193,7 +2193,7 @@ const App = (() => {
     my: '<circle cx="12" cy="8.5" r="3.6"/><path d="M4.8 20c.6-3.8 3.7-6 7.2-6s6.6 2.2 7.2 6"/>'
   };
   const renderNav = () => {
-    $('#nav').innerHTML = TABS.map(v => `<button data-act="tab" data-tab="${v}"${state.tab === v ? ' aria-current="page"' : ''}><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[v]}</svg><span>${COPY.nav[v]}</span>${v === 'keep' && state.user && state.keep.size ? `<em class="count">${state.keep.size}</em>` : ''}</button>`).join('');
+    $('#nav').innerHTML = TABS.map(v => `<button data-act="tab" data-tab="${v}"${state.tab === v ? ' aria-current="page"' : ''}><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[v]}</svg><span>${COPY.nav[v]}</span>${v === 'keep' && state.user && keepN() ? `<em class="count">${keepN()}</em>` : ''}</button>`).join('');
   };
   function setFocus(cc) {
     const ft = $('#ft'), fs = $('#fs'), co = cc && CO[cc];
