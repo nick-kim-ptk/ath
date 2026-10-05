@@ -1,0 +1,2358 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>지구 근황</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Unbounded:wght@700;800;900&family=Outfit:wght@600;700&display=swap">
+<style>html,body{margin:0}body{font:14px system-ui,sans-serif}
+/* 레이아웃: 한 손에 들어오는 세로 앱. 지구본이 주인공이고, 나머지는 큰 타이포와 가는 선으로만 말한다. */
+:root {
+  --bg:#E9ECF3; --paper:#F7F8FC; --ink:#11142B; --mute:#626883; --line:rgba(17,20,43,.13);
+  --accent:#AEFF1C; --accent-ink:#4A7C00; --on-accent:#0B1A10; --hot:#FF4A2B; --on-hot:#FFFFFF; --outer:#DCE0EB;
+  --g-ocean:#FDFDFF; --g-land:#B3BBD6; --g-grid:rgba(17,20,43,.07);
+  --g-shade0:rgba(255,255,255,.65); --g-shade1:rgba(17,20,43,.13); --g-rim:rgba(17,20,43,.2); --shadow:rgba(17,20,43,.16);
+  --f-display:'Anybody','Arial Narrow','Noto Sans KR',sans-serif;
+  --f-body:'Noto Sans KR',system-ui,-apple-system,'Apple SD Gothic Neo',sans-serif;
+  --f-mono:'DM Mono',ui-monospace,Menlo,monospace;
+  --gutter:20px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:#0E1122; --paper:#171B33; --ink:#ECEEFA; --mute:#9AA0C0; --line:rgba(236,238,250,.14);
+    --accent:#AEFF1C; --accent-ink:#AEFF1C; --on-accent:#0B1A10; --hot:#FF6A4D; --outer:#080A16;
+    --g-ocean:#171C2A; --g-land:#4B5645; --g-edge:#D6FF7A; --g-grid:rgba(236,238,250,.07);
+    --g-shade0:rgba(255,255,255,.08); --g-shade1:rgba(0,0,0,.38); --g-rim:rgba(236,238,250,.16); --shadow:rgba(0,0,0,.5);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg:#0E1122; --paper:#171B33; --ink:#ECEEFA; --mute:#9AA0C0; --line:rgba(236,238,250,.14);
+  --accent:#AEFF1C; --accent-ink:#AEFF1C; --on-accent:#0B1A10; --hot:#FF6A4D; --outer:#080A16;
+  --g-ocean:#171C2A; --g-land:#4B5645; --g-edge:#D6FF7A; --g-grid:rgba(236,238,250,.07);
+  --g-shade0:rgba(255,255,255,.08); --g-shade1:rgba(0,0,0,.38); --g-rim:rgba(236,238,250,.16); --shadow:rgba(0,0,0,.5);
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing:border-box; }
+html, body { height:100%; }
+body { margin:0; background:var(--outer); color:var(--ink); font:400 14px/1.5 var(--f-body); -webkit-font-smoothing:antialiased; overflow:hidden; }
+button { font:inherit; color:inherit; background:none; border:0; padding:0; cursor:pointer; text-align:inherit; -webkit-tap-highlight-color:transparent; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, .pin:focus-visible { outline:2px solid var(--accent-ink); outline-offset:2px; }
+h1,h2,h3,p { margin:0; }
+.sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+
+.app { height:100%; max-width:480px; margin:0 auto; display:flex; flex-direction:column; background:var(--bg); position:relative; overflow:hidden; }
+@media (min-width:520px) { .app { border-inline:1px solid var(--line); } }
+.views { flex:1; min-height:0; position:relative; }
+.view { position:absolute; inset:0; overflow-y:auto; overflow-x:hidden; display:none; overscroll-behavior:contain; }
+.view.on { display:block; }
+.view-pad { padding:22px var(--gutter) 40px; }
+
+/* ---------- 하단 내비게이션: 글자만으로 ---------- */
+.nav { display:grid; grid-template-columns:repeat(5,1fr); border-top:1px solid var(--line); background:var(--bg); padding:2px 6px 4px; }
+.nav button { padding:13px 0 11px; text-align:center; font:700 12px/1 var(--f-display); font-stretch:75%; letter-spacing:.12em; color:var(--mute); position:relative; }
+.nav button[aria-current="page"] { color:var(--ink); }
+.nav button[aria-current="page"]::before { content:''; position:absolute; left:50%; top:3px; width:5px; height:5px; margin-left:-2.5px; border-radius:50%; background:var(--accent-ink); }
+.nav .count { font:500 9px var(--f-mono); margin-left:3px; color:var(--accent-ink); letter-spacing:0; vertical-align:top; }
+
+/* ---------- 공통 조각 ---------- */
+.eyebrow { font:500 10.5px/1 var(--f-mono); letter-spacing:.14em; text-transform:uppercase; color:var(--mute); }
+.big { font:900 clamp(40px,13vw,58px)/.92 var(--f-display); font-stretch:62%; letter-spacing:-.01em; text-transform:uppercase; }
+.sub { color:var(--mute); font-size:13px; margin-top:8px; }
+.code { font:700 11px/1 var(--f-mono); letter-spacing:.08em; }
+.tag { display:inline-flex; align-items:center; gap:5px; font:500 10px/1 var(--f-mono); letter-spacing:.1em; padding:4px 8px 3px; border-radius:999px; border:1px solid var(--line); color:var(--ink); white-space:nowrap; }
+.tag--hot { background:var(--hot); border-color:var(--hot); color:var(--on-hot); }
+.tag--rising { border-color:var(--ink); }
+.tag--new { background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+.tag--talked { color:var(--mute); border-style:dashed; }
+.pill { display:inline-flex; align-items:center; gap:6px; height:34px; padding:0 14px; border-radius:999px; border:1px solid var(--line); font:700 13px var(--f-body); white-space:nowrap; }
+.pill.on { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+.keep-btn { display:inline-flex; align-items:center; gap:6px; height:34px; padding:0 14px; border-radius:999px; border:1.5px solid var(--ink); font:800 13px var(--f-display); font-stretch:85%; letter-spacing:.06em; text-transform:uppercase; transition:transform .2s; white-space:nowrap; }
+.keep-btn .plus { display:inline-block; transition:transform .35s cubic-bezier(.3,1.6,.5,1); font-weight:400; }
+.keep-btn.on { background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+.keep-btn.on .plus { transform:rotate(45deg) scale(0); width:0; margin-right:-6px; }
+.keep-btn.pop { animation:pop .45s cubic-bezier(.3,1.6,.5,1); }
+.keep-btn.sm { height:28px; padding:0 11px; font-size:11px; }
+@keyframes pop { 0%{transform:scale(1)} 35%{transform:scale(1.18)} 100%{transform:scale(1)} }
+@keyframes rise { from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none} }
+@keyframes pulse { 0%{transform:scale(.6); opacity:.7} 100%{transform:scale(2.4); opacity:0} }
+@keyframes pinpop { from{scale:.6} to{scale:1} }
+
+.poster { display:block; width:100%; height:100%; }
+.poster svg { display:block; width:100%; height:100%; }
+
+/* ---------- HOME ---------- */
+.home { position:absolute; inset:0; overflow:hidden; }
+.home-head { position:absolute; left:0; right:0; top:0; padding:16px var(--gutter) 0; transition:opacity .35s, transform .6s cubic-bezier(.2,.8,.2,1); z-index:2; pointer-events:none; }
+.has-sel .home-head { opacity:0; transform:translateY(-24px); }
+.brand { display:flex; justify-content:space-between; align-items:baseline; }
+.brand b { font:900 17px var(--f-body); letter-spacing:-.04em; }
+.hero { margin-top:14px; font:900 clamp(30px,9.2vw,40px)/1.03 var(--f-body); letter-spacing:-.055em; }
+.hero span { color:var(--accent-ink); display:block; }
+.hint { margin-top:9px; font:500 11px var(--f-mono); letter-spacing:.06em; color:var(--mute); }
+
+.stage { position:absolute; left:50%; top:var(--stageTop,150px); width:var(--S,340px); height:var(--S,340px); margin-left:calc(var(--S,340px) / -2); transform-origin:50% 0; transition:transform .7s cubic-bezier(.2,.8,.2,1); touch-action:none; user-select:none; -webkit-user-select:none; cursor:grab; z-index:1; }
+.stage.drag { cursor:grabbing; }
+.has-sel .stage { transform:translateY(var(--liftY,-120px)) scale(var(--liftScale,.62)); }
+#globe { position:absolute; inset:0; width:100%; height:100%; display:block; }
+.ring { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; animation:spin 90s linear infinite; }
+.ring text { font:700 9.5px var(--f-display); font-stretch:75%; letter-spacing:.3em; fill:var(--mute); text-transform:uppercase; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+.pin { position:absolute; left:0; top:0; display:flex; align-items:center; gap:6px; padding:8px 9px; margin:-14px 0 0 -14px; border-radius:999px; color:var(--ink); will-change:transform; transition:opacity .2s; }
+.pin i { width:9px; height:9px; border-radius:50%; background:var(--pc); box-shadow:0 0 0 2px var(--g-ocean); position:relative; flex:none; }
+.pin i::after { content:''; position:absolute; inset:0; border-radius:50%; background:var(--pc); animation:pulse 2.2s ease-out infinite; }
+.pin .pc { font:700 10px/1 var(--f-mono); letter-spacing:.08em; background:var(--g-ocean); padding:3px 5px 2px; border-radius:4px; box-shadow:0 0 0 1px var(--line); }
+.pin .pn, .pin .pk { display:none; }
+.pin.focus { z-index:5; background:var(--ink); color:var(--bg); padding:7px 12px 7px 9px; animation:pinpop .32s cubic-bezier(.3,1.5,.5,1) both; flex-wrap:wrap; max-width:190px; row-gap:1px; transform-origin:14px 50%; }
+.pin.focus .pc { display:none; }
+.pin.focus i { box-shadow:0 0 0 2px var(--ink); }
+.pin.focus .pn { display:block; font:800 15px/1 var(--f-display); font-stretch:70%; letter-spacing:.04em; text-transform:uppercase; }
+.pin.focus .pk { display:block; flex-basis:100%; font:700 11.5px/1.3 var(--f-body); opacity:.85; padding-left:15px; }
+.pin.sel { z-index:6; }
+.pin.sel:not(.focus) .pc { background:var(--ink); color:var(--bg); box-shadow:none; }
+
+.dock { position:absolute; left:0; right:0; bottom:0; padding:0 var(--gutter) 14px; display:grid; gap:10px; transition:transform .5s cubic-bezier(.2,.8,.2,1), opacity .3s; z-index:3; }
+.has-sel .dock { transform:translateY(130%); opacity:0; pointer-events:none; }
+.rail { display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; margin-inline:calc(var(--gutter) * -1); padding-inline:var(--gutter); }
+.rail::-webkit-scrollbar { display:none; }
+.chip { flex:none; display:inline-flex; align-items:center; gap:7px; padding:8px 12px 7px; border-radius:999px; border:1px solid var(--line); font:800 12.5px/1 var(--f-display); font-stretch:75%; letter-spacing:.1em; text-transform:uppercase; }
+.chip i { width:7px; height:7px; border-radius:50%; background:var(--pc); }
+.btn-surprise { height:52px; border-radius:999px; background:var(--ink); color:var(--bg); display:flex; align-items:center; justify-content:space-between; padding:0 22px; font:900 17px var(--f-display); font-stretch:75%; letter-spacing:.08em; text-transform:uppercase; }
+.btn-surprise svg { width:22px; height:22px; }
+
+/* ---------- 아래에서 올라오는 시트 ---------- */
+.sheet { position:absolute; left:0; right:0; bottom:0; top:var(--sheetTop,300px); background:var(--paper); border-radius:24px 24px 0 0; box-shadow:0 -14px 44px var(--shadow); transform:translateY(106%); transition:transform .6s cubic-bezier(.2,.8,.2,1); display:flex; flex-direction:column; z-index:4; pointer-events:none; }
+.sheet.open { transform:none; pointer-events:auto; }
+.sheet-head { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; padding:18px var(--gutter) 12px; }
+.sheet-title { font:900 clamp(40px,12.5vw,54px)/.88 var(--f-display); font-stretch:62%; letter-spacing:-.005em; text-transform:uppercase; }
+.sheet-meta { margin-top:9px; display:flex; flex-wrap:wrap; gap:4px 12px; font:500 10.5px var(--f-mono); letter-spacing:.08em; color:var(--mute); }
+.sheet-ctl { display:flex; gap:6px; flex:none; }
+.round { width:36px; height:36px; border-radius:50%; border:1px solid var(--line); display:grid; place-items:center; font:500 15px var(--f-mono); }
+.kw-list { overflow-y:auto; padding:0 var(--gutter) 22px; flex:1; min-height:0; }
+.kw { display:grid; grid-template-columns:1fr auto; gap:3px 12px; padding:14px 0 15px; border-top:1px solid var(--line); width:100%; opacity:0; }
+.sheet.open .kw { animation:rise .55s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--i) * 70ms + 260ms); }
+.kw-title { font:900 clamp(23px,7vw,28px)/1.12 var(--f-body); letter-spacing:-.05em; display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
+.kw-desc { color:var(--mute); font-size:12.5px; grid-column:1; }
+.kw-go { grid-row:1 / 3; grid-column:2; align-self:center; font:500 20px var(--f-mono); color:var(--accent-ink); }
+
+.sp { padding:22px var(--gutter) 24px; display:flex; flex-direction:column; gap:6px; overflow-y:auto; flex:1; min-height:0; }
+.sp-lead { font:800 17px/1.3 var(--f-body); letter-spacing:-.03em; }
+.sp-city { font:500 11px var(--f-mono); letter-spacing:.1em; color:var(--mute); margin-top:14px; text-transform:uppercase; }
+.sp-title { font:900 clamp(40px,12.5vw,56px)/.9 var(--f-display); font-stretch:62%; text-transform:uppercase; margin-top:4px; }
+.sp-ko { font:900 20px var(--f-body); letter-spacing:-.04em; margin-top:6px; }
+.sp-short { color:var(--mute); font-size:13px; margin-top:4px; }
+.sp-btns { display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; }
+.sp-btns .main { height:44px; padding:0 20px; background:var(--accent); color:var(--on-accent); border-radius:999px; font:800 14px var(--f-body); }
+.sp-btns .keep-btn, .sp-btns .pill { height:44px; }
+
+.toast { position:absolute; left:50%; bottom:86px; transform:translate(-50%,20px); opacity:0; display:flex; align-items:center; gap:14px; background:var(--ink); color:var(--bg); padding:11px 16px; border-radius:999px; font:700 13px var(--f-body); z-index:60; pointer-events:none; transition:transform .35s cubic-bezier(.2,.8,.2,1), opacity .25s; white-space:nowrap; max-width:calc(100% - 32px); }
+.toast.on { transform:translate(-50%,0); opacity:1; pointer-events:auto; }
+.toast button { font:800 12px var(--f-display); font-stretch:80%; letter-spacing:.08em; text-transform:uppercase; color:var(--accent-ink); filter:brightness(1.25); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ring, .pin i::after { animation:none; }
+  .sheet, .stage, .home-head, .dock, .toast { transition-duration:.01ms; }
+  .sheet.open .kw { animation:none; opacity:1; }
+  .pin.focus { animation:none; }
+}
+
+/* ---------- DISCOVER / FOLLOWING ---------- */
+.view-head { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; }
+.seg { display:flex; gap:22px; margin-top:20px; border-bottom:1px solid var(--line); }
+.seg button { padding:0 0 11px; font:800 14px var(--f-display); font-stretch:80%; letter-spacing:.1em; color:var(--mute); text-transform:uppercase; position:relative; }
+.seg button[aria-selected="true"] { color:var(--ink); }
+.seg button[aria-selected="true"]::after { content:''; position:absolute; left:0; right:0; bottom:-1px; height:3px; background:var(--accent); }
+.filters { display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; margin:16px calc(var(--gutter) * -1) 0; padding:0 var(--gutter); }
+.filters::-webkit-scrollbar { display:none; }
+.feed { margin-top:6px; }
+.fi { display:block; width:100%; padding:18px 0; border-bottom:1px solid var(--line); animation:rise .5s both; animation-delay:calc(var(--i) * 40ms); }
+.fi-img { position:relative; aspect-ratio:4 / 3; max-width:100%; border-radius:6px; overflow:hidden; background:var(--paper); }
+.fi-img .tag { position:absolute; left:10px; top:10px; background:var(--bg); }
+.fi-img .tag--hot { background:var(--hot); }
+.fi-img .tag--new { background:var(--accent); }
+.fi-cc { position:absolute; right:12px; bottom:6px; font:900 64px/1 var(--f-display); font-stretch:50%; color:var(--cc-ink); opacity:.92; letter-spacing:-.01em; }
+.fi-meta { display:flex; align-items:center; gap:8px; margin-top:12px; color:var(--mute); font:500 10.5px var(--f-mono); letter-spacing:.08em; text-transform:uppercase; }
+.fi-title { margin-top:7px; font:900 clamp(26px,8vw,32px)/1.1 var(--f-body); letter-spacing:-.055em; }
+.fi-desc { margin-top:6px; color:var(--mute); font-size:13.5px; }
+.fi-foot { display:flex; justify-content:space-between; align-items:center; margin-top:12px; }
+.fi-row { display:grid; grid-template-columns:1fr 92px; gap:14px; align-items:start; }
+.fi-row .fi-img { aspect-ratio:1; border-radius:6px; }
+.fi-row .fi-cc { font-size:34px; right:6px; bottom:2px; }
+.fi-row .fi-title { font-size:23px; margin-top:6px; }
+.more { width:100%; margin-top:20px; height:46px; border-radius:999px; border:1px solid var(--ink); text-align:center; font:800 13px var(--f-display); font-stretch:80%; letter-spacing:.12em; text-transform:uppercase; }
+
+.up { padding:18px 0; border-bottom:1px solid var(--line); animation:rise .5s both; animation-delay:calc(var(--i) * 60ms); }
+.up-lead { font:800 15px/1.35 var(--f-body); letter-spacing:-.035em; }
+.up-lead em { font-style:normal; color:var(--accent-ink); }
+.up-card { display:block; width:100%; margin-top:12px; padding:14px; border-radius:6px; background:var(--paper); }
+.up-card b { display:block; font:700 15px/1.3 var(--f-body); letter-spacing:-.03em; }
+.up-card span { display:block; margin-top:5px; color:var(--mute); font:500 10.5px var(--f-mono); letter-spacing:.06em; }
+.divider { margin:26px 0 4px; display:flex; align-items:center; gap:12px; }
+.divider::after { content:''; flex:1; height:1px; background:var(--line); }
+
+.empty { padding:56px 0 20px; }
+.empty p { font:800 20px/1.35 var(--f-body); letter-spacing:-.04em; max-width:15em; }
+.empty .main { margin-top:20px; height:46px; padding:0 22px; border-radius:999px; background:var(--accent); color:var(--on-accent); font:800 14px var(--f-body); }
+
+/* ---------- LOCAL ---------- */
+.rail-cities { display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; margin:18px calc(var(--gutter) * -1) 0; padding:0 var(--gutter); }
+.rail-cities::-webkit-scrollbar { display:none; }
+.sec { display:flex; justify-content:space-between; align-items:baseline; margin:30px 0 4px; }
+.sec h2 { font:900 22px/1 var(--f-display); font-stretch:68%; letter-spacing:.02em; text-transform:uppercase; }
+.sec .eyebrow { text-align:right; }
+.mini { display:grid; grid-template-columns:1fr auto; align-items:center; gap:10px; padding:13px 0; border-bottom:1px solid var(--line); width:100%; }
+.mini b { font:800 18px/1.2 var(--f-body); letter-spacing:-.045em; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.mini .go { font:500 17px var(--f-mono); color:var(--accent-ink); }
+.share { width:100%; height:54px; margin-top:16px; border-radius:999px; background:var(--accent); color:var(--on-accent); display:flex; align-items:center; justify-content:space-between; padding:0 22px; font:800 15px var(--f-body); letter-spacing:-.02em; }
+.share small { font:500 10.5px var(--f-mono); letter-spacing:.1em; text-transform:uppercase; opacity:.85; }
+.pp { padding:18px 0; border-bottom:1px solid var(--line); animation:rise .5s both; animation-delay:calc(var(--i) * 50ms); }
+.pp-img { aspect-ratio:5 / 4; border-radius:6px; overflow:hidden; background:var(--paper); }
+.pp-img img { width:100%; height:100%; object-fit:cover; display:block; }
+.pp-meta { margin-top:11px; display:flex; flex-wrap:wrap; gap:3px 10px; font:500 10.5px var(--f-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--mute); }
+.pp-meta .you { color:var(--accent-ink); }
+.pp-title { margin-top:6px; font:900 22px/1.15 var(--f-body); letter-spacing:-.05em; }
+.pp-text { margin-top:5px; color:var(--mute); font-size:13.5px; }
+.pp-foot { margin-top:11px; display:flex; justify-content:space-between; align-items:center; font:500 11px var(--f-mono); color:var(--mute); }
+.seen { display:inline-flex; align-items:center; gap:7px; height:30px; padding:0 12px; border-radius:999px; border:1px solid var(--line); font:700 12px var(--f-body); color:var(--ink); }
+.seen.on { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+.seen.pop { animation:pop .4s cubic-bezier(.3,1.6,.5,1); }
+
+/* ---------- KEEP ---------- */
+.kp { position:relative; overflow:hidden; border-bottom:1px solid var(--line); animation:rise .5s both; animation-delay:calc(var(--i) * 50ms); }
+.kp-del { position:absolute; right:0; top:0; bottom:0; width:96px; display:grid; place-items:center; background:var(--hot); color:var(--on-hot); font:800 12px var(--f-display); font-stretch:80%; letter-spacing:.1em; text-transform:uppercase; }
+.kp-in { position:relative; background:var(--bg); display:grid; grid-template-columns:auto 1fr auto; gap:14px; align-items:center; padding:16px 0; touch-action:pan-y; transition:transform .25s cubic-bezier(.2,.8,.2,1); }
+.kp-in.dragging { transition:none; }
+.kp-cc { width:48px; height:48px; border-radius:50%; display:grid; place-items:center; font:900 17px var(--f-display); font-stretch:75%; letter-spacing:.04em; background:var(--cc-bg); color:var(--cc-ink); }
+.kp-title { font:900 22px/1.15 var(--f-body); letter-spacing:-.05em; text-align:left; }
+.kp-en { margin-top:2px; font:500 10.5px var(--f-mono); letter-spacing:.06em; color:var(--mute); text-transform:uppercase; }
+.kp-x { width:34px; height:34px; border-radius:50%; border:1px solid var(--line); display:grid; place-items:center; font:400 16px var(--f-mono); color:var(--mute); }
+.note { margin-top:22px; padding:12px 14px; border-radius:6px; background:var(--paper); color:var(--mute); font-size:12px; display:flex; gap:10px; align-items:center; }
+.note b { font:500 10px var(--f-mono); letter-spacing:.1em; color:var(--accent-ink); flex:none; }
+
+/* ---------- MY ---------- */
+.me { display:flex; align-items:center; gap:14px; margin-top:20px; }
+.avatar { width:62px; height:62px; border-radius:50%; background:var(--ink); color:var(--bg); display:grid; place-items:center; font:900 28px var(--f-display); font-stretch:60%; }
+.me b { display:block; font:900 22px/1.1 var(--f-body); letter-spacing:-.05em; }
+.stats { display:grid; grid-template-columns:repeat(3,1fr); margin-top:22px; border-block:1px solid var(--line); }
+.stats div { padding:14px 0; }
+.stats div + div { padding-left:14px; border-left:1px solid var(--line); }
+.stats strong { display:block; font:900 36px/1 var(--f-display); font-stretch:62%; font-variant-numeric:tabular-nums; }
+.visited { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+.visited span { font:700 11px/1 var(--f-mono); letter-spacing:.08em; padding:7px 9px 6px; border-radius:999px; border:1px dashed var(--line); color:var(--mute); }
+.visited span.on { border:1px solid var(--cc-bg); background:var(--cc-bg); color:var(--cc-ink); }
+.theme-seg { display:flex; gap:6px; margin-top:12px; }
+.danger { margin-top:14px; height:42px; padding:0 16px; border-radius:999px; border:1px solid var(--line); font:700 13px var(--f-body); color:var(--mute); }
+.my-post { display:grid; grid-template-columns:56px 1fr auto; gap:12px; align-items:center; padding:12px 0; border-bottom:1px solid var(--line); }
+.my-post .th { width:56px; height:56px; border-radius:6px; overflow:hidden; background:var(--paper); }
+.my-post .th img { width:100%; height:100%; object-fit:cover; display:block; }
+.my-post b { display:block; font:800 16px/1.25 var(--f-body); letter-spacing:-.04em; }
+
+/* ---------- 상세 화면 / 올리기 화면 ---------- */
+.layer { position:absolute; inset:0; z-index:30; background:var(--bg); overflow-y:auto; overscroll-behavior:contain; transform:translateX(104%); transition:transform .5s cubic-bezier(.2,.8,.2,1); visibility:hidden; }
+.layer.open { transform:none; visibility:visible; }
+.layer.up-from { transform:translateY(104%); }
+.layer.up-from.open { transform:none; }
+.d-bar { position:sticky; top:0; z-index:5; display:flex; justify-content:space-between; align-items:center; padding:10px var(--gutter); background:color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
+.back { display:inline-flex; align-items:center; gap:8px; height:36px; padding-right:8px; font:800 13px var(--f-display); font-stretch:80%; letter-spacing:.1em; text-transform:uppercase; }
+.d-poster { position:relative; aspect-ratio:16 / 11; overflow:hidden; background:var(--paper); }
+.d-cc { position:absolute; left:14px; bottom:-4px; font:900 clamp(96px,32vw,150px)/.84 var(--f-display); font-stretch:50%; color:var(--cc-ink); letter-spacing:-.02em; opacity:.95; }
+.d-body { padding:20px var(--gutter) 48px; }
+.d-meta { display:flex; align-items:center; flex-wrap:wrap; gap:8px 10px; font:500 11px var(--f-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--mute); }
+.d-title { margin-top:12px; font:900 clamp(40px,12.5vw,54px)/1.02 var(--f-body); letter-spacing:-.055em; word-spacing:.08em; }
+.d-en { margin-top:6px; font:800 14px var(--f-display); font-stretch:75%; letter-spacing:.1em; text-transform:uppercase; color:var(--mute); }
+.d-short { margin-top:18px; font:700 19px/1.4 var(--f-body); letter-spacing:-.04em; padding-left:14px; border-left:3px solid var(--accent); }
+.d-sec { margin-top:34px; font:900 20px/1 var(--f-display); font-stretch:68%; letter-spacing:.03em; text-transform:uppercase; }
+.why { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+.why span { padding:9px 14px; border-radius:999px; background:var(--ink); color:var(--bg); font:700 14px var(--f-body); letter-spacing:-.03em; }
+.what { margin-top:8px; }
+.what > div { padding:14px 0; border-bottom:1px solid var(--line); }
+.what b { display:block; font:800 16px/1.3 var(--f-body); letter-spacing:-.04em; }
+.what p { margin-top:4px; color:var(--mute); font-size:13.5px; }
+.nw { display:grid; grid-template-columns:76px 1fr; gap:14px; width:100%; padding:14px 0; border-bottom:1px solid var(--line); align-items:start; }
+.nw .th { width:76px; height:76px; border-radius:6px; overflow:hidden; }
+.nw b { display:block; font:800 15.5px/1.3 var(--f-body); letter-spacing:-.04em; }
+.nw .src { margin-top:4px; font:500 10.5px var(--f-mono); letter-spacing:.06em; color:var(--mute); }
+.nw p { margin-top:4px; color:var(--mute); font-size:12.5px; }
+.sample { display:inline-block; margin-left:8px; font:500 9px var(--f-mono); letter-spacing:.1em; padding:2px 6px; border:1px dashed var(--line); border-radius:4px; vertical-align:middle; color:var(--mute); }
+.next { width:100%; margin-top:30px; padding:18px 0 0; border-top:2px solid var(--ink); display:flex; justify-content:space-between; align-items:flex-end; gap:12px; }
+.next small { display:block; font:500 10.5px var(--f-mono); letter-spacing:.1em; color:var(--mute); text-transform:uppercase; }
+.next b { display:block; margin-top:6px; font:900 26px/1.1 var(--f-body); letter-spacing:-.055em; }
+.next .arrow { font:500 28px var(--f-mono); color:var(--accent-ink); }
+
+/* 올리기 폼 */
+.form { padding:6px var(--gutter) 40px; display:grid; gap:20px; }
+.fld { display:grid; gap:8px; }
+.fld > label, .fld > .lab { font:500 10.5px var(--f-mono); letter-spacing:.12em; text-transform:uppercase; color:var(--mute); display:flex; justify-content:space-between; }
+.in { width:100%; box-sizing:border-box; background:transparent; border:0; border-bottom:2px solid var(--ink); border-radius:0; padding:8px 0 10px; color:var(--ink); font:800 22px/1.25 var(--f-body); letter-spacing:-.045em; }
+.in.sm { font:600 16px/1.3 var(--f-body); letter-spacing:-.02em; border-bottom-width:1px; }
+.in::placeholder { color:var(--mute); opacity:.6; font-weight:600; }
+select.in { appearance:none; -webkit-appearance:none; background-image:linear-gradient(45deg,transparent 50%,var(--ink) 50%),linear-gradient(135deg,var(--ink) 50%,transparent 50%); background-position:calc(100% - 14px) 55%, calc(100% - 8px) 55%; background-size:6px 6px; background-repeat:no-repeat; }
+textarea.in { resize:none; min-height:84px; font-size:17px; font-weight:600; border:1px solid var(--line); border-bottom:2px solid var(--ink); padding:10px 12px; border-radius:6px 6px 0 0; }
+.cats { display:flex; flex-wrap:wrap; gap:6px; }
+.photo { position:relative; aspect-ratio:5 / 3; border:1.5px dashed var(--mute); border-radius:6px; display:grid; place-items:center; text-align:center; color:var(--mute); overflow:hidden; cursor:pointer; }
+.photo input { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+.photo img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.photo b { display:block; font:900 20px var(--f-body); letter-spacing:-.04em; color:var(--ink); }
+.go-btn { height:54px; border-radius:999px; background:var(--accent); color:var(--on-accent); font:800 16px var(--f-body); text-align:center; }
+.go-btn:disabled { background:var(--line); color:var(--mute); cursor:not-allowed; }
+
+/* ---------- 뒤에 오는 보정 ---------- */
+.hd { margin-top:10px; font:900 clamp(30px,9vw,38px)/1.08 var(--f-body); letter-spacing:-.06em; max-width:11em; text-wrap:balance; }
+.fi-cc, .d-cc { color:var(--cc-bg); -webkit-text-stroke:2.5px var(--cc-fg); paint-order:stroke fill; }
+.kp-cc { background:var(--cc-bg); color:var(--cc-fg); }
+.visited span.on { border:1px solid var(--cc-bg); background:var(--cc-bg); color:var(--cc-fg); }
+.kp-main { min-width:0; text-align:left; }
+.stats strong small { font-weight:500; }
+.view-pad .eyebrow + .hd { margin-top:12px; }
+.fi:last-child { border-bottom:0; }
+.sec h2 { font-weight:900; }
+.sheet .kw:first-child { border-top:1px solid var(--line); }
+.layer .d-bar .keep-btn { margin-left:auto; }
+.photo div { padding:0 20px; font-size:12.5px; }
+@media (max-height:640px) { .hero { font-size:28px; } .hint { display:none; } }
+
+/* ---------- 흰 배경 + Pretendard ---------- */
+:root {
+  --bg:#FFFFFF; --paper:#F3F5F9; --outer:#EEF0F5; --line:rgba(17,20,43,.1);
+  --g-ocean:#F4F8EC; --g-land:#CAD1BE; --g-edge:#5E9400; --g-shade0:rgba(255,255,255,.7); --g-shade1:rgba(17,20,43,.12);
+  --f-display:'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+  --f-body:var(--f-display); --f-mono:var(--f-display);
+}
+body, button, input, select, textarea { font-family:var(--f-body); }
+.eyebrow, .code, .tag, .sheet-meta, .pp-meta, .fi-meta { font-variant-numeric:tabular-nums; }
+.big, .sheet-title, .sp-title, .d-sec, .sec h2, .stats strong, .fi-cc, .d-cc, .kp-cc, .avatar { font-stretch:100%; letter-spacing:-.03em; }
+.sheet-title, .sp-title { font-weight:900; line-height:.95; }
+.fi-cc, .d-cc { letter-spacing:-.04em; }
+
+/* 홈 상단: 가운데에 온 나라 이름 */
+.focus-title { position:absolute; left:0; right:0; top:0; z-index:3; text-align:center; padding:18px 20px 0; pointer-events:none; transition:opacity .35s, transform .5s cubic-bezier(.2,.8,.2,1); }
+.has-sel .focus-title { opacity:0; transform:translateY(-16px); }
+#ft { font:900 clamp(50px,16vw,72px)/.95 var(--f-display); letter-spacing:-.04em; text-transform:uppercase; }
+#fs { margin-top:8px; font:600 13px var(--f-body); color:var(--mute); letter-spacing:0; }
+#ft.swap, #fs.swap { animation:rise .35s both; }
+
+/* 하단 메뉴: 아이콘 + 라벨 */
+.nav { padding:6px 6px 2px; }
+.nav button { display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px 0 7px; font:600 10.5px/1 var(--f-body); letter-spacing:.01em; text-transform:none; color:var(--mute); }
+.nav button svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.nav button[aria-current="page"] { color:var(--ink); }
+.nav button[aria-current="page"]::before { display:none; }
+.nav button[aria-current="page"] svg { stroke:var(--accent-ink); }
+.nav .count { position:absolute; top:3px; left:calc(50% + 6px); min-width:15px; height:15px; padding:0 4px; margin:0; border-radius:8px; background:var(--accent); color:var(--on-accent); font:700 9.5px/15px var(--f-body); font-style:normal; text-align:center; }
+@media (max-height:640px) { #ft { font-size:44px; } }
+
+.focus-title { z-index:0; }
+#fs:empty { display:none; }
+
+/* 전체 화면 스테이지: 지구본의 크기와 위치는 JS가 움직인다 */
+.stage { left:0; top:0; width:100%; height:100%; margin:0; transform:none !important; transition:none; z-index:1; }
+.stage #globe, .stage canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
+#pins { position:absolute; inset:0; pointer-events:none; }
+#pins .pin { pointer-events:auto; }
+.dock { z-index:3; }
+
+/* 상단 큰 제목: Monument Extended (없으면 비슷한 와이드 서체) */
+#ft { font-family:'Monument Extended','Unbounded','Pretendard Variable','Pretendard',sans-serif; font-weight:800; font-size:clamp(34px,10.5vw,52px); letter-spacing:-.02em; line-height:1; }
+
+/* 인스타 피드형 게시물 */
+.ig-head { margin-top:28px; padding-top:18px; border-top:1px solid var(--line); display:flex; flex-direction:column; gap:3px; }
+.ig-head span { font:800 12px var(--f-mono); letter-spacing:.12em; }
+.ig-head small { font:500 12px var(--f-body); color:var(--mute); }
+.ig-list { display:flex; flex-direction:column; margin:14px calc(var(--gutter) * -1) 0; }
+.ig { padding:0 0 22px; }
+.ig header { display:flex; align-items:center; gap:10px; padding:10px var(--gutter); }
+.ig header > div { flex:1; min-width:0; display:flex; flex-direction:column; line-height:1.25; }
+.ig header b { font:800 13px var(--f-body); letter-spacing:-.02em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ig header small { font:500 11px var(--f-body); color:var(--mute); }
+.ig-av { width:34px; height:34px; border-radius:50%; flex:none; display:grid; place-items:center; background:var(--cc-bg, var(--ink)); color:var(--cc-fg, var(--bg)); font:900 14px var(--f-body); }
+.ig-cat { font:600 10px var(--f-mono); letter-spacing:.06em; color:var(--mute); text-transform:uppercase; }
+.ig-img { aspect-ratio:1 / 1; background:var(--paper); overflow:hidden; }
+.ig-img img, .ig-img .poster { width:100%; height:100%; object-fit:cover; display:block; }
+.ig-act { display:flex; align-items:center; justify-content:space-between; padding:10px var(--gutter) 0; font:500 11px var(--f-mono); color:var(--mute); }
+.ig-cap { padding:8px var(--gutter) 0; font-size:13.5px; line-height:1.5; }
+.ig-cap b { font-weight:800; margin-right:4px; }
+.sp { padding-bottom:96px; }
+
+/* 키워드별 가로 피드 */
+.kwb { border-top:1px solid var(--line); opacity:0; padding-bottom:20px; }
+.sheet.open .kwb { animation:rise .55s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--i) * 70ms + 260ms); }
+.kwb .kw { border-top:0; opacity:1; animation:none !important; }
+.kf { display:flex; gap:12px; overflow-x:auto; scroll-snap-type:x mandatory; margin:12px calc(var(--gutter) * -1) 0; padding:0 var(--gutter) 4px; scroll-padding:0 var(--gutter); scrollbar-width:none; overscroll-behavior-x:contain; -webkit-overflow-scrolling:touch; }
+.kf::-webkit-scrollbar { display:none; }
+.kf-c { flex:none; width:min(80vw, 330px); scroll-snap-align:start; background:var(--bg); border-radius:14px; overflow:hidden; padding-bottom:14px; box-shadow:0 0 0 1px var(--line); }
+.kf-c header { display:flex; align-items:center; gap:9px; padding:10px 12px; }
+.kf-c header > div { flex:1; min-width:0; display:flex; flex-direction:column; line-height:1.25; }
+.kf-c header b { font:800 13px var(--f-body); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.kf-c header small { font:500 11px var(--f-body); color:var(--mute); }
+.kf-img { position:relative; aspect-ratio:4 / 5; background:var(--paper); overflow:hidden; }
+.kf-img .poster { width:100%; height:100%; }
+.kf-ph { position:absolute; left:12px; bottom:12px; right:12px; font:900 22px/1.1 var(--f-body); letter-spacing:-.04em; color:#fff; text-shadow:0 1px 14px rgba(0,0,0,.35); }
+.kf-c .ig-act, .kf-c .ig-cap { padding-left:12px; padding-right:12px; }
+.kf-c .ig-cap { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+@media (prefers-reduced-motion: reduce) { .sheet.open .kwb { animation:none; opacity:1; } }
+.kf-img svg, .ig-img svg { width:100%; height:100%; display:block; }
+
+.pf-sub { color:var(--mute); font-size:13px; margin-top:-2px; }
+.d-body .ig-list.pf { margin-left:calc(var(--gutter) * -1); margin-right:calc(var(--gutter) * -1); }
+
+.pf-more { text-align:center; display:block; width:100%; height:48px; margin-top:4px; border:1px solid var(--line); border-radius:999px; font:800 14px var(--f-body); color:var(--ink); background:var(--bg); }
+.pf-more:active { background:var(--paper); }
+.share { margin-top:14px; }
+
+/* Keep 버튼 위치 통일: 큰/작은 카드 모두 카드 오른쪽 아래 */
+.fi-row .fi-foot { grid-column:1 / -1; margin-top:0; }
+.fi-row { row-gap:12px; }
+.fi-img svg { width:100%; height:100%; display:block; }
+
+/* 한글 줄바꿈: 단어 중간에서 끊지 않고 어절 단위로 */
+body, .view, .sheet, .layer, .nav { word-break:keep-all; overflow-wrap:break-word; line-break:strict; }
+.hd, .sp-lead, .sp-ko, .kw-title, .fi-title, .pp-title, .d-title, .mini b, .kp-title, .up-lead, .ig-head small, .pf-sub { text-wrap:balance; }
+.fi-desc, .kw-desc, .d-short, .pp-text, .sp-short, .ig-cap, .what p, .nw p, .empty p, .note span { text-wrap:pretty; }
+.hd { max-width:15em; }
+
+/* 상세 화면 플로팅 올리기 버튼 */
+.fab-wrap { position:sticky; bottom:0; height:0; z-index:5; pointer-events:none; }
+.fab { position:absolute; right:var(--gutter); bottom:calc(18px + env(safe-area-inset-bottom, 0px)); height:48px; padding:0 18px 0 14px; display:inline-flex; align-items:center; gap:8px; border-radius:999px; background:var(--accent); color:var(--on-accent); font:800 14px var(--f-body); letter-spacing:-.02em; box-shadow:0 8px 24px rgba(20,24,60,.28); pointer-events:auto; white-space:nowrap; }
+.fab span { font:400 22px/1 var(--f-body); margin-top:-2px; }
+.fab:active { transform:scale(.97); }
+
+.cp-link { margin-top:8px; font:500 12px var(--f-body); color:var(--mute); }
+
+/* 검색 */
+.srch { display:flex; align-items:center; gap:10px; height:46px; margin-top:16px; padding:0 14px; border-radius:999px; background:var(--paper); color:var(--mute); }
+.srch svg { width:18px; height:18px; flex:none; }
+.srch input { flex:1; min-width:0; height:100%; background:transparent; border:0; outline:0; font:600 15px var(--f-body); color:var(--ink); letter-spacing:-.02em; -webkit-appearance:none; appearance:none; }
+.srch input::placeholder { color:var(--mute); font-weight:500; }
+.srch:focus-within { box-shadow:0 0 0 2px var(--ink); }
+/* 내가 올린 글: 수정/삭제 */
+.my-act { display:flex; align-items:center; gap:6px; }
+.pill.sm { height:34px; padding:0 13px; font-size:12px; }
+.kp-x.armed { width:auto; padding:0 12px; border-radius:999px; background:var(--hot); border-color:var(--hot); color:#fff; font:800 12px var(--f-body); }
+
+/* 홈 하단: 나라 카드 + 서프라이즈 버튼 */
+.dock { gap:12px; }
+.rail { gap:8px; padding-block:4px; scroll-snap-type:x proximity; }
+.chip { flex:none; scroll-snap-align:center; display:grid; grid-template-columns:auto 1fr; grid-template-rows:auto auto; column-gap:9px; row-gap:2px; align-items:center; width:132px; padding:10px 12px 10px 11px; border-radius:18px; border:1px solid var(--line); background:color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); text-align:left; letter-spacing:0; text-transform:none; font:inherit; transition:background .25s, color .25s, border-color .25s, transform .25s; }
+.chip .cf { grid-row:1 / 3; font-size:26px; line-height:1; }
+.chip .cn { font:900 12px/1.1 var(--f-body); letter-spacing:.06em; text-transform:uppercase; }
+.chip .ck { font:600 11.5px/1.2 var(--f-body); color:var(--mute); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; letter-spacing:-.02em; }
+.chip.on { background:var(--ink); border-color:var(--ink); color:var(--bg); transform:translateY(-3px); box-shadow:0 8px 20px var(--shadow); }
+.chip.on .ck { color:color-mix(in srgb, var(--bg) 72%, transparent); }
+.chip i { display:none; }
+.btn-surprise { position:relative; height:64px; padding:0 18px 0 8px; gap:12px; justify-content:flex-start; overflow:hidden; background:linear-gradient(100deg, var(--ink) 0%, color-mix(in srgb, var(--ink) 78%, var(--accent)) 100%); font-stretch:100%; letter-spacing:0; text-transform:none; box-shadow:0 10px 28px color-mix(in srgb, var(--accent) 35%, transparent); }
+.btn-surprise::after { content:''; position:absolute; inset:0; background:linear-gradient(110deg, transparent 35%, rgba(255,255,255,.22) 50%, transparent 65%); transform:translateX(-120%); animation:sheen 4.8s ease-in-out infinite; pointer-events:none; }
+@keyframes sheen { 0%, 55% { transform:translateX(-120%); } 85%, 100% { transform:translateX(120%); } }
+.sb-dice { width:48px; height:48px; flex:none; border-radius:16px; background:var(--accent); color:var(--on-accent); display:grid; place-items:center; transition:transform .4s cubic-bezier(.3,1.6,.5,1); }
+.sb-dice svg { width:26px; height:26px; }
+.sb-txt { flex:1; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:3px; text-align:left; }
+.sb-txt b { font:900 17px/1 var(--f-body); letter-spacing:.04em; }
+.sb-txt em { font:600 12.5px/1.2 var(--f-body); font-style:normal; letter-spacing:-.02em; opacity:.8; transition:opacity .26s, transform .26s; white-space:nowrap; max-width:100%; overflow:hidden; text-overflow:ellipsis; }
+.sb-txt em.out { opacity:0; transform:translateY(5px); }
+.sb-go { font:700 22px var(--f-body); opacity:.7; }
+.btn-surprise.wiggle .sb-dice { animation:dice 1s cubic-bezier(.3,1.4,.5,1); }
+@keyframes dice { 0% { transform:rotate(0); } 25% { transform:rotate(-24deg) scale(1.1); } 55% { transform:rotate(18deg) scale(1.1); } 80% { transform:rotate(-6deg); } 100% { transform:rotate(0); } }
+.btn-surprise.rolling .sb-dice { animation:roll .55s linear infinite; }
+.btn-surprise.rolling .sb-go { animation:roll .9s linear infinite; }
+.btn-surprise.rolling em { opacity:1; font-weight:800; }
+@keyframes roll { to { transform:rotate(360deg); } }
+.btn-surprise:active { transform:scale(.985); }
+@media (prefers-reduced-motion: reduce) { .btn-surprise::after, .btn-surprise.wiggle .sb-dice, .btn-surprise.rolling .sb-dice, .btn-surprise.rolling .sb-go { animation:none; } }
+
+/* 온도 구분: 뜨거운 곳 / 따뜻한 곳 / 잔잔한 곳 */
+.pin.t-blaze .pc { background:var(--ink); color:var(--bg); box-shadow:none; font-size:11px; padding:4px 7px 3px; }
+.pin.t-blaze i { width:13px; height:13px; box-shadow:0 0 0 3px var(--g-ocean), 0 0 14px var(--pc); }
+.pin.t-blaze i::after { animation-duration:1.4s; }
+.pin.t-calm { opacity:.7; }
+.pin.t-calm i { width:6px; height:6px; }
+.pin.t-calm i::after { animation:none; display:none; }
+.pin.t-calm .pc { font-weight:500; opacity:.8; }
+.chip.t-blaze:not(.on) { border-color:var(--pc); box-shadow:0 0 0 1px var(--pc) inset; }
+.chip.t-blaze .cn::after { content:'HOT'; margin-left:6px; padding:2px 5px 1px; border-radius:4px; background:var(--hot); color:#fff; font:800 9px var(--f-mono); letter-spacing:.06em; vertical-align:1px; }
+.chip.t-calm:not(.on) { opacity:.72; }
+.sheet-meta .heat { font-weight:800; }
+.sheet-meta .heat-blaze { color:var(--hot); }
+#fs { font-size:12.5px; }
+
+/* 로그인 · 가입 · 개인정보 */
+.lg-hero, .form > .eyebrow + .hd { }
+.lg-sub { margin-top:10px; color:var(--mute); font-size:14px; }
+.lg-hero { margin-top:14px; padding-top:6px; }
+.sns { display:grid; gap:10px; margin-top:26px; }
+.sns-btn { display:flex; align-items:center; justify-content:center; gap:10px; height:54px; border-radius:999px; font:800 15px var(--f-body); letter-spacing:-.02em; }
+.sns-btn svg { width:22px; height:22px; flex:none; }
+.sns-btn.kakao { background:#FEE500; color:#191919; }
+.sns-btn.google { background:#fff; color:#1f1f1f; box-shadow:inset 0 0 0 1px #dadce0; }
+.sns-note { margin-top:12px; color:var(--mute); font-size:12px; line-height:1.55; text-wrap:pretty; }
+.sns-note.proto b { font:500 10px var(--f-mono); letter-spacing:.1em; color:var(--accent-ink); margin-right:6px; }
+.lg-legal { margin-top:18px; font:600 12.5px var(--f-body); color:var(--mute); text-decoration:underline; text-underline-offset:3px; }
+.idrow { display:flex; align-items:center; gap:4px; border-bottom:2px solid var(--ink); }
+.idrow i { font:800 22px var(--f-body); font-style:normal; color:var(--mute); }
+.idrow .in { border-bottom:0; flex:1; min-width:0; }
+.fld label span.ok { color:#1E9E5A; } .fld label span.bad { color:var(--hot); }
+.agree { display:grid; gap:2px; }
+.chk { display:flex; align-items:center; gap:10px; padding:11px 0; border-top:1px solid var(--line); font:600 14px/1.35 var(--f-body); }
+.chk.all { border-top:0; font-weight:900; font-size:15px; }
+.chk input { width:20px; height:20px; flex:none; accent-color:var(--accent); margin:0; }
+.chk span { flex:1; min-width:0; }
+.chk em { font-style:normal; font:800 11px var(--f-mono); color:var(--accent-ink); margin-right:6px; }
+.chk button { font:600 12px var(--f-body); color:var(--mute); text-decoration:underline; flex:none; }
+.lg-p { margin-top:8px; font-size:14px; line-height:1.65; color:var(--ink); text-wrap:pretty; }
+.acct { display:grid; margin-top:10px; border-top:1px solid var(--line); }
+.acct .row { display:flex; justify-content:space-between; align-items:center; padding:15px 0; border-bottom:1px solid var(--line); font:700 15px var(--f-body); }
+.acct .row i { font:500 17px var(--f-mono); font-style:normal; color:var(--mute); }
+.wd { margin-top:14px; padding:16px; border-radius:14px; background:var(--paper); }
+.wd b { font:900 17px var(--f-body); letter-spacing:-.03em; }
+.wd ul { margin:10px 0 0; padding-left:18px; font-size:13px; line-height:1.6; color:var(--mute); }
+.wd-btns { display:flex; gap:8px; margin-top:14px; }
+.wd-go { height:42px; padding:0 18px; border-radius:999px; background:var(--hot); color:#fff; font:800 14px var(--f-body); }
+.ig-av.gone { background:var(--line); color:var(--mute); }
+
+/* 로고: 지구가 돌고 있을 때(나라가 가운데에 없을 때) 'EARTH' 자리에 보인다 */
+
+#ft.is-logo { text-transform:none; font-family:'Outfit','Pretendard Variable','Pretendard',sans-serif; font-weight:600; font-size:clamp(46px,14vw,66px); letter-spacing:-.045em; line-height:.9; }
+.logo { display:inline-flex; align-items:flex-start; gap:.04em; }
+.logo-star { width:.34em; height:.34em; margin-top:.02em; fill:var(--accent); transform-origin:50% 50%; animation:twinkle 3.2s ease-in-out infinite; }
+@keyframes twinkle { 0%, 70%, 100% { transform:scale(1) rotate(0); } 82% { transform:scale(1.25) rotate(90deg); } }
+@media (prefers-reduced-motion: reduce) { .logo-star { animation:none; } }
+#ft { height:62px; display:flex; align-items:center; justify-content:center; }
+
+.focus-title { padding-top:34px; }
+
+/* 로그인 영역: 로고 한 번 더 + 문구 */
+.lg-logo { margin-top:16px; font:600 clamp(60px,19vw,80px)/.9 'Outfit','Pretendard Variable','Pretendard',sans-serif; letter-spacing:-.045em; color:var(--ink); }
+.lg-hd { margin-top:14px; font-size:clamp(22px,6.6vw,28px); letter-spacing:-.04em; }
+
+/* 로그인: 전체 화면, 중앙 정렬, 우측 상단 닫기 */
+.auth-page { min-height:100%; display:flex; flex-direction:column; }
+.auth-bar { display:flex; justify-content:flex-end; padding:calc(14px + env(safe-area-inset-top, 0px)) var(--gutter) 6px; }
+.auth-x { width:40px; height:40px; border-radius:50%; border:1px solid var(--line); display:grid; place-items:center; font:500 16px var(--f-body); color:var(--ink); background:var(--bg); }
+.auth-center { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:0 var(--gutter) 72px; }
+.auth-center .lg-logo { margin-top:0; }
+.auth-center .hd { margin-inline:auto; }
+.auth-center .lg-sub { max-width:20em; margin-inline:auto; text-wrap:balance; }
+.auth-center .sns { width:100%; max-width:360px; }
+#signupForm { padding-top:0; }
+
+/* Keep: 키워드 중심 (나라는 여러 개일 수 있다) */
+.kp-in { grid-template-columns:1fr auto; }
+.kp-main { text-align:left; min-width:0; }
+.kp-where { display:flex; flex-wrap:wrap; gap:6px; margin-top:9px; }
+.kw-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 10px 5px 9px; border-radius:999px; border:1px solid var(--line); font:600 11.5px/1 var(--f-body); color:var(--mute); letter-spacing:-.01em; white-space:nowrap; }
+.kw-chip b { font:800 11px/1 var(--f-body); letter-spacing:.04em; text-transform:uppercase; color:var(--ink); }
+.kw-chip.now { border-color:var(--ink); color:var(--ink); }
+.kp-hint { margin-top:8px; color:var(--mute); font-size:12px; letter-spacing:-.02em; }
+.oc-none { color:var(--mute); font-size:13.5px; line-height:1.55; text-wrap:pretty; }
+
+/* 지구본 톤온톤 연두 */
+.pin i { box-shadow:0 0 0 1.5px var(--ink), 0 0 0 3px var(--g-ocean); }
+.pin.t-blaze i { box-shadow:0 0 0 1.5px var(--ink), 0 0 0 3px var(--g-ocean), 0 0 14px var(--pc); }
+.chip.t-blaze:not(.on) { border-color:var(--accent-ink); box-shadow:0 0 0 1px var(--accent-ink) inset; }
+.chip.t-blaze .cn::after { background:var(--accent); color:var(--on-accent); }
+
+.pin .pc { font:700 11px/1 var(--f-body); letter-spacing:0; white-space:nowrap; }
+.pin.t-calm .pc { font-weight:600; }
+
+.d-xwrap { position:sticky; top:0; z-index:6; height:0; }
+.d-x { position:absolute; top:calc(12px + env(safe-area-inset-top,0px)); right:14px; width:40px; height:40px; border-radius:50%; display:grid; place-items:center; font-size:17px; font-weight:700; background:rgba(11,26,16,.55); color:#fff; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+.d-poster { aspect-ratio:4 / 3.6; }
+.d-sec-row { margin-top:34px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.d-sec-row .d-sec { margin-top:0; }
+.d-sec-row .keep-btn { flex:none; margin:0; }
+.d-poster svg { width:100%; height:100%; display:block; }
+
+.keep-btn .kc { font:700 11px var(--f-mono); letter-spacing:0; padding-left:7px; margin-left:1px; border-left:1px solid currentColor; opacity:.7; font-variant-numeric:tabular-nums; line-height:1; }
+.keep-btn.sm .kc { font-size:10px; padding-left:6px; }
+
+.fbar { display:flex; align-items:center; gap:8px; margin-top:12px; flex-wrap:wrap; }
+.fbtn { display:inline-flex; align-items:center; gap:6px; height:36px; padding:0 14px; border-radius:999px; border:1.5px solid var(--ink); font:800 13px var(--f-body); }
+.fbtn svg { width:16px; height:16px; }
+#fchips { display:contents; }
+.fchip { height:36px; padding:0 12px; border-radius:999px; background:var(--accent); color:var(--on-accent); font:800 13px var(--f-body); }
+.fchip span { font-size:11px; margin-left:4px; }
+.fsheet { position:absolute; inset:0; z-index:40; visibility:hidden; pointer-events:none; }
+.fsheet.open { visibility:visible; pointer-events:auto; }
+.fs-scrim { position:absolute; inset:0; background:rgba(0,0,0,.4); opacity:0; transition:opacity .3s; }
+.fsheet.open .fs-scrim { opacity:1; }
+.fs-panel { position:absolute; left:0; right:0; bottom:0; max-height:80%; overflow-y:auto; padding:10px var(--gutter) calc(20px + env(safe-area-inset-bottom,0px)); background:var(--bg); border-radius:22px 22px 0 0; transform:translateY(104%); transition:transform .4s cubic-bezier(.2,.9,.3,1); }
+.fsheet.open .fs-panel { transform:none; }
+.fs-grip { width:40px; height:4px; border-radius:2px; background:var(--line); margin:0 auto 10px; }
+.fs-head { display:flex; justify-content:space-between; align-items:center; font:900 20px var(--f-body); }
+.fs-head button { font:700 13px var(--f-body); color:var(--mute); }
+.fs-lab { margin-top:18px; font:700 11px var(--f-mono); letter-spacing:.1em; color:var(--mute); }
+.fs-pills { margin-top:8px; display:flex; flex-wrap:wrap; gap:8px; }
+.fs-done { margin-top:22px; width:100%; height:50px; border-radius:999px; background:var(--ink); color:var(--bg); font:800 15px var(--f-body); }
+.fs-done { display:flex; align-items:center; justify-content:center; text-align:center; }
+
+</style></head><body>
+<div class="app" id="app">
+  <main class="views">
+
+    <section class="view on" id="v-home" aria-label="HOME">
+      <div class="home" id="home">
+        <div class="focus-title" id="focusTitle" aria-live="polite"><h1 id="ft"></h1><p id="fs"></p></div>
+
+        <div class="stage" id="stage">
+          <canvas id="globe" role="img" aria-label="돌려볼 수 있는 지구본"></canvas>
+          <div id="pins"></div>
+        </div>
+
+        <div class="dock">
+          <div class="rail" id="rail" aria-label="나라 바로 가기"></div>
+          <button class="btn-surprise" id="surpriseBtn" data-act="surprise"></button>
+        </div>
+
+        <section class="sheet" id="sheetCountry" aria-live="polite">
+          <div class="sheet-head">
+            <div>
+              <h2 class="sheet-title" id="shName"></h2>
+              <div class="sheet-meta" id="shMeta"></div>
+            </div>
+            <div class="sheet-ctl">
+              <button class="round" data-act="prev" aria-label="이전 나라">←</button>
+              <button class="round" data-act="next" aria-label="다음 나라">→</button>
+              <button class="round" data-act="close" aria-label="닫기">×</button>
+            </div>
+          </div>
+          <div class="kw-list" id="kwList"></div>
+        </section>
+
+        <section class="sheet" id="sheetSurprise" aria-live="polite">
+          <div class="sp" id="spBody"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="view" id="v-discover" aria-label="DISCOVER"><div class="view-pad" id="discoverBody"></div></section>
+    <section class="view" id="v-local" aria-label="LOCAL"><div class="view-pad" id="localBody"></div></section>
+    <section class="view" id="v-keep" aria-label="KEEP"><div class="view-pad" id="keepBody"></div></section>
+    <section class="view" id="v-my" aria-label="MY"><div class="view-pad" id="myBody"></div></section>
+
+  </main>
+
+  <nav class="nav" id="nav" aria-label="메인 메뉴"></nav>
+
+  <div class="layer" id="detail" aria-label="트렌드 상세"></div>
+  <div class="layer up-from" id="composer" aria-label="트렌드 올리기"></div>
+  <div class="layer up-from" id="auth" aria-label="로그인 · 회원가입"></div>
+  <div class="layer" id="legal" aria-label="개인정보 처리방침"></div>
+  <div class="fsheet" id="fsheet"></div>
+  <div class="toast" id="toast" role="status"></div>
+</div>
+
+<script>
+(async () => {
+/* ---------- GEO · hand-drawn coarse land (lon,lat) ----------
+   Dot-matrix globe 용 윤곽. 정밀한 지도가 아니라 점으로 찍었을 때 대륙이 읽히는 수준. */
+var GEO = { land: {}, water: {}, nation: {} };
+
+GEO.land.eurasia = [
+  -8.9,37.0, -9.5,38.8, -8.8,41.5, -9.3,43.0, -8.0,43.7, -4.0,43.5, -1.5,43.5, -1.3,45.5,
+  -1.2,46.2, -2.3,47.3, -4.5,47.8, -4.8,48.5, -3.0,48.8, -1.6,48.6, -1.3,49.7, 0.2,49.4,
+  1.6,50.3, 2.5,51.1, 4.0,51.7, 4.7,53.0, 7.0,53.5, 8.5,54.0, 8.2,55.5, 8.5,57.0,
+  10.6,57.7, 10.5,59.2, 8.0,58.2, 5.5,58.8, 5.0,61.0, 6.0,62.5, 9.0,63.5, 12.0,65.5,
+  14.5,67.5, 17.0,69.0, 20.0,70.0, 25.0,71.0, 28.0,71.0, 31.0,70.0, 33.5,69.4, 36.0,69.0,
+  41.0,67.0, 44.0,66.6, 44.0,68.5, 46.0,68.0, 52.0,68.0, 54.5,68.5, 60.0,69.5, 66.0,69.2,
+  69.0,73.0, 76.0,72.5, 80.0,73.5, 87.0,74.5, 95.0,76.0, 104.0,77.5, 112.0,76.0, 113.0,74.0,
+  125.0,73.5, 130.0,71.0, 140.0,72.5, 150.0,71.5, 160.0,69.5, 170.0,70.0, 180.0,69.0, 180.0,65.5,
+  176.0,65.0, 170.0,64.0, 178.0,62.3, 173.0,61.5, 170.0,60.0, 164.0,59.8, 163.0,57.5, 162.0,56.0,
+  160.0,53.0, 156.7,51.0, 156.0,53.0, 156.0,57.0, 160.0,60.5, 155.0,59.5, 150.0,59.5, 143.0,59.3,
+  138.0,56.0, 141.0,53.2, 140.5,51.0, 140.0,48.0, 136.0,44.0, 133.0,42.5, 130.0,42.3, 129.7,40.8,
+  128.0,39.0, 129.4,37.0, 129.4,35.2, 126.5,34.5, 126.4,37.0, 125.0,37.7, 125.0,39.5, 121.5,39.0,
+  122.3,40.5, 121.0,40.9, 118.0,39.0, 119.0,37.2, 122.5,37.2, 121.0,35.0, 119.5,34.5, 121.8,31.5,
+  121.9,30.5, 120.5,27.0, 119.0,25.0, 117.0,23.5, 114.0,22.3, 110.0,21.2, 108.3,21.7, 106.6,20.5,
+  105.7,19.0, 108.0,16.0, 109.3,13.0, 109.0,11.5, 107.0,10.3, 105.0,8.6, 104.8,10.3, 102.5,12.0,
+  100.9,13.2, 100.1,12.0, 99.2,10.0, 100.3,8.3, 101.0,6.8, 103.4,4.5, 104.2,1.5, 103.5,1.3,
+  101.5,2.8, 100.4,5.5, 98.5,8.0, 98.4,10.0, 98.7,12.0, 97.7,16.0, 95.5,16.0, 94.3,18.5,
+  92.2,21.0, 91.5,22.8, 89.0,21.8, 86.8,21.0, 86.5,20.0, 84.5,19.0, 82.2,16.5, 80.2,15.2,
+  80.3,13.0, 79.8,10.3, 78.2,8.9, 77.0,8.1, 76.2,10.0, 74.8,13.0, 73.3,17.5, 72.8,20.0,
+  72.6,21.5, 70.5,20.8, 69.0,22.2, 70.5,23.0, 68.4,23.6, 67.0,24.8, 64.0,25.2, 61.5,25.2,
+  57.3,25.7, 56.7,27.0, 54.0,26.7, 51.0,28.5, 48.8,30.0, 48.3,28.0, 50.0,26.5, 51.5,25.2,
+  51.6,24.2, 52.5,24.1, 56.0,26.0, 56.4,24.8, 58.5,23.6, 59.8,22.4, 58.0,20.2, 55.0,17.2,
+  52.0,16.0, 48.0,14.0, 45.0,12.8, 43.3,12.8, 42.8,15.0, 42.5,16.5, 40.5,20.3, 39.0,22.0,
+  37.0,25.5, 35.0,28.0, 34.9,29.5, 34.3,31.3, 35.0,32.8, 35.8,34.6, 36.0,35.8, 36.2,36.7,
+  34.5,36.7, 32.0,36.2, 30.5,36.7, 28.5,36.7, 27.2,37.2, 26.3,38.3, 26.5,40.0, 28.0,41.0,
+  26.0,40.9, 24.0,40.8, 22.9,40.5, 23.5,39.4, 24.0,38.2, 23.2,36.5, 22.0,36.5, 21.2,37.5,
+  21.2,38.3, 20.5,39.2, 19.4,40.4, 19.5,41.8, 19.2,42.3, 16.0,43.5, 14.3,44.8, 13.7,45.6,
+  12.4,45.3, 12.3,44.3, 13.6,43.5, 14.5,42.0, 15.9,41.9, 16.1,41.3, 18.5,40.2, 17.2,40.4,
+  16.6,39.6, 17.1,38.9, 16.1,38.0, 15.7,38.0, 15.9,38.7, 16.0,39.5, 15.5,40.1, 14.3,40.7,
+  13.0,41.3, 11.2,42.5, 10.3,43.8, 8.8,44.4, 7.5,43.8, 6.0,43.0, 4.8,43.4, 3.1,42.4,
+  3.2,41.8, 0.8,41.0, 0.0,39.8, -0.5,38.5, -0.7,37.6, -2.0,36.7, -4.5,36.7, -5.6,36.0,
+  -6.4,36.8
+];
+
+GEO.water.baltic = [
+  10.4,57.6, 11.8,57.6, 12.7,56.5, 12.9,55.4, 14.4,55.5, 16.4,56.3, 16.6,57.5, 18.3,59.0,
+  17.3,60.7, 17.5,62.3, 19.5,63.8, 21.5,65.0, 24.8,65.5, 24.5,64.5, 21.4,63.0, 21.4,61.5,
+  21.6,60.3, 23.3,59.9, 26.6,60.4, 30.0,60.0, 28.3,59.6, 24.4,59.2, 24.0,57.3, 21.6,57.4,
+  21.0,55.7, 19.5,54.4, 16.5,54.5, 14.0,54.0, 11.2,54.0, 10.2,54.5
+];
+
+GEO.water.black = [
+  28.1,41.8, 28.6,44.0, 30.0,45.4, 31.8,46.6, 33.5,46.0, 33.0,45.2, 34.5,44.5, 36.5,45.3,
+  37.8,44.7, 39.5,43.5, 41.5,41.8, 41.0,41.0, 36.0,41.4, 34.5,42.0, 32.0,41.8, 29.2,41.2
+];
+
+GEO.water.caspian = [
+  47.0,45.3, 46.8,43.0, 48.5,41.8, 49.8,40.3, 49.0,38.7, 50.6,37.2, 53.5,36.9, 54.3,38.5,
+  53.0,40.4, 52.8,42.3, 51.5,43.6, 53.0,45.3, 51.0,46.8, 49.0,46.5
+];
+
+GEO.land.africa = [
+  32.3,31.3, 29.0,30.9, 25.0,31.7, 23.0,32.5, 20.0,32.0, 19.0,30.3, 16.0,31.2, 15.0,32.3,
+  11.5,33.2, 10.2,34.0, 11.0,37.0, 9.8,37.3, 8.0,36.9, 5.0,36.8, 2.0,36.6, -1.0,35.3,
+  -2.0,35.1, -5.3,35.9, -6.5,34.0, -9.5,30.5, -10.0,29.0, -13.0,27.5, -14.5,26.0, -16.5,23.5,
+  -17.0,21.0, -16.3,19.0, -16.5,16.0, -17.4,14.7, -16.7,13.5, -15.0,11.0, -13.5,9.5, -12.0,7.5,
+  -10.0,6.0, -7.5,4.4, -4.0,5.2, -2.0,4.7, 0.5,5.8, 2.5,6.3, 4.5,6.3, 5.5,5.0,
+  6.5,4.3, 8.5,4.5, 9.7,3.7, 9.5,1.0, 9.2,-1.0, 11.5,-4.0, 12.2,-6.0, 13.5,-9.0,
+  13.4,-12.0, 12.5,-17.0, 14.5,-22.5, 15.2,-27.0, 17.5,-32.0, 18.4,-34.3, 20.0,-34.8, 25.0,-34.0,
+  27.5,-33.2, 30.0,-31.0, 32.8,-28.0, 32.8,-26.0, 35.4,-24.0, 35.5,-21.5, 34.8,-19.8, 36.5,-18.5,
+  37.0,-17.0, 40.5,-15.0, 40.5,-11.0, 39.5,-8.0, 39.0,-5.0, 40.2,-2.5, 42.0,-0.5, 44.0,1.5,
+  48.0,5.0, 51.0,10.5, 51.2,11.8, 49.0,11.4, 45.0,10.4, 43.3,11.5, 43.2,12.4, 41.0,14.5,
+  39.3,15.5, 37.5,18.0, 37.2,21.0, 35.7,24.0, 34.0,27.0, 32.8,29.7
+];
+
+GEO.land.madagascar = [
+  49.3,-12.0, 50.5,-15.5, 49.5,-18.0, 47.5,-24.5, 45.0,-25.5, 43.3,-22.0, 44.3,-16.5, 47.0,-15.0
+];
+
+
+/* ---------- GEO · Americas, Oceania, islands ---------- */
+
+GEO.land.northAmerica = [
+  -166.0,68.3, -156.5,71.3, -141.0,69.6, -128.0,70.2, -115.0,68.8, -108.0,68.0, -98.0,67.8, -94.0,69.5,
+  -88.0,68.5, -85.0,66.5, -87.0,64.2, -90.0,63.5, -93.0,61.5, -94.5,59.0, -92.5,57.2, -88.0,56.5,
+  -85.0,55.2, -82.2,53.0, -80.5,51.5, -79.0,52.0, -79.0,54.5, -77.0,56.5, -77.5,59.0, -78.0,62.2,
+  -73.0,62.3, -70.0,61.0, -65.0,60.5, -62.0,57.0, -61.5,56.2, -57.5,54.0, -55.8,52.0, -56.0,51.3,
+  -60.0,50.2, -66.5,50.2, -64.5,49.1, -64.4,47.5, -61.0,45.7, -60.0,46.3, -63.5,44.5, -66.0,43.7,
+  -67.0,44.8, -70.0,43.7, -70.5,41.8, -74.0,40.5, -75.5,38.5, -76.0,36.9, -75.5,35.3, -78.0,33.8,
+  -80.8,32.0, -81.4,30.2, -80.0,26.8, -80.5,25.2, -82.0,26.8, -82.8,28.5, -84.0,30.0, -86.0,30.3,
+  -89.0,30.3, -90.0,29.1, -92.0,29.6, -94.5,29.4, -97.0,27.8, -97.3,25.5, -97.8,22.5, -97.2,20.5,
+  -96.0,19.0, -94.5,18.2, -92.0,18.5, -90.7,19.5, -90.5,21.0, -87.0,21.5, -87.5,19.5, -88.2,16.5,
+  -87.5,15.8, -84.0,15.9, -83.3,14.8, -83.8,12.0, -83.7,10.6, -82.5,9.4, -80.0,9.3, -77.4,8.7,
+  -78.3,7.8, -80.5,7.3, -81.8,8.0, -83.5,8.4, -85.7,10.0, -87.5,13.0, -91.4,13.9, -94.5,16.0,
+  -96.5,15.7, -99.0,16.7, -101.5,17.8, -105.0,19.5, -105.5,21.5, -106.0,23.0, -109.0,25.5, -112.8,29.5,
+  -114.7,31.7, -113.2,29.3, -111.0,26.5, -109.6,23.2, -112.2,24.7, -114.2,27.5, -115.8,29.8, -117.1,32.5,
+  -118.5,34.0, -120.6,34.5, -122.5,37.5, -124.1,40.3, -124.5,43.0, -124.0,46.2, -124.7,48.4, -125.0,49.5,
+  -128.0,51.5, -130.5,54.5, -133.0,57.0, -136.0,58.5, -140.0,59.8, -146.0,60.7, -150.0,59.5, -152.0,59.3,
+  -154.0,58.0, -158.0,56.5, -162.0,55.0, -165.0,54.5, -160.0,58.5, -162.0,60.0, -165.0,61.5, -166.5,63.0,
+  -162.0,63.8, -161.0,64.5, -165.0,64.5, -168.0,65.5
+];
+
+GEO.land.southAmerica = [
+  -77.4,8.7, -76.0,9.5, -75.5,10.5, -72.5,12.2, -71.5,10.8, -68.5,10.6, -64.0,10.5, -62.0,10.7,
+  -61.0,8.6, -60.0,8.5, -57.0,6.0, -54.0,5.8, -52.0,4.8, -51.0,3.5, -50.0,1.5, -50.5,0.0,
+  -48.0,-0.8, -44.5,-2.5, -41.0,-2.9, -38.5,-3.8, -35.2,-5.5, -34.8,-8.0, -36.0,-10.5, -38.5,-13.0,
+  -39.0,-17.5, -40.5,-20.5, -41.5,-23.0, -44.0,-23.2, -48.0,-25.5, -48.7,-28.0, -50.0,-31.0, -53.0,-34.0,
+  -55.0,-35.0, -57.0,-35.0, -58.0,-34.2, -57.5,-36.5, -57.0,-37.5, -62.0,-39.0, -62.5,-41.0, -65.0,-41.0,
+  -65.0,-45.0, -67.5,-46.5, -66.0,-48.0, -68.5,-50.5, -69.0,-52.5, -68.3,-53.5, -66.0,-55.0, -68.0,-55.5,
+  -71.0,-54.0, -74.0,-52.0, -75.5,-48.0, -74.0,-44.0, -73.5,-40.0, -73.5,-37.0, -71.5,-33.0, -71.5,-30.0,
+  -70.5,-24.0, -70.2,-18.5, -72.0,-17.0, -76.0,-14.0, -78.5,-10.0, -81.0,-6.0, -81.2,-4.5, -80.0,-2.5,
+  -80.5,-0.5, -80.0,1.0, -78.8,1.8, -77.4,4.0, -77.5,6.5, -77.3,8.5
+];
+
+GEO.land.greenland = [
+  -73.0,78.5, -60.0,82.0, -30.0,83.5, -20.0,81.5, -18.0,77.0, -20.0,73.0, -22.0,70.5, -25.0,69.0,
+  -32.0,68.0, -40.0,65.0, -43.0,60.0, -47.0,61.0, -51.0,64.0, -54.0,67.0, -55.0,70.0, -60.0,75.0,
+  -66.0,76.2
+];
+
+GEO.land.australia = [
+  114.0,-22.0, 113.5,-26.0, 115.0,-30.0, 115.0,-34.0, 118.0,-35.0, 122.0,-34.0, 124.0,-33.5, 129.0,-31.7,
+  131.5,-31.5, 134.0,-32.7, 135.5,-34.8, 137.8,-33.0, 138.5,-35.5, 140.0,-37.5, 143.5,-38.8, 146.2,-39.0,
+  147.5,-38.0, 150.0,-37.5, 151.2,-34.0, 153.0,-30.0, 153.5,-28.0, 153.0,-25.5, 150.5,-22.5, 148.8,-20.3,
+  146.0,-18.5, 145.3,-15.0, 143.8,-14.0, 142.5,-10.8, 141.5,-13.0, 141.5,-16.7, 139.5,-17.5, 136.7,-15.8,
+  135.5,-14.7, 136.8,-12.2, 133.0,-11.5, 131.0,-12.2, 129.5,-14.8, 127.5,-14.0, 125.0,-15.5, 123.0,-17.0,
+  122.2,-18.0, 120.0,-19.6, 117.0,-20.7
+];
+
+/* 작은 섬들: 점 지도에서 지역의 느낌을 살려주는 용도 */
+GEO.land.tasmania = [144.7,-40.7, 148.3,-40.9, 148.0,-43.2, 146.5,-43.6, 145.2,-42.2];
+GEO.land.nzNorth = [172.7,-34.4, 174.5,-36.7, 175.5,-37.6, 178.5,-37.7, 177.0,-39.2, 175.5,-41.5, 174.8,-41.3, 174.2,-39.5, 173.8,-39.2];
+GEO.land.nzSouth = [172.8,-40.5, 174.2,-41.7, 173.0,-43.5, 171.2,-44.5, 170.5,-46.0, 168.5,-46.6, 166.6,-45.8, 168.2,-44.0, 171.5,-41.5];
+GEO.land.sumatra = [95.3,5.6, 98.0,4.0, 100.5,2.0, 103.5,-1.0, 106.0,-3.0, 105.8,-5.8, 104.5,-5.9, 102.0,-4.0, 98.5,0.5, 96.0,3.0];
+GEO.land.borneo = [109.0,1.5, 110.0,-1.0, 111.0,-3.0, 114.5,-4.0, 116.5,-3.0, 117.5,0.5, 119.0,5.0, 117.0,7.0, 115.0,5.0, 113.0,3.0, 111.0,2.0];
+GEO.land.java = [105.5,-6.5, 108.0,-6.5, 112.0,-6.9, 114.5,-7.8, 114.5,-8.6, 108.0,-7.8, 106.0,-7.0];
+GEO.land.sulawesi = [119.5,-5.0, 120.2,-3.0, 119.0,0.0, 120.5,1.0, 124.8,1.5, 121.0,-1.0, 123.0,-4.5, 122.0,-5.0];
+GEO.land.newGuinea = [131.0,-0.8, 135.0,-3.3, 138.0,-1.8, 141.0,-2.6, 146.0,-5.5, 147.5,-6.2, 150.5,-10.5, 147.0,-10.0, 143.5,-9.0, 141.0,-9.2, 138.0,-8.3, 137.5,-5.5, 133.0,-4.0];
+GEO.land.luzon = [120.0,18.5, 122.5,18.3, 122.0,14.0, 124.0,13.0, 121.5,13.0, 120.2,14.5, 120.3,16.5];
+GEO.land.mindanao = [122.0,7.0, 125.5,9.5, 126.5,7.0, 125.5,5.8, 123.0,7.0];
+GEO.land.taiwan = [120.2,23.0, 121.5,25.2, 122.0,24.5, 121.0,22.0];
+GEO.land.sriLanka = [79.8,9.5, 81.7,7.5, 80.5,6.0, 79.8,7.5];
+GEO.land.iceland = [-24.0,65.5, -22.0,66.4, -16.0,66.5, -13.5,65.0, -18.0,63.4, -22.5,63.8];
+GEO.land.cuba = [-85.0,22.0, -82.0,23.1, -77.0,21.8, -74.2,20.2, -77.5,19.9, -80.0,22.0];
+GEO.land.hispaniola = [-74.4,18.4, -72.8,19.9, -69.0,19.3, -68.4,18.5, -71.0,17.8, -74.4,18.2];
+GEO.land.newfoundland = [-59.3,47.6, -56.0,51.6, -53.0,46.6, -56.0,47.5];
+GEO.land.baffin = [-80.0,73.5, -70.0,70.5, -62.0,66.5, -65.0,62.5, -72.0,65.0, -78.0,64.5, -72.0,68.0, -80.0,70.0];
+GEO.land.victoria = [-118.0,69.5, -105.0,69.5, -101.0,69.0, -101.0,68.5, -106.0,68.5, -117.0,68.8];
+GEO.land.ellesmere = [-90.0,76.5, -80.0,83.0, -65.0,82.0, -62.0,81.0, -75.0,78.5, -85.0,76.5];
+GEO.land.sakhalin = [142.0,46.0, 143.5,49.0, 143.5,53.5, 142.0,54.2, 142.5,50.0];
+GEO.land.ireland = [-10.0,51.7, -6.0,52.2, -6.0,54.0, -5.7,54.5, -7.5,55.3, -9.5,54.3, -10.0,53.5, -9.5,52.0];
+GEO.land.svalbard = [11.0,78.5, 17.0,80.0, 26.0,80.2, 22.0,77.5, 16.0,76.7];
+GEO.land.novayaZemlya = [52.0,71.5, 57.0,75.0, 68.0,77.0, 60.0,73.5, 55.0,70.8];
+
+
+/* ---------- GEO · featured nations (한 나라 = 여러 윤곽) ---------- */
+
+GEO.nation.KR = [
+  [126.4,37.8, 128.4,38.6, 129.4,37.0, 129.45,35.5, 128.7,35.1, 126.5,34.4, 126.3,35.5, 126.6,36.9]
+];
+
+GEO.nation.JP = [
+  [131.0,34.0, 132.6,35.5, 134.5,35.7, 136.0,36.0, 137.0,37.3, 138.5,37.5, 139.8,39.8, 140.0,41.2,
+   141.3,41.2, 142.0,39.5, 141.0,37.5, 140.5,35.7, 139.8,35.0, 138.8,34.7, 137.0,34.6, 136.3,34.2,
+   135.2,33.5, 134.8,34.6, 133.0,34.4],
+  [140.0,41.5, 140.5,43.0, 141.5,45.4, 142.5,45.2, 144.5,44.0, 145.5,43.3, 143.4,42.0, 141.5,42.5, 140.7,41.8],
+  [129.7,33.5, 130.9,33.9, 131.9,33.3, 131.5,31.5, 131.0,31.2, 130.2,31.2, 129.9,32.7],
+  [132.5,33.9, 134.5,34.2, 134.2,33.4, 133.0,32.8, 132.4,33.2]
+];
+
+GEO.nation.CN = [
+  [73.6,39.5, 74.5,37.2, 78.0,35.5, 79.0,32.5, 81.0,30.2, 85.0,28.3, 88.0,27.9, 92.0,27.8,
+   95.0,28.5, 97.0,28.0, 98.7,27.0, 98.7,24.5, 97.5,23.8, 99.5,22.2, 101.2,21.2, 102.0,22.4,
+   105.5,23.0, 106.7,22.5, 108.0,21.5, 110.0,21.2, 113.0,22.1, 114.2,22.3, 117.0,23.4, 119.0,25.0,
+   120.5,27.0, 121.8,29.0, 122.0,30.8, 121.0,32.0, 120.4,34.0, 119.2,35.0, 120.5,36.2, 122.5,37.0,
+   120.7,37.8, 118.5,37.2, 117.7,38.5, 119.5,39.8, 121.0,40.9, 122.3,40.4, 124.0,39.8, 125.5,40.5,
+   127.5,41.5, 129.0,42.2, 130.5,42.7, 131.0,44.5, 133.0,45.2, 134.5,48.3, 131.0,47.7, 130.6,48.8,
+   127.5,49.8, 125.5,52.8, 122.0,53.4, 119.5,52.5, 117.8,49.6, 116.0,47.8, 119.7,46.7, 114.0,45.4,
+   111.8,45.0, 111.0,43.5, 105.0,41.5, 100.0,42.6, 97.0,42.8, 96.5,43.8, 91.0,45.2, 90.5,47.3,
+   88.5,48.2, 87.0,49.0, 85.5,47.0, 83.0,47.2, 82.5,45.2, 80.5,45.0, 80.3,42.5, 77.0,41.0,
+   74.5,40.4]
+];
+
+GEO.nation.US = [
+  [-123.0,49.0, -95.2,49.0, -89.0,48.0, -84.7,46.7, -82.5,45.5, -82.5,42.5, -79.0,43.0, -79.0,43.6,
+   -76.5,44.0, -75.0,45.0, -71.5,45.0, -70.0,47.0, -67.8,47.1, -67.0,45.0, -70.7,43.1, -70.0,41.7,
+   -74.0,40.5, -75.5,38.5, -76.0,36.9, -75.5,35.3, -78.0,33.8, -80.8,32.0, -81.4,30.2, -80.0,26.8,
+   -80.5,25.2, -82.0,26.5, -82.8,28.5, -84.0,30.0, -86.0,30.3, -89.0,30.3, -90.0,29.1, -92.0,29.6,
+   -94.5,29.4, -97.0,27.8, -97.2,25.9, -99.5,27.5, -101.0,29.8, -103.0,29.0, -104.5,29.7, -106.5,31.8,
+   -108.2,31.8, -108.2,31.3, -111.0,31.3, -114.8,32.5, -117.1,32.5, -118.5,34.0, -120.6,34.5, -122.5,37.5,
+   -124.1,40.3, -124.5,43.0, -124.0,46.2, -124.7,48.4],
+  [-141.0,69.6, -156.5,71.3, -166.0,68.3, -162.0,66.5, -168.0,65.5, -165.0,64.5, -161.0,64.5, -165.5,62.5,
+   -162.0,60.0, -162.0,58.7, -158.0,58.5, -162.0,55.0, -158.0,56.5, -154.0,58.0, -152.0,59.3, -150.0,59.5,
+   -146.0,60.7, -141.0,60.0]
+];
+
+GEO.nation.FR = [
+  [2.5,51.1, 4.2,49.9, 6.0,49.5, 8.2,49.0, 7.6,47.6, 6.0,46.2, 7.0,45.9, 7.5,44.2, 6.9,43.6,
+   4.8,43.4, 3.1,42.5, 1.7,42.5, -1.8,43.4, -1.3,45.5, -1.2,46.2, -2.3,47.3, -4.7,48.0, -4.5,48.7,
+   -1.6,48.7, -1.3,49.7, 0.2,49.5, 1.6,50.3],
+  [8.6,41.4, 9.5,42.5, 9.4,43.0, 8.6,42.4]
+];
+
+GEO.nation.UK = [
+  [-5.7,50.1, -3.5,50.3, -1.5,50.7, 0.8,50.8, 1.4,51.2, 1.7,52.7, 0.3,53.1, 0.0,53.6,
+   -1.5,55.0, -1.8,56.0, -2.5,56.1, -2.0,57.5, -3.5,57.6, -3.0,58.6, -5.0,58.6, -6.2,57.5,
+   -5.5,56.5, -5.8,55.5, -4.8,54.8, -3.2,54.9, -3.0,53.5, -4.5,53.3, -4.7,52.2, -5.2,51.7,
+   -3.0,51.4, -4.5,51.1],
+  [-8.0,54.2, -5.5,54.5, -5.7,55.2, -6.8,55.2, -7.3,54.8]
+];
+
+GEO.nation.IT = [
+  [7.0,45.9, 10.0,46.6, 12.5,47.0, 13.7,46.5, 13.5,45.6, 12.4,45.3, 12.3,44.3, 13.6,43.5,
+   14.5,42.0, 15.9,41.9, 16.1,41.3, 18.5,40.2, 17.2,40.4, 16.6,39.6, 17.1,38.9, 16.1,38.0,
+   15.7,38.0, 15.9,38.7, 16.0,39.5, 15.5,40.1, 14.3,40.7, 13.0,41.3, 11.2,42.5, 10.3,43.8,
+   8.8,44.4, 7.5,43.8, 7.0,44.2, 6.8,45.1],
+  [12.5,38.0, 15.6,38.3, 15.1,36.7, 12.6,37.5],
+  [8.2,41.0, 9.6,41.0, 9.7,39.2, 8.5,38.9, 8.4,40.3]
+];
+
+GEO.nation.BR = [
+  [-52.0,4.2, -51.0,2.5, -50.0,1.2, -50.5,0.0, -48.0,-0.8, -44.5,-2.5, -41.0,-2.9, -38.5,-3.8,
+   -35.2,-5.5, -34.8,-8.0, -36.0,-10.5, -38.5,-13.0, -39.0,-17.5, -40.5,-20.5, -41.5,-23.0, -44.0,-23.2,
+   -48.0,-25.5, -48.7,-28.0, -50.0,-31.0, -53.0,-33.7, -55.0,-31.5, -57.6,-30.2, -56.0,-28.2, -54.0,-26.5,
+   -54.6,-25.6, -54.2,-24.0, -55.5,-23.7, -55.0,-22.0, -57.8,-22.0, -58.0,-20.0, -58.0,-17.5, -60.0,-16.2,
+   -60.5,-13.7, -65.0,-11.0, -69.0,-10.9, -72.5,-9.5, -73.5,-7.2, -70.0,-4.2, -70.0,-1.0, -69.8,0.0,
+   -67.0,1.5, -67.5,2.5, -64.0,4.0, -60.5,5.0, -60.0,3.5, -57.5,2.0, -55.0,2.0]
+];
+
+GEO.nation.AU = [GEO.land.australia, GEO.land.tasmania];
+
+GEO.nation.TH = [
+  [98.2,19.7, 100.1,20.4, 101.3,19.6, 100.5,17.8, 102.0,18.1, 104.7,17.6, 105.6,15.7, 105.2,14.3,
+   102.9,14.2, 102.3,12.2, 100.9,12.6, 100.5,13.5, 99.9,12.5, 99.3,10.5, 100.2,8.5, 101.3,6.6,
+   100.4,6.2, 99.7,6.9, 98.4,8.2, 98.4,10.2, 98.7,12.0, 98.2,13.5, 99.0,15.0, 98.4,16.5, 97.8,17.7]
+];
+
+
+/* =====================================================================
+   CONTENT · 이 파일들(data_*.js, copy.js)만 바꾸면 앱의 글과 데이터가 바뀝니다.
+   나중에 Supabase 같은 API로 바꿀 때도 TRENDS 배열과 같은 모양으로 내려주면 됩니다.
+   ===================================================================== */
+
+/* 국가 메타: center = 지구본이 돌아가서 멈출 좌표, c = [포스터 바탕색, 포스터 보조색], g = 지구본에서 쓰는 색(없으면 c[0]), dark = 글자색이 어두워야 하는 배경 */
+const COUNTRIES = [
+  { cc:'KR', name:'한국', en:'Korea', ko:'한국',     center:[127.8, 36.4],  tz:'Asia/Seoul',          c:['#3340FF','#D9DCFF'], dark:false },
+  { cc:'JP', name:'일본', en:'Japan', ko:'일본',     center:[137.5, 36.5],  tz:'Asia/Tokyo',          c:['#F3B6CD','#7E1F46'], g:'#E8588F', dark:true  },
+  { cc:'CN', name:'중국', en:'China', ko:'중국',     center:[104.0, 34.5],  tz:'Asia/Shanghai',       c:['#E8A200','#3D2A00'], dark:true  },
+  { cc:'US', name:'미국', en:'USA', ko:'미국',     center:[-98.0, 39.0],  tz:'America/New_York',    c:['#E23B3B','#FFDCDC'], dark:false },
+  { cc:'FR', name:'프랑스', en:'France', ko:'프랑스',   center:[2.5, 46.6],    tz:'Europe/Paris',        c:['#7B61F2','#E6E0FF'], dark:false },
+  { cc:'UK', name:'영국', en:'UK', ko:'영국',     center:[-2.5, 54.0],   tz:'Europe/London',       c:['#1F2B63','#C9D2FF'], dark:false },
+  { cc:'IT', name:'이탈리아', en:'Italy', ko:'이탈리아', center:[12.5, 42.5],   tz:'Europe/Rome',         c:['#2E9E5B','#DDF5E5'], dark:false },
+  { cc:'BR', name:'브라질', en:'Brazil', ko:'브라질',   center:[-52.0, -11.0], tz:'America/Sao_Paulo',   c:['#F2D01B','#0B5B35'], g:'#D9B000', dark:true  },
+  { cc:'AU', name:'호주', en:'Australia', ko:'호주',     center:[134.0, -25.0], tz:'Australia/Sydney',    c:['#10A5B5','#D3F4F7'], dark:false },
+  { cc:'TH', name:'태국', en:'Thailand', ko:'태국',     center:[101.0, 15.0],  tz:'Asia/Bangkok',        c:['#FF8A3D','#4A2300'], dark:true  }
+];
+
+const CATEGORIES = { food:'푸드', tech:'테크', life:'라이프', culture:'컬처', fashion:'패션', wellness:'웰니스', travel:'여행' };
+const STATUS = { hot:'HOT', rising:'RISING', new:'NEW', talked:'TALKED ABOUT' };
+
+/* 아래 T()는 짧게 적은 항목을 앱이 쓰는 전체 필드(country, countryCode, trendTitle, ...)로 펼쳐줍니다. */
+const TRENDS = [];
+function T(cc, o) {
+  const co = COUNTRIES.find(x => x.cc === cc);
+  TRENDS.push({
+    id: cc.toLowerCase() + '-' + (TRENDS.filter(t => t.countryCode === cc).length + 1),
+    country: co.name, countryCode: cc,
+    trendTitle: o.title, titleEn: o.en, shortDescription: o.short,
+    status: o.status, category: o.cat, city: o.city,
+    image: { pattern: o.pat },
+    whyTrending: o.why,
+    whatIsHappening: o.what.map(w => ({ head: w[0], text: w[1] })),
+    news: o.news.map(n => ({ title: n[0], source: n[1], date: n[2], summary: n[3] })),
+    isFollowing: !!o.follow
+  });
+}
+
+/* ---------- KOREA ---------- */
+T('KR', { title:'팝업 문화', en:'Pop-up Culture', short:'한 달만 열리는 가게 앞에 줄이 서는 도시.', status:'hot', cat:'culture', city:'성수', pat:2, follow:true,
+  why:['한정이라서 더 궁금해요','브랜드가 체험을 먼저 팔아요','인증샷이 곧 홍보'],
+  what:[['성수·한남 중심으로 번지는 중','매달 새 팝업이 열리고, 끝나면 바로 다음 브랜드가 들어와요.'],
+        ['물건보다 분위기','제품을 사지 않아도 공간을 구경하고 사진을 남기는 것 자체가 목적이 돼요.'],
+        ['해외 브랜드도 서울 먼저','신제품 공개 전에 서울에서 먼저 반응을 보는 브랜드가 늘고 있어요.']],
+  news:[['성수동 골목, 이번 달 가장 긴 줄은 어디?','Metro Daily','2026-10-02','주말마다 대기 시간이 길어지는 팝업 세 곳을 둘러봤어요.'],
+        ['팝업이 끝난 자리에 남는 것들','Hanbit Magazine','2026-09-27','철거된 공간이 다음 브랜드의 무대로 이어지는 과정을 따라갔어요.']] });
+
+T('KR', { title:'러닝 크루', en:'Run Crew', short:'퇴근하고 한강에 모이는 사람들.', status:'rising', cat:'wellness', city:'한강', pat:6,
+  why:['혼자보다 같이 뛰면 오래 가요','운동복이 곧 패션','러닝 후 맛집·카페 코스'],
+  what:[['크루마다 취향이 달라요','페이스가 느린 산책형부터 대회 준비형까지, 이름도 콘셉트도 다양해요.'],
+        ['달리고 나서가 진짜','완주 후 근처 가게에서 모이는 코스가 하나의 문화가 됐어요.'],
+        ['브랜드의 새 무대','러닝 브랜드가 크루 전용 클래스와 대여 이벤트를 열기 시작했어요.']],
+  news:[['한강 러닝 코스, 요즘 크루들이 고르는 곳','Metro Daily','2026-10-01','여의도와 반포 사이, 저녁 시간대 풍경을 담았어요.'],
+        ['가을 러닝 대회 접수, 마감이 빨라졌다','Hanbit Magazine','2026-09-24','접수 시작 몇 분 만에 마감되는 대회가 늘었어요.']] });
+
+T('KR', { title:'제로슈거', en:'Zero Sugar', short:'달지 않은데 달다고 하는 음료들.', status:'talked', cat:'food', city:'서울', pat:3,
+  why:['건강을 챙기는 가벼운 방법','맛이 꽤 좋아졌어요','편의점 신상이 쉴 새 없이 나와요'],
+  what:[['음료 코너가 한 칸 늘었어요','탄산, 주스, 커피까지 제로 라인이 따로 진열돼요.'],
+        ['디저트로 번지는 중','제로 아이스크림과 베이커리가 카페 메뉴에 들어오고 있어요.'],
+        ['맛 논쟁도 계속','"이게 진짜 제로야?" 하는 후기 영상이 꾸준히 올라와요.']],
+  news:[['제로 음료, 이번 달 신상 모아보기','Metro Daily','2026-09-30','편의점 냉장고에서 새로 보이는 제품들을 정리했어요.'],
+        ['단맛을 줄이는 카페들','Hanbit Magazine','2026-09-22','당 줄이기 메뉴를 따로 만든 동네 카페를 찾아갔어요.']] });
+
+T('KR', { title:'필름 카메라', en:'Film Camera Comeback', short:'일부러 느리게 찍는 사진이 돌아왔어요.', status:'new', cat:'fashion', city:'을지로', pat:7,
+  why:['결과를 기다리는 재미','화면 속 사진이 너무 매끈해서','빈티지 소품과 잘 어울려요'],
+  what:[['현상소가 다시 바빠졌어요','을지로와 연남동 일대에서 필름 현상과 스캔 서비스가 늘고 있어요.'],
+        ['카메라가 액세서리','가방에 달아두는 작은 필름 카메라가 코디 아이템이 됐어요.'],
+        ['한 롤의 규칙','36장만 찍을 수 있다는 제한이 오히려 사진을 신중하게 만들어요.']],
+  news:[['필름 한 롤 값이 오른 이유','Metro Daily','2026-10-03','수요가 늘면서 인기 필름이 빨리 소진되고 있어요.'],
+        ['을지로 현상소 골목','Hanbit Magazine','2026-09-26','오래된 가게와 새로 생긴 가게가 나란히 이어지는 거리를 걸었어요.']] });
+
+/* ---------- JAPAN ---------- */
+T('JP', { title:'AI 편의점', en:'AI Convenience Store', short:'일본 편의점이 점점 AI와 친해지는 중.', status:'hot', cat:'tech', city:'도쿄', pat:5, follow:true,
+  why:['인력 부족','AI 기술 발전','무인 매장 확대'],
+  what:[['진열과 주문을 AI가 도와요','재고를 카메라로 읽고, 부족한 상품을 자동으로 채우도록 알려줘요.'],
+        ['계산대 없는 점포','들어가서 집고 나오면 결제까지 끝나는 매장이 도심 역 주변에 늘고 있어요.'],
+        ['야간은 더 똑똑하게','사람이 적은 시간대에는 안내와 결제를 화면이 맡는 점포도 생겼어요.']],
+  news:[['도쿄 역 안 편의점, 점원이 보이지 않는다','Kanto Journal','2026-10-02','출근길 역 안 점포에서 달라진 풍경을 취재했어요.'],
+        ['AI 발주, 폐기를 줄일 수 있을까','The Lantern','2026-09-25','발주를 예측하는 시스템이 음식 폐기에 미치는 영향을 살폈어요.']] });
+
+T('JP', { title:'혼자 여행', en:'Solo Trip', short:'일정 없이 떠나는 하루짜리 혼자 여행.', status:'rising', cat:'travel', city:'교토', pat:3,
+  why:['혼자도 편한 숙소와 식당','당일치기 철도 패스','나만의 속도'],
+  what:[['1인석이 기본이 됐어요','카운터 좌석과 1인용 코스를 내세운 가게가 늘었어요.'],
+        ['짐 없는 여행','역 코인로커와 짐 배송 서비스 덕에 가볍게 다닐 수 있어요.'],
+        ['계획보다 기분','목적지만 정하고 나머지는 걷다가 정하는 여행이 인기예요.']],
+  news:[['교토 새벽 산책, 혼자 온 사람들','Kanto Journal','2026-09-29','관광객이 몰리기 전 시간대를 선택하는 여행자들을 만났어요.'],
+        ['혼자 가기 좋은 온천 마을','The Lantern','2026-09-21','1인 이용이 편한 숙소를 모아봤어요.']] });
+
+T('JP', { title:'새벽 라멘', en:'Dawn Ramen', short:'해 뜨기 전에 먹는 한 그릇.', status:'talked', cat:'food', city:'후쿠오카', pat:4,
+  why:['밤샘 뒤 해장 문화','새벽에 여는 가게 증가','가볍고 진한 국물'],
+  what:[['아침 5시에 줄 서는 가게','밤늦게 놀고 온 사람과 이른 출근길 사람이 같은 줄에 서요.'],
+        ['국물이 가벼워졌어요','새벽에 먹기 좋게 맑은 국물을 내는 가게가 눈에 띄어요.'],
+        ['지도 앱에 새벽 필터','영업 시작 시간으로 가게를 찾는 사람이 늘었어요.']],
+  news:[['후쿠오카 새벽 포장마차 거리','Kanto Journal','2026-10-01','해 뜨기 전 거리의 불빛을 따라 걸었어요.'],
+        ['라멘 가게가 새벽 영업을 시작한 이유','The Lantern','2026-09-23','영업 시간을 앞당긴 주인장들의 이야기예요.']] });
+
+T('JP', { title:'무인 매장', en:'Unmanned Shops', short:'사람 없는 가게가 동네 골목까지 들어왔어요.', status:'new', cat:'tech', city:'오사카', pat:1,
+  why:['24시간 영업','임대료 부담을 줄이려고','비대면이 편한 사람들'],
+  what:[['냉동 만두부터 옷까지','무인 판매점의 종류가 점점 다양해지고 있어요.'],
+        ['도난 방지는 카메라가','출입 인증과 영상 확인으로 관리하는 점포가 많아요.'],
+        ['동네의 새 간판','빈 점포 자리에 작은 무인 가게가 들어서는 모습이 보여요.']],
+  news:[['골목마다 생기는 무인 판매점','Kanto Journal','2026-09-28','오사카 주택가에서 늘어난 24시간 점포를 둘러봤어요.'],
+        ['무인 매장이 잘 되는 위치의 조건','The Lantern','2026-09-20','유동 인구와 접근성을 어떻게 보는지 정리했어요.']] });
+
+/* ---------- CHINA ---------- */
+T('CN', { title:'시티워크', en:'City Walk', short:'도시를 천천히 걸으며 구경하는 산책 여행.', status:'hot', cat:'life', city:'상하이', pat:6,
+  why:['관광지 대신 골목','걷기 좋은 지도 공유','주말 가벼운 외출'],
+  what:[['코스를 공유해요','"오늘의 산책 루트"가 지도와 사진으로 올라와요.'],
+        ['오래된 동네가 주인공','골목 카페와 작은 서점이 있는 거리가 인기를 얻고 있어요.'],
+        ['걷기 모임도 생겼어요','가이드 없이 모여서 같이 걷는 동호회가 늘고 있어요.']],
+  news:[['상하이 골목 산책 코스 다섯 곳','Dragon Gate Review','2026-10-03','오래된 주택가를 따라 걷는 코스를 소개해요.'],
+        ['시티워크가 바꾼 주말 풍경','Harbour Notes','2026-09-26','주말 오후, 걷는 사람들로 달라진 거리를 담았어요.']] });
+
+T('CN', { title:'신중식 패션', en:'New Chinese Style', short:'전통 실루엣을 일상복으로 입는 흐름.', status:'rising', cat:'fashion', city:'항저우', pat:0,
+  why:['전통 요소를 새롭게','젊은 디자이너들의 등장','사진이 잘 받아요'],
+  what:[['매듭 단추와 맞깃','익숙한 디테일이 셔츠와 재킷에 들어가요.'],
+        ['소재는 가볍게','일상에서 입기 편한 천과 색을 쓰는 브랜드가 늘고 있어요.'],
+        ['공원과 찻집에서','전통 거리가 아닌 일상 공간에서 입고 나오는 사람이 늘었어요.']],
+  news:[['항저우 신진 디자이너 쇼룸','Dragon Gate Review','2026-09-30','작은 쇼룸에서 시작한 브랜드들을 만났어요.'],
+        ['전통 디테일, 어디까지 가져올까','Harbour Notes','2026-09-22','익숙한 디자인을 현대적으로 푸는 방법을 이야기해요.']] });
+
+T('CN', { title:'세로형 숏드라마', en:'Vertical Mini Drama', short:'1분짜리 세로 화면 드라마에 빠지는 중.', status:'new', cat:'culture', city:'선전', pat:7,
+  why:['짧아서 끊기 쉬워요','스마트폰에 맞는 화면','빠른 전개'],
+  what:[['한 편이 1~2분','출퇴근 길에 몇 편씩 이어서 보는 사람이 많아요.'],
+        ['전용 앱이 늘었어요','처음 몇 편은 무료, 이후는 결제하는 방식이 흔해요.'],
+        ['해외로 번지는 중','자막을 붙여 다른 나라에서도 보는 사람이 생기고 있어요.']],
+  news:[['숏드라마 제작 현장 들여다보기','Dragon Gate Review','2026-10-01','며칠 만에 한 시즌을 찍는 촬영 현장을 다녀왔어요.'],
+        ['왜 사람들은 세로 화면을 고를까','Harbour Notes','2026-09-24','이동 중 시청 습관과 화면 구성의 관계를 짚어봤어요.']] });
+
+/* ---------- USA ---------- */
+T('US', { title:'러닝 클럽', en:'Running Club', short:'동네 러닝 클럽이 새로운 사교 모임이 됐어요.', status:'hot', cat:'wellness', city:'뉴욕', pat:6, follow:true,
+  why:['운동하면서 사람을 만나요','누구나 참여할 수 있어요','가게와 연결되는 코스'],
+  what:[['출발지는 동네 가게','커피숍이나 매장 앞에 모여 함께 뛰고 돌아와요.'],
+        ['속도는 상관없어요','걷는 사람부터 빠른 사람까지 나눠서 달려요.'],
+        ['뛰고 나서 한잔','러닝 후 음료를 마시며 이야기하는 시간이 이어져요.']],
+  news:[['뉴욕의 저녁, 러닝 클럽이 도시를 채운다','Pacific Brief','2026-10-02','브루클린에서 시작한 러닝 모임을 따라 뛰어봤어요.'],
+        ['러닝 클럽이 새로운 데이트 코스?','Hudson Weekly','2026-09-26','운동으로 만나는 사람들의 이야기를 모았어요.']] });
+
+T('US', { title:'덤폰 회귀', en:'Dumbphone Revival', short:'일부러 단순한 폰을 쓰는 사람들.', status:'rising', cat:'tech', city:'포틀랜드', pat:1,
+  why:['화면에서 잠깐 벗어나고 싶어서','알림이 너무 많아요','단순함이 멋이 됐어요'],
+  what:[['주말만 덤폰','평일엔 스마트폰, 주말엔 접는 폰으로 바꾸는 사람도 있어요.'],
+        ['앱을 줄이는 방식','기능을 최소로 둔 런처와 단순 폰 케이스가 인기예요.'],
+        ['모임이 생겼어요','폰을 맡기고 대화하는 저녁 모임을 여는 곳이 늘었어요.']],
+  news:[['접는 폰을 다시 꺼낸 사람들','Pacific Brief','2026-09-29','일상에서 화면 시간을 줄이는 방법을 소개해요.'],
+        ['폰 없는 저녁 모임 후기','Hudson Weekly','2026-09-21','알림 없이 보낸 세 시간은 어땠을까요.']] });
+
+T('US', { title:'단백질 푸드', en:'Protein Everything', short:'커피에도 아이스크림에도 단백질이 들어가요.', status:'talked', cat:'food', city:'로스앤젤레스', pat:2,
+  why:['운동 인구 증가','간편한 한 끼 선호','신제품 경쟁'],
+  what:[['마트 진열대가 달라졌어요','스낵, 시리얼, 음료에 단백질 함량이 크게 적혀 있어요.'],
+        ['카페 메뉴에도','라테에 단백질 파우더를 추가하는 옵션이 보여요.'],
+        ['맛 경쟁','먹기 편한 맛과 식감을 만드는 데 브랜드가 집중하고 있어요.']],
+  news:[['단백질 라테를 마셔봤다','Pacific Brief','2026-10-01','LA 카페 세 곳의 단백질 메뉴를 비교했어요.'],
+        ['마트 진열대, 단백질이 차지한 자리','Hudson Weekly','2026-09-23','매대 구성이 어떻게 바뀌었는지 살펴봤어요.']] });
+
+T('US', { title:'피클볼 코트', en:'Pickleball Courts', short:'동네 주차장이 피클볼 코트로 바뀌고 있어요.', status:'new', cat:'wellness', city:'오스틴', pat:5,
+  why:['배우기 쉬워요','나이 상관없이 같이 해요','작은 공간에서도 가능'],
+  what:[['빈 공간이 코트로','테니스장과 주차장을 나눠 피클볼 코트로 쓰는 곳이 늘었어요.'],
+        ['소셜 스포츠','게임을 하고 음료를 마시는 클럽형 시설이 생기고 있어요.'],
+        ['장비도 가벼워졌어요','입문용 패들 세트가 인기 선물이 됐어요.']],
+  news:[['오스틴의 새 피클볼 클럽','Pacific Brief','2026-09-28','저녁마다 코트가 가득 차는 이유를 취재했어요.'],
+        ['처음 하는 피클볼, 이것만 알면 돼요','Hudson Weekly','2026-09-20','기본 규칙과 장비를 쉽게 정리했어요.']] });
+
+
+/* ---------- FRANCE ---------- */
+T('FR', { title:'논알콜 바', en:'Alcohol-free Bar', short:'술 없이도 밤이 즐거운 바가 늘고 있어요.', status:'hot', cat:'food', city:'파리', pat:3,
+  why:['술을 줄이는 사람들','칵테일 못지않은 메뉴','밤 문화의 선택지 확대'],
+  what:[['메뉴판이 달라졌어요','무알콜 칵테일을 메인으로 내세우는 가게가 생겼어요.'],
+        ['향과 재료로 승부','허브, 발효차, 과일 식초를 쓴 음료가 눈에 띄어요.'],
+        ['같이 마시는 분위기','술을 마시는 친구와 안 마시는 친구가 같은 테이블에 앉아요.']],
+  news:[['파리 무알콜 바 지도','Rive Gauche Notes','2026-10-02','저녁에 가볼 만한 새로운 바 다섯 곳을 모았어요.'],
+        ['술 없는 금요일 밤','Seine Quarterly','2026-09-25','알콜을 빼고도 즐거운 밤을 보낸 후기예요.']] });
+
+T('FR', { title:'빈티지', en:'Vintage', short:'오래된 옷과 물건이 가장 새로운 취향.', status:'rising', cat:'fashion', city:'마레', pat:0,
+  why:['환경을 생각하는 소비','나만의 스타일','가격 부담 완화'],
+  what:[['벼룩시장은 주말 코스','생투앙과 마레 일대에서 빈티지 매장이 이어져요.'],
+        ['수선도 유행','헌 옷을 고쳐 입는 수선 가게가 인기를 얻고 있어요.'],
+        ['젊은 셀러의 등장','직접 고른 옷을 온라인으로 파는 소규모 셀러가 늘었어요.']],
+  news:[['마레 빈티지 숍 골목','Rive Gauche Notes','2026-09-29','손님이 줄 서는 작은 가게들을 찾아갔어요.'],
+        ['고쳐 입는 사람들','Seine Quarterly','2026-09-22','수선 가게가 다시 바빠지는 이유를 들어봤어요.']] });
+
+T('FR', { title:'새로운 카페 문화', en:'New Café Culture', short:'테라스에서 오래 앉아 있는 방식이 달라졌어요.', status:'new', cat:'culture', city:'파리', pat:4,
+  why:['스페셜티 커피 확산','작업하는 사람들','동네 단골 문화'],
+  what:[['에스프레소와 노트북','전통 카페 옆에 작업하기 좋은 카페가 늘어나요.'],
+        ['로스터리가 동네에','직접 원두를 볶는 작은 카페가 골목마다 생기고 있어요.'],
+        ['아침이 붐벼요','출근 전 서서 마시는 한 잔이 새로운 습관이 됐어요.']],
+  news:[['파리 로스터리 카페 지도','Rive Gauche Notes','2026-10-01','원두 향이 가득한 동네 카페를 소개해요.'],
+        ['테라스 의자의 변화','Seine Quarterly','2026-09-24','카페 테라스가 어떻게 달라지고 있는지 살펴봤어요.']] });
+
+/* ---------- UK ---------- */
+T('UK', { title:'데이타임 디스코', en:'Daytime Disco', short:'해가 떠 있을 때 춤추고 집에 가요.', status:'rising', cat:'culture', city:'런던', pat:2,
+  why:['저녁 약속을 지키기 위해','숙취 없는 주말','건강한 밤 문화'],
+  what:[['오후 2시에 시작','클럽이 낮 시간에 문을 열고 일찍 끝나요.'],
+        ['가족과 함께 오기도','아이와 부모가 같이 춤추는 행사도 있어요.'],
+        ['음료는 가볍게','무알콜 음료와 간단한 먹거리가 함께 나와요.']],
+  news:[['런던 낮 파티 후기','Thames Review','2026-10-02','낮에 열린 파티에서 만난 사람들을 소개해요.'],
+        ['일찍 끝나는 파티가 인기','Borough Notes','2026-09-26','일정이 가벼운 모임이 늘어나는 이유를 짚어봤어요.']] });
+
+T('UK', { title:'펍 퀴즈 나이트', en:'Pub Quiz Night', short:'퀴즈 한 판에 동네 사람이 다 모여요.', status:'talked', cat:'life', city:'맨체스터', pat:5,
+  why:['팀으로 노는 재미','저렴한 저녁 약속','동네 펍의 부활'],
+  what:[['요일마다 다른 테마','영화, 음악, 지역 상식까지 주제가 달라요.'],
+        ['팀 이름도 놀이','웃긴 팀 이름을 정하는 것부터 게임이 시작돼요.'],
+        ['젊은 층이 늘었어요','친구들과 가볍게 모이는 자리로 인기를 얻고 있어요.']],
+  news:[['맨체스터 펍 퀴즈 가이드','Thames Review','2026-09-30','요일별로 열리는 퀴즈 나이트를 모았어요.'],
+        ['펍이 다시 북적이는 이유','Borough Notes','2026-09-22','퀴즈와 라이브 음악이 손님을 불러오고 있어요.']] });
+
+T('UK', { title:'한식 레스토랑 붐', en:'Korean Food Boom', short:'런던 곳곳에 한식당이 늘어나는 중.', status:'new', cat:'food', city:'런던', pat:1,
+  why:['K-컬처에 대한 관심','다양한 메뉴','나눠 먹는 문화'],
+  what:[['메뉴가 넓어졌어요','불고기뿐 아니라 분식, 포차 스타일까지 등장해요.'],
+        ['현지 셰프의 해석','한식 재료로 새로운 요리를 만드는 현지 셰프가 늘었어요.'],
+        ['장보기도 쉬워졌어요','한국 식재료를 파는 마트가 곳곳에 생기고 있어요.']],
+  news:[['런던의 새 한식당 다섯 곳','Thames Review','2026-10-01','줄 서서 먹는 한식당을 찾아가 봤어요.'],
+        ['한식이 영국 식탁에 오르기까지','Borough Notes','2026-09-23','현지 식재료 시장의 변화를 정리했어요.']] });
+
+/* ---------- ITALY ---------- */
+T('IT', { title:'파델 열풍', en:'Padel Fever', short:'테니스와 스쿼시 사이, 모두가 라켓을 들어요.', status:'hot', cat:'wellness', city:'로마', pat:5,
+  why:['배우기 쉬워요','4명이 함께 해요','코트가 빠르게 늘어요'],
+  what:[['코트가 도시 곳곳에','옥상과 빈 공터에도 파델 코트가 생기고 있어요.'],
+        ['예약이 어려울 정도','퇴근 후 시간대는 일주일 전에 마감되기도 해요.'],
+        ['친구와 가족 스포츠','세대가 섞여서 즐기는 모습이 흔해졌어요.']],
+  news:[['로마 파델 코트 예약 전쟁','Via Piazza','2026-10-03','인기 코트의 예약 풍경을 취재했어요.'],
+        ['파델 입문 가이드','Tiber Daily','2026-09-27','처음 시작하는 사람을 위한 기본 규칙이에요.']] });
+
+T('IT', { title:'아그리투리스모 휴가', en:'Agriturismo Stay', short:'농장에서 보내는 느린 휴가.', status:'rising', cat:'travel', city:'토스카나', pat:4,
+  why:['번잡한 도시를 피해서','직접 만든 음식','조용한 시간'],
+  what:[['농장에서 하룻밤','숙소가 올리브 농장이나 포도밭 안에 있어요.'],
+        ['식탁이 곧 체험','그 지역에서 키운 재료로 만든 식사를 먹어요.'],
+        ['걷는 여행과 연결','트레킹 코스와 함께 묶어 즐기는 사람이 늘었어요.']],
+  news:[['토스카나 농장 숙소 고르는 법','Via Piazza','2026-09-28','분위기와 식사를 기준으로 살펴봤어요.'],
+        ['올리브 수확철 체험','Tiber Daily','2026-09-21','가을에 참여할 수 있는 수확 체험을 소개해요.']] });
+
+T('IT', { title:'서서 마시는 에스프레소', en:'Standing Espresso', short:'바 앞에서 짧게, 빠르게, 진하게.', status:'talked', cat:'food', city:'밀라노', pat:3,
+  why:['빠른 일상 리듬','저렴한 한 잔','바리스타와의 짧은 대화'],
+  what:[['카운터가 무대','바리스타와 몇 마디 나누고 바로 나가요.'],
+        ['한 잔의 규칙','아침엔 카푸치노, 오후엔 에스프레소 같은 암묵적 규칙이 있어요.'],
+        ['관광객도 따라해요','서서 마시는 방식이 여행 코스에 들어오고 있어요.']],
+  news:[['밀라노 에스프레소 바 순례','Via Piazza','2026-10-01','아침마다 사람이 모이는 바를 찾아가 봤어요.'],
+        ['한 잔의 값','Tiber Daily','2026-09-24','커피 한 잔의 가격이 가진 의미를 이야기해요.']] });
+
+/* ---------- BRAZIL ---------- */
+T('BR', { title:'스트리트 푸드 2.0', en:'Street Food 2.0', short:'길거리 음식이 한 단계 진화했어요.', status:'hot', cat:'food', city:'상파울루', pat:2,
+  why:['셰프들의 참여','합리적인 가격','도시 문화와 연결'],
+  what:[['푸드 트럭이 레스토랑급','유명 셰프가 트럭에서 새 메뉴를 선보여요.'],
+        ['전통과 퓨전','치즈빵과 튀김 요리가 새로운 방식으로 재해석돼요.'],
+        ['주말 푸드 마켓','거리 한 구역을 통째로 푸드 마켓으로 바꾸는 행사가 늘었어요.']],
+  news:[['상파울루 푸드 트럭 지도','Paulista Post','2026-10-02','주말마다 모이는 트럭들을 소개해요.'],
+        ['길거리 음식의 새 얼굴','Rio Notes','2026-09-26','셰프와 노점이 만나는 지점을 들여다봤어요.']] });
+
+T('BR', { title:'거리 파티 블로쿠', en:'Bloco Street Party', short:'카니발이 아니어도 거리에서 춤을 춰요.', status:'rising', cat:'culture', city:'리우', pat:6,
+  why:['음악과 사람','돈이 들지 않아요','지역 커뮤니티'],
+  what:[['한 해 내내 열려요','카니발 시즌이 아니어도 동네별로 블로쿠가 열려요.'],
+        ['악단이 이끌어요','타악기와 밴드가 길을 걸으며 사람들을 모아요.'],
+        ['젊은 층이 주도','동네 모임에서 시작해 큰 행사로 자라는 곳도 있어요.']],
+  news:[['리우 블로쿠 달력','Paulista Post','2026-09-30','주말에 갈 수 있는 거리 파티를 모았어요.'],
+        ['동네 악단의 하루','Rio Notes','2026-09-22','연습부터 행진까지 따라가 봤어요.']] });
+
+T('BR', { title:'푸치발리', en:'Footvolley', short:'발로 하는 비치발리볼.', status:'new', cat:'wellness', city:'리우', pat:3,
+  why:['해변에서 하기 좋아요','기술이 눈에 띄어요','관람하는 재미'],
+  what:[['해변마다 네트가 쳐져요','아침부터 저녁까지 경기가 이어져요.'],
+        ['기술이 볼거리','공을 다루는 기술로 구경하는 사람들이 모여요.'],
+        ['다른 나라로 번져요','해외에서도 배우고 싶어 하는 사람이 늘고 있어요.']],
+  news:[['코파카바나의 푸치발리','Paulista Post','2026-09-29','해변에서 열리는 아침 경기를 취재했어요.'],
+        ['처음 해보는 푸치발리','Rio Notes','2026-09-21','입문자를 위한 기본 동작을 소개해요.']] });
+
+/* ---------- AUSTRALIA ---------- */
+T('AU', { title:'얼리버드 서프 클럽', en:'Early-bird Surf Club', short:'출근 전에 파도를 타고 하루를 시작해요.', status:'rising', cat:'wellness', city:'시드니', pat:6,
+  why:['해가 일찍 떠요','운동과 출근을 같이','동네 커뮤니티'],
+  what:[['새벽 6시 해변','서핑 후 해변 카페에서 커피를 마시고 출근해요.'],
+        ['초보도 환영','강습과 장비 대여를 갖춘 클럽이 늘고 있어요.'],
+        ['클럽 문화','회원끼리 아침 식사를 하는 모임이 생겨요.']],
+  news:[['본다이의 아침','Harbour Lines','2026-10-02','해 뜨기 전 해변이 붐비는 이유를 취재했어요.'],
+        ['서핑 클럽 가입 가이드','Southern Cross Daily','2026-09-25','가입 전에 알아야 할 점을 정리했어요.']] });
+
+T('AU', { title:'스페셜티 로스터리', en:'Specialty Roasters', short:'동네마다 자기 원두를 볶는 가게가 있어요.', status:'talked', cat:'food', city:'멜버른', pat:4,
+  why:['커피에 대한 자부심','원두의 이력','골목 카페 문화'],
+  what:[['원두 이야기가 메뉴','산지와 로스팅 날짜를 적어두는 카페가 많아요.'],
+        ['플랫화이트의 진화','기본 메뉴를 더 정교하게 만드는 데 집중해요.'],
+        ['투어 코스','멜버른 골목을 도는 커피 투어가 인기예요.']],
+  news:[['멜버른 로스터리 골목','Harbour Lines','2026-09-30','골목마다 다른 향을 가진 카페를 찾아갔어요.'],
+        ['원두를 고르는 법','Southern Cross Daily','2026-09-23','처음 사는 사람을 위한 기본 가이드예요.']] });
+
+T('AU', { title:'로드트립 밴라이프', en:'Van Life Road Trip', short:'캠핑카 한 대로 호주 일주.', status:'hot', cat:'travel', city:'퀸즐랜드', pat:7,
+  why:['자유로운 일정','숙소 부담 감소','넓은 대륙'],
+  what:[['밴 개조가 취미','직접 침대와 주방을 꾸며서 여행을 떠나요.'],
+        ['캠핑장이 늘었어요','밴 전용 캠핑장과 샤워 시설이 곳곳에 생기고 있어요.'],
+        ['일과 여행을 같이','원격 근무를 하며 달리는 사람도 있어요.']],
+  news:[['퀸즐랜드 해안 로드트립','Harbour Lines','2026-10-01','해안선을 따라 달리는 코스를 소개해요.'],
+        ['밴 개조 비용 얼마나 들까','Southern Cross Daily','2026-09-24','구성별 예산을 정리했어요.']] });
+
+/* ---------- THAILAND ---------- */
+T('TH', { title:'스트리트 푸드 투어', en:'Street Food Tour', short:'방콕의 노점을 한 바퀴 도는 저녁.', status:'hot', cat:'food', city:'방콕', pat:2,
+  why:['저렴하고 맛있어요','다양한 메뉴','야시장 문화'],
+  what:[['밤이 되면 열려요','해가 지면 골목마다 노점이 불을 켜요.'],
+        ['한 입씩 맛보기','여러 가게를 돌며 조금씩 먹는 방식이 인기예요.'],
+        ['노점도 인정받아요','국제 가이드에 오르는 노점이 늘고 있어요.']],
+  news:[['방콕 야시장 지도','Siam Notebook','2026-10-02','밤마다 열리는 시장들을 소개해요.'],
+        ['노점 요리사의 하루','Chao Phraya Post','2026-09-26','새벽 준비부터 마감까지 따라가 봤어요.']] });
+
+T('TH', { title:'웰니스 리트릿', en:'Wellness Retreat', short:'치앙마이에서 며칠 쉬어가는 여행.', status:'rising', cat:'wellness', city:'치앙마이', pat:3,
+  why:['쉬는 여행 선호','요가와 명상','자연 속 숙소'],
+  what:[['프로그램이 있는 숙소','요가, 명상, 식사가 함께 구성돼 있어요.'],
+        ['혼자 오는 사람도 많아요','조용히 머물 수 있는 1인 프로그램이 늘었어요.'],
+        ['로컬 재료의 식사','지역에서 난 재료로 만든 식단이 나와요.']],
+  news:[['치앙마이 리트릿 고르는 법','Siam Notebook','2026-09-29','프로그램과 분위기를 비교해 봤어요.'],
+        ['3일의 느린 여행','Chao Phraya Post','2026-09-21','짧게 다녀온 후기를 소개해요.']] });
+
+T('TH', { title:'무에타이 체험', en:'Muay Thai Class', short:'여행 코스에 체육관이 들어왔어요.', status:'new', cat:'wellness', city:'방콕', pat:5,
+  why:['체험형 여행','운동 효과','현지 문화'],
+  what:[['당일 클래스가 있어요','초보자도 한 시간 정도 배울 수 있어요.'],
+        ['관람도 인기','현지 경기를 보러 가는 코스가 늘고 있어요.'],
+        ['장비 대여','글러브와 복장을 빌려주는 체육관이 많아요.']],
+  news:[['방콕 무에타이 체육관','Siam Notebook','2026-10-03','체험 수업이 있는 곳을 모았어요.'],
+        ['처음 맞는 킥','Chao Phraya Post','2026-09-27','한 시간 수업 후기를 전해요.']] });
+
+
+/* ---------- 키워드(개념) 묶음 ----------
+   같은 키워드가 여러 나라에서 뜰 수 있어서, Keep은 나라가 아니라 '키워드'에 건다.
+   여기에 없는 트렌드는 자기 자신이 하나의 키워드(id 그대로)다.
+   실제 데이터에서는 수집이 키워드를 묶어 keywords 테이블에 넣는다. */
+const KW_GROUPS = {
+  'running':     { title: '러닝', members: ['kr-2', 'us-1'] },
+  'street-food': { title: '스트리트 푸드', members: ['br-1', 'th-1'] },
+  'cafe':        { title: '카페 문화', members: ['fr-3', 'au-2'] }
+};
+
+
+/* ---------- 지역(LOCAL)과 PEOPLE'S TREND 샘플 ---------- */
+const CITIES = [
+  { id:'seoul',    name:'SEOUL',     ko:'서울',     cc:'KR' },
+  { id:'tokyo',    name:'TOKYO',     ko:'도쿄',     cc:'JP' },
+  { id:'shanghai', name:'SHANGHAI',  ko:'상하이',   cc:'CN' },
+  { id:'newyork',  name:'NEW YORK',  ko:'뉴욕',     cc:'US' },
+  { id:'paris',    name:'PARIS',     ko:'파리',     cc:'FR' },
+  { id:'london',   name:'LONDON',    ko:'런던',     cc:'UK' },
+  { id:'rome',     name:'ROME',      ko:'로마',     cc:'IT' },
+  { id:'saopaulo', name:'SÃO PAULO', ko:'상파울루', cc:'BR' },
+  { id:'sydney',   name:'SYDNEY',    ko:'시드니',   cc:'AU' },
+  { id:'bangkok',  name:'BANGKOK',   ko:'방콕',     cc:'TH' }
+];
+
+/* 사용자가 직접 올린 것처럼 보이는 샘플. likes = "나도 봤어" 수 */
+const PEOPLE = [
+  { id:'p1',  city:'seoul',    area:'성수',      title:'작은 공간, 하루짜리 전시 카페', text:'성수에서 새로운 형태의 카페가 계속 생기는 중. 낮에는 카페, 저녁엔 전시장.', category:'culture', author:'@seongsu.daily', likes:128, date:'2026-10-03', pat:2 },
+  { id:'p2',  city:'seoul',    area:'연남',      title:'골목 안 필름 현상소', text:'연남동 골목 모퉁이마다 현상소가 하나씩 생겼어요. 다들 사진 맡기러 와요.', category:'life', author:'@yeonnam_roll', likes:74, date:'2026-09-30', pat:7 },
+  { id:'p3',  city:'seoul',    area:'망원',      title:'새벽 한강 러닝 모임', text:'망원 한강공원, 해 뜨기 전에 줄지어 뛰는 사람들이 보여요.', category:'wellness', author:'@mangwon.run', likes:51, date:'2026-09-28', pat:6 },
+  { id:'p4',  city:'tokyo',    area:'시모키타자와', title:'현지인이 많이 찾는 작은 바', text:'간판 없는 작은 바가 늘었어요. 단골끼리 앉아서 조용히 마셔요.', category:'food', author:'@shimokita.log', likes:96, date:'2026-10-02', pat:4 },
+  { id:'p5',  city:'tokyo',    area:'기치조지',  title:'동네 서점의 심야 영업', text:'기치조지 서점이 밤 11시까지 문을 열기 시작했어요.', category:'culture', author:'@kichijoji.walk', likes:63, date:'2026-09-27', pat:1 },
+  { id:'p6',  city:'shanghai', area:'안푸루',    title:'아침 시티워크 모임', text:'안푸루에서 아침마다 걷는 모임이 생겼어요. 커피 들고 같이 걸어요.', category:'life', author:'@anfu.morning', likes:58, date:'2026-10-01', pat:6 },
+  { id:'p7',  city:'newyork',  area:'브루클린',  title:'동네에서 자주 보이는 새로운 운동 문화', text:'가게 앞에 모여서 같이 뛰고, 끝나면 커피 마시는 모임이 계속 늘어요.', category:'wellness', author:'@bk.runclub', likes:142, date:'2026-10-03', pat:6 },
+  { id:'p8',  city:'newyork',  area:'윌리엄스버그', title:'LP 바 새로 오픈', text:'레코드를 직접 골라서 틀어주는 바가 여기저기 생겨요.', category:'culture', author:'@wburg.vinyl', likes:77, date:'2026-09-29', pat:5 },
+  { id:'p9',  city:'paris',    area:'마레',      title:'일요일 벼룩시장 줄', text:'마레 골목에서 일요일마다 빈티지 셀러들이 테이블을 펼쳐요.', category:'fashion', author:'@marais.sunday', likes:88, date:'2026-10-02', pat:0 },
+  { id:'p10', city:'paris',    area:'11구',      title:'무알콜 맥주 전문 바', text:'11구에 무알콜 맥주만 파는 바가 생겼어요. 생각보다 사람이 많아요.', category:'food', author:'@onzieme.nuit', likes:69, date:'2026-09-26', pat:3 },
+  { id:'p11', city:'london',   area:'쇼디치',    title:'낮 12시에 시작하는 파티', text:'쇼디치 클럽에서 낮에 춤추는 모임이 열려요. 저녁엔 다들 집에 가요.', category:'culture', author:'@shoreditch.noon', likes:81, date:'2026-10-01', pat:2 },
+  { id:'p12', city:'london',   area:'펙햄',      title:'옥상 코트에서 하는 피클볼', text:'펙햄 주차장 옥상에 코트가 생겼어요. 주말마다 예약이 꽉 차요.', category:'wellness', author:'@peckham.rooftop', likes:45, date:'2026-09-25', pat:5 },
+  { id:'p13', city:'rome',     area:'트라스테베레', title:'골목 파델 코트', text:'트라스테베레 뒷골목에 파델 코트가 들어섰어요. 저녁마다 줄 서요.', category:'wellness', author:'@trastevere.padel', likes:52, date:'2026-09-30', pat:5 },
+  { id:'p14', city:'saopaulo', area:'비라 마달레나', title:'골목 푸드 마켓', text:'비라 마달레나 골목에서 주말마다 셰프들이 직접 파는 마켓이 열려요.', category:'food', author:'@vila.mad', likes:91, date:'2026-10-02', pat:2 },
+  { id:'p15', city:'sydney',   area:'본다이',    title:'출근 전 서핑하는 사람들', text:'아침 6시에 해변에 가보면 서핑 보드를 든 사람들이 가득해요.', category:'wellness', author:'@bondi.dawn', likes:66, date:'2026-09-28', pat:6 },
+  { id:'p16', city:'bangkok',  area:'아리',      title:'아리 골목 카페 거리', text:'아리 골목에 로스터리 카페가 줄줄이 생기는 중. 퇴근길에 한 잔씩.', category:'food', author:'@ari.bkk', likes:73, date:'2026-10-01', pat:4 },
+  { id:'p17', city:'tokyo',    area:'下北沢',    title:'빈티지 셔츠 한 장 골라 입기', text:'주말 골목마다 옷 고르는 사람들로 북적여요. 오늘은 체크 셔츠가 대세.', category:'fashion', author:'@shimo.thrift', likes:84, date:'2026-10-03', pat:0 },
+  { id:'p18', city:'shanghai', area:'우캉루',    title:'오래된 집을 고친 작은 가게', text:'우캉루 옛 주택이 하나둘 카페와 편집숍으로 바뀌고 있어요.', category:'culture', author:'@wukang.walk', likes:92, date:'2026-10-03', pat:1 },
+  { id:'p19', city:'shanghai', area:'쉬후이',    title:'저녁 강변 러닝', text:'웨스트번드를 따라 퇴근 후 뛰는 사람들이 부쩍 늘었어요.', category:'wellness', author:'@xuhui.after', likes:61, date:'2026-09-29', pat:6 },
+  { id:'p20', city:'newyork',  area:'이스트빌리지', title:'동네 서점 낭독회', text:'작은 서점에서 저녁마다 낭독회가 열려요. 자리가 금방 차요.', category:'culture', author:'@ev.pages', likes:70, date:'2026-10-01', pat:1 },
+  { id:'p21', city:'paris',    area:'벨빌',      title:'언덕 위 와인바 테라스', text:'벨빌 공원 근처 테라스마다 해 질 무렵 사람들이 가득해요.', category:'food', author:'@belleville.soir', likes:79, date:'2026-10-03', pat:3 },
+  { id:'p22', city:'london',   area:'브릭레인',  title:'일요일 마켓 새 얼굴들', text:'브릭레인 일요일 마켓에 처음 보는 푸드 부스가 많아졌어요.', category:'food', author:'@bricklane.sun', likes:58, date:'2026-10-02', pat:2 },
+  { id:'p23', city:'rome',     area:'몬티',      title:'아침 에스프레소 바 줄서기', text:'몬티 골목 바에서 서서 마시는 에스프레소가 하루의 시작이에요.', category:'food', author:'@monti.mattina', likes:66, date:'2026-10-02', pat:4 },
+  { id:'p24', city:'rome',     area:'테스타초',  title:'새벽 시장 투어', text:'테스타초 시장을 도는 동네 투어가 요즘 인기예요.', category:'life', author:'@testaccio.mkt', likes:48, date:'2026-09-27', pat:2 },
+  { id:'p25', city:'saopaulo', area:'피녜이루스', title:'벽화 골목 산책', text:'새 벽화가 올라온 골목을 따라 걷는 사람들이 늘었어요.', category:'culture', author:'@pinheiros.arte', likes:83, date:'2026-10-03', pat:5 },
+  { id:'p26', city:'saopaulo', area:'파울리스타', title:'일요일 자전거 도로 개방', text:'파울리스타 대로가 일요일엔 자전거와 롤러 천지예요.', category:'wellness', author:'@paulista.dom', likes:62, date:'2026-09-28', pat:6 },
+  { id:'p27', city:'sydney',   area:'뉴타운',    title:'레코드 가게와 팝업 카페', text:'뉴타운 골목에 LP 가게와 팝업 카페가 나란히 생겼어요.', category:'culture', author:'@newtown.dig', likes:55, date:'2026-10-01', pat:5 },
+  { id:'p28', city:'sydney',   area:'맨리',      title:'페리 타고 가는 아침 수영', text:'맨리행 페리에 수영 가방을 멘 사람들이 가득해요.', category:'wellness', author:'@manly.ferry', likes:97, date:'2026-10-03', pat:6 },
+  { id:'p29', city:'bangkok',  area:'통로',      title:'밤에 열리는 골목 마켓', text:'통로 뒷골목에 해 지면 열리는 작은 마켓이 생겼어요.', category:'food', author:'@thonglor.night', likes:75, date:'2026-10-02', pat:4 },
+  { id:'p30', city:'bangkok',  area:'올드타운',  title:'오래된 건물 속 갤러리', text:'올드타운 옛 상가 건물이 작은 전시 공간으로 바뀌었어요.', category:'culture', author:'@oldtown.bkk', likes:59, date:'2026-09-29', pat:1 }
+];
+
+/* ---------- 화면에 보이는 문구 ---------- */
+const COPY = {
+  appName: '지구 근황',
+  appSub: 'EARTH, LATELY',
+  heroLine1: '요즘 여기서',
+  heroLine2: '뭐가 뜨고 있을까?',
+  heroHint: '지구본을 돌려서 나라를 골라보세요',
+  ring: 'WHAT’S TRENDING ON EARTH  ·  요즘 지구에서 뭐가 뜨고 있을까  ·  ',
+  surprise: 'Surprise Me',
+  surpriseLead: n => `오늘은 ${n}로 가볼까요?`,
+  surpriseCity: c => `지금 ${c}에서 뜨는 것`,
+  nav: { home:'홈', discover:'탐색', local:'로컬', keep:'Keep', my:'MY' },
+  keepTitle: 'MY KEEP',
+  keepSub: '내가 관심 있는 키워드',
+  keepEmpty: '아직 Keep한 게 없어요. 지구본에서 마음에 드는 걸 골라볼까요?',
+  followingEmpty: '아직 Keep한 트렌드가 없어요. 하나만 Keep하면 새 이야기가 여기에 올라와요.',
+  discoverSub: '지금, 다른 나라 사람들은 뭐해?',
+  localSub: '지금, 내 주변에서는?',
+  share: '우리 동네 트렌드 올리기',
+  shareTitle: 'Share a Trend',
+  sample: '샘플 콘텐츠',
+  toastKeep: 'Keep에 담았어요',
+  toastUnkeep: 'Keep에서 뺐어요',
+  toastPosted: '올렸어요. LOCAL에서 보여요',
+  toastSample: '샘플 콘텐츠라서 연결된 링크는 없어요'
+};
+
+
+/* ---------- Supabase 연결 설정 ----------
+   publishable(anon) 키는 공개되어도 안전한 키예요. (보안은 RLS가 담당)
+   secret / service_role 키는 절대 여기에 넣지 마세요. */
+const SUPABASE_URL = 'https://wbmiszonrsxpjzbnppfz.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_J8EkuZW7bpB1MGXbHkz8WA_Yl26qAQX';
+
+
+/* =====================================================================
+   REMOTE · Supabase에서 트렌드를 읽어와 TRENDS/KW_GROUPS를 같은 모양으로 채웁니다.
+   실패하면(오프라인, 미리보기 등) 샘플 데이터를 그대로 씁니다.
+   ===================================================================== */
+const DATA_SOURCE = { kind: 'sample' };
+async function loadRemote() {
+  if (typeof SUPABASE_URL === 'undefined' || !SUPABASE_URL) return;
+  const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 6000);
+  try {
+    const h = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY };
+    const get = p => fetch(SUPABASE_URL + '/rest/v1/' + p, { headers: h, signal: ctl.signal }).then(r => { if (!r.ok) throw new Error(p + ' ' + r.status); return r.json(); });
+    const [rows, kws] = await Promise.all([
+      get('trends?select=*,trend_news(*)&order=published_at.desc'),
+      get('keywords?select=*')
+    ]);
+    if (!rows.length) throw new Error('empty');
+    const cityName = {}; CITIES.forEach(c => { cityName[c.id] = c.ko; });
+    const next = rows.map(x => {
+      const co = COUNTRIES.find(c => c.cc === x.cc);
+      return {
+        id: x.id, country: co ? co.name : x.cc, countryCode: x.cc,
+        trendTitle: x.title, titleEn: x.title_en, shortDescription: x.short_desc,
+        status: x.status, category: x.category, city: x.area || cityName[x.city_id] || '',
+        image: { pattern: x.pattern || 0 },
+        whyTrending: x.why || [],
+        whatIsHappening: (x.what || []).map(w => ({ head: w.head, text: w.text })),
+        news: (x.trend_news || []).sort((a, b) => String(b.published_on).localeCompare(String(a.published_on))).map(n => ({ title: n.title, source: n.source, date: n.published_on, summary: n.summary })),
+        isFollowing: false, _kw: x.keyword_id
+      };
+    }).filter(t => COUNTRIES.some(c => c.cc === t.countryCode));
+    /* 같은 키워드가 2곳 이상이면 묶음으로 */
+    const groups = {};
+    next.forEach(t => { (groups[t._kw] = groups[t._kw] || []).push(t.id); });
+    Object.keys(KW_GROUPS).forEach(k => delete KW_GROUPS[k]);
+    Object.entries(groups).forEach(([k, ids]) => { if (ids.length > 1) { const kw = kws.find(z => z.id === k); KW_GROUPS[k] = { title: kw ? kw.title : k, members: ids }; } });
+    TRENDS.length = 0; next.forEach(t => TRENDS.push(t));
+    DATA_SOURCE.kind = 'supabase';
+  } catch (e) {
+    console.warn('[remote] 샘플 데이터로 시작해요:', e && e.message);
+  } finally { clearTimeout(to); }
+}
+
+await loadRemote();
+/* =====================================================================
+   CORE · 작은 도구들, 저장소, 포스터 이미지 생성
+   ===================================================================== */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const CO = Object.fromEntries(COUNTRIES.map(c => [c.cc, c]));
+const CITY = Object.fromEntries(CITIES.map(c => [c.id, c]));
+const byId = Object.fromEntries(TRENDS.map(t => [t.id, t]));
+/* 키워드 키: 묶음에 속하면 묶음 id, 아니면 트렌드 id */
+TRENDS.forEach(t => { t.kw = t.id; });
+Object.entries(KW_GROUPS).forEach(([k, g]) => g.members.forEach(id => { if (byId[id]) byId[id].kw = k; }));
+const kwKey = id => (byId[id] ? byId[id].kw : id);
+const kwTitle = k => KW_GROUPS[k] ? KW_GROUPS[k].title : (byId[k] ? byId[k].trendTitle : k);
+const flag = cc => { const k = cc === 'UK' ? 'GB' : cc; return String.fromCodePoint(...[...k].map(ch => 0x1F1E6 + ch.charCodeAt(0) - 65)); };
+const fmtDate = iso => { const p = String(iso).split('-'); return `${+p[1]}월 ${+p[2]}일`; };
+const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const hash = s => { let h = 2166136261; for (const ch of String(s)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+const gcolor = cc => CO[cc].g || CO[cc].c[0];
+
+/* localStorage는 막혀 있을 수 있어서 항상 try/catch. 실패해도 앱은 그대로 동작합니다. */
+const LS = {
+  get(k, def) { try { const v = localStorage.getItem('gt.' + k); return v == null ? def : JSON.parse(v); } catch (e) { return def; } },
+  set(k, v) { try { localStorage.setItem('gt.' + k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+  clear() { try { Object.keys(localStorage).filter(k => k.startsWith('gt.')).forEach(k => localStorage.removeItem(k)); } catch (e) {} }
+};
+
+const state = {
+  tab: 'home', sel: null, mode: null, detailId: null, lastCc: null,
+  keep: new Set(LS.get('keep', TRENDS.filter(t => t.isFollowing).map(t => t.kw)).map(kwKey)),
+  posts: LS.get('posts', []),
+  seen: new Set(LS.get('seen', [])),
+  visited: new Set(LS.get('visited', [])),
+  city: LS.get('city', 'seoul'),
+  theme: LS.get('theme', 'auto'),
+  user: LS.get('user', null), wd: false, feedTab: 'discover', cat: 'all', shown: 8, q: ''
+};
+const saveKeep = () => LS.set('keep', [...state.keep]);
+
+/* ---------- 상태 태그 / 시간 / 좌표 ---------- */
+const GLYPH = { hot:'●', rising:'↗', new:'✦', talked:'◐' };
+const tag = s => `<span class="tag tag--${s}">${GLYPH[s]} ${STATUS[s]}</span>`;
+function localTime(tz) {
+  try { return new Intl.DateTimeFormat('en-GB', { hour:'2-digit', minute:'2-digit', hour12:false, timeZone:tz }).format(new Date()); }
+  catch (e) { return '--:--'; }
+}
+const fmtLL = (lon, lat) => `${Math.abs(lat).toFixed(1)}°${lat >= 0 ? 'N' : 'S'} ${Math.abs(lon).toFixed(1)}°${lon >= 0 ? 'E' : 'W'}`;
+const hotOf = cc => { const l = TRENDS.filter(t => t.countryCode === cc); return l.find(t => t.status === 'hot') || l[0]; };
+/* 나라별 '온도': 키워드 상태(HOT 4 · RISING 2.5 · NEW 2 · TALKED 1)와 최근 소식으로 점수를 내고 순위로 3단계를 나눈다 */
+const HEAT = (() => {
+  const W = { hot: 4, rising: 2.5, new: 2, talked: 1 }, out = {};
+  const sc = COUNTRIES.map(co => {
+    const l = TRENDS.filter(t => t.countryCode === co.cc);
+    const s = l.reduce((a, t) => a + (W[t.status] || 1), 0) + l.length * .2 + (l.map(t => t.news.reduce((m, n) => n.date > m ? n.date : m, '')).sort().pop() || '').slice(-2) / 100;
+    return [co.cc, s];
+  }).sort((a, b) => b[1] - a[1]);
+  sc.forEach(([cc, s], i) => { out[cc] = { score: s, rank: i + 1, tier: i < 3 ? 'blaze' : i < 7 ? 'warm' : 'calm' }; });
+  return out;
+})();
+const HEAT_LABEL = { blaze: '🔥 지금 가장 뜨거운 곳', warm: '☀️ 요즘 따뜻해지는 곳', calm: '🌿 비교적 잔잔한 곳' };
+const LOGO_HTML = '<span class="logo" aria-hidden="true">ath<svg viewBox="0 0 24 24" class="logo-star"><path d="M12 0C12.8 7 17 11.2 24 12C17 12.8 12.8 17 12 24C11.2 17 7 12.8 0 12C7 11.2 11.2 7 12 0Z"/></svg></span>';
+
+/* 글쓴이 표시: 가입한 사용자는 닉네임, 탈퇴한 사용자는 '탈퇴한 사용자' */
+const authorOf = p => {
+  if (p.withdrawn) return { name: '탈퇴한 사용자', init: '?', gone: true };
+  if (p.nick) return { name: p.nick, init: p.nick.charAt(0), sub: '@' + String(p.author).replace('@', '') };
+  const h = String(p.author).replace('@', ''); return { name: h, init: h.charAt(0).toUpperCase() };
+};
+const latest = t => t.news.reduce((m, n) => n.date > m ? n.date : m, '');
+
+/* ---------- 포스터: 사진 대신 쓰는 평면 그래픽 8종 ---------- */
+function poster(pat, cc, seed) {
+  const [bg, fg] = CO[cc].c, h = hash(seed), a = (h % 7) / 7, b = ((h >> 3) % 5) / 5;
+  let g = '';
+  switch (pat % 8) {
+    case 0: for (let i = 0; i < 8; i++) g += `<circle cx="${250 + a * 60}" cy="${110 + b * 40}" r="${18 + i * 24}" fill="none" stroke="${fg}" stroke-width="${i % 2 ? 3 : 12}"/>`; break;
+    case 1: for (let y = 0; y < 9; y++) for (let x = 0; x < 13; x++) g += `<circle cx="${22 + x * 29}" cy="${22 + y * 32}" r="${3 + ((x + y + Math.round(a * 5)) % 4) * 3.2}" fill="${fg}"/>`; break;
+    case 2: g += `<circle cx="${190 + a * 40}" cy="300" r="150" fill="${fg}"/><rect x="0" y="262" width="400" height="38" fill="${bg}"/><rect x="0" y="258" width="400" height="5" fill="${fg}"/>`; break;
+    case 3: for (let i = -6; i < 14; i++) g += `<rect x="${i * 34}" y="-60" width="${12 + b * 8}" height="440" fill="${fg}" transform="rotate(${-18 - a * 8} 200 150)" opacity=".92"/>`; break;
+    case 4: for (let i = 0; i < 4; i++) { const w = 300 - i * 64; g += `<path d="M${200 - w / 2} 300 V${150 + i * 10} a${w / 2} ${w / 2} 0 0 1 ${w} 0 V300 Z" fill="${i % 2 ? bg : fg}" stroke="${fg}" stroke-width="3"/>`; } break;
+    case 5: for (let y = 0; y < 5; y++) for (let x = 0; x < 7; x++) if ((x + y + Math.round(a * 3)) % 2 === 0) g += `<rect x="${x * 60 - 10}" y="${y * 60}" width="60" height="60" fill="${fg}" opacity="${(.35 + ((x * y) % 3) * .3).toFixed(2)}"/>`; break;
+    case 6: for (let i = 0; i < 7; i++) { let d = 'M-10 ' + (40 + i * 38); for (let x = 0; x <= 420; x += 20) d += ` L${x - 10} ${(40 + i * 38 + Math.sin(x / 38 + i * .7 + a * 6) * 14).toFixed(1)}`; g += `<path d="${d}" fill="none" stroke="${fg}" stroke-width="${i % 2 ? 4 : 9}" stroke-linecap="round"/>`; } break;
+    default: g += `<rect x="${60 + a * 40}" y="40" width="190" height="190" fill="${fg}" opacity=".95" transform="rotate(12 150 130)"/><rect x="${170 - b * 30}" y="90" width="170" height="170" fill="none" stroke="${fg}" stroke-width="10" transform="rotate(-8 250 170)"/><circle cx="120" cy="230" r="46" fill="${bg}" stroke="${fg}" stroke-width="8"/>`;
+  }
+  return `<svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="400" height="300" fill="${bg}"/>${g}</svg>`;
+}
+const ccVars = cc => `--cc-bg:${CO[cc].c[0]};--cc-fg:${CO[cc].c[1]};--pc:${gcolor(cc)}`;
+
+/* ---------- 토스트 ---------- */
+let toastTimer = 0, toastAct = null;
+function toast(msg, actLabel, act) {
+  const el = $('#toast');
+  el.innerHTML = `<span>${esc(msg)}</span>${actLabel ? `<button data-toast-act>${esc(actLabel)}</button>` : ''}`;
+  toastAct = act || null;
+  el.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('on'), actLabel ? 3600 : 2000);
+}
+
+
+/* =====================================================================
+   GLOBE · 점으로 찍은 지구본 (canvas) + 나라 핀(HTML)
+   - 캔버스는 홈 화면 전체 크기. 지구본의 반지름/중심은 값으로 움직인다.
+     fill = 화면 가득(제목 아래를 살짝 덮음) / fit = 화면 가운데에 딱 맞게 / sel = 나라 선택 시 위로 올라감
+   ===================================================================== */
+const Globe = (() => {
+  const stage = $('#stage'), cv = $('#globe'), ctx = cv.getContext('2d'), pinsEl = $('#pins');
+  const D = Math.PI / 180, TAU = Math.PI * 2;
+  let W = 340, H = 600, R = 146, cyv = 300, dpr = 1, running = false, raf = 0, last = 0, idle = 0;
+  let lon = 112, lat = 26, vlon = 0, vlat = 0, dragging = false, tween = null, focusN = -1, tN = -1;
+  let onPick = () => {}, onFocus = () => {}, onZoom = () => {};
+  const T = {};
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const easeInOut = p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+  const easeOut = p => 1 - Math.pow(1 - p, 4);
+  const hexA = (h, a) => { const n = parseInt(h.slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; };
+  const clear = c => c.replace(/[\d.]+\)\s*$/, '0)');
+
+  /* ---- 지구본 크기/위치 (현재값 view, 목표값 goal) ---- */
+  let L = { fitR: 150, fitCy: 300, fillR: 300, fillCy: 400, selR: 120, selCy: 134 };
+  const view = { R: 146, cy: 300 }, goal = { R: 146, cy: 300 };
+  let zoom = 1, selMode = false;
+  function setGoal() {
+    if (selMode) { goal.R = L.selR; goal.cy = L.selCy; }
+    else { goal.R = L.fitR + (L.fillR - L.fitR) * zoom; goal.cy = L.fitCy + (L.fillCy - L.fitCy) * zoom; }
+  }
+  function layout(o) { L = o; W = o.W; H = o.H; dpr = Math.min(window.devicePixelRatio || 1, 2); cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); setGoal(); view.R = goal.R; view.cy = goal.cy; readTheme(); }
+  function setZoom(z) { zoom = z; if (!selMode) { setGoal(); start(); } onZoom(zoom); }
+  function setSel(b) { selMode = b; setGoal(); if (reduced) { view.R = goal.R; view.cy = goal.cy; draw(); updatePins(); } else start(); }
+
+  /* ---- 1. 점 지도: 손으로 그린 윤곽 안쪽에 일정 간격으로 점을 찍는다 ---- */
+  const bbox = a => { let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; for (let i = 0; i < a.length; i += 2) { x0 = Math.min(x0, a[i]); x1 = Math.max(x1, a[i]); y0 = Math.min(y0, a[i + 1]); y1 = Math.max(y1, a[i + 1]); } return [x0, x1, y0, y1]; };
+  const mk = a => ({ a, b: bbox(a) });
+  function inside(p, x, y) {
+    const b = p.b; if (x < b[0] || x > b[1] || y < b[2] || y > b[3]) return false;
+    const a = p.a; let c = false;
+    for (let i = 0, j = a.length - 2; i < a.length; j = i, i += 2) {
+      const xi = a[i], yi = a[i + 1], xj = a[j], yj = a[j + 1];
+      if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c;
+    }
+    return c;
+  }
+  const land = Object.values(GEO.land).map(mk), water = Object.values(GEO.water).map(mk);
+  const nations = COUNTRIES.map(co => (GEO.nation[co.cc] || []).map(mk));
+
+  /* ---- 2. 나라 핀 (버튼) ---- */
+  pinsEl.innerHTML = COUNTRIES.map(co => {
+    const h = hotOf(co.cc);
+    return `<button class="pin" data-cc="${co.cc}" style="--pc:${{ blaze: '#AEFF1C', warm: '#8FD400', calm: '#BFC8B0' }[HEAT[co.cc].tier]}" aria-label="${esc(co.ko)} 트렌드 보기"><i></i><span class="pc">${HEAT[co.cc].tier === 'blaze' ? '🔥 ' : ''}${esc(co.name)}</span><span class="pn">${esc(co.name)}</span><span class="pk">${esc(h.trendTitle)} ↗</span></button>`;
+  }).join('');
+  const pins = $$('.pin', pinsEl); pins.forEach(el => el.classList.add('t-' + HEAT[el.dataset.cc].tier));
+  const cvec = COUNTRIES.map(co => { const f = co.center[1] * D, l = co.center[0] * D; return [Math.cos(f) * Math.sin(l), Math.sin(f), Math.cos(f) * Math.cos(l)]; });
+
+  /* ---- 3. 투영 ---- */
+  let cl = 1, sl = 0, cp = 1, sp = 0;
+  const out = [0, 0, 0];
+  const rot = () => { cl = Math.cos(lon * D); sl = Math.sin(lon * D); cp = Math.cos(lat * D); sp = Math.sin(lat * D); };
+  function pr(x, y, z) {
+    const x1 = x * cl - z * sl, z1 = x * sl + z * cl, y2 = y * cp - z1 * sp, z2 = y * sp + z1 * cp;
+    out[0] = x1; out[1] = y2; out[2] = z2; return out;
+  }
+  function readTheme() {
+    const cs = getComputedStyle(document.documentElement), g = n => cs.getPropertyValue(n).trim();
+    T.ocean = g('--g-ocean'); T.land = g('--g-land'); T.grid = g('--g-grid'); T.s0 = g('--g-shade0'); T.s1 = g('--g-shade1'); T.rim = g('--g-rim'); T.shadow = g('--shadow'); T.ink = g('--ink'); T.edge = g('--g-edge');
+    draw();
+  }
+
+  /* ---- 4. 그리기 ---- */
+  function ringPath(a, cx, cy) {
+    let any = false; const pts = [];
+    for (let i = 0; i < a.length; i += 2) {
+      const f = a[i + 1] * D, l = a[i] * D, c = Math.cos(f);
+      pr(c * Math.sin(l), Math.sin(f), c * Math.cos(l));
+      let x = out[0], y = out[1];
+      if (out[2] > 0) any = true; else { const m = Math.hypot(x, y) || 1; x /= m; y /= m; }
+      pts.push(cx + R * x, cy - R * y);
+    }
+    if (!any) return false;
+    ctx.moveTo(pts[0], pts[1]);
+    for (let i = 2; i < pts.length; i += 2) ctx.lineTo(pts[i], pts[i + 1]);
+    ctx.closePath(); return true;
+  }
+  function draw() {
+    if (!T.ocean) return;
+    R = view.R; rot(); const breath = .5 + .5 * Math.sin(performance.now() / 520);
+    const cx = W / 2, cy = view.cy;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.fillStyle = T.ocean; ctx.fill();
+    ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.clip();
+
+    ctx.strokeStyle = T.grid; ctx.lineWidth = 1; ctx.beginPath();
+    for (let lo = -180; lo < 180; lo += 30) {
+      let pen = false;
+      for (let la = -90; la <= 90; la += 3) {
+        const f = la * D, l = lo * D, c = Math.cos(f);
+        pr(c * Math.sin(l), Math.sin(f), c * Math.cos(l));
+        if (out[2] > 0) { const px = cx + R * out[0], py = cy - R * out[1]; pen ? ctx.lineTo(px, py) : ctx.moveTo(px, py); pen = true; } else pen = false;
+      }
+    }
+    for (let la = -60; la <= 60; la += 30) {
+      let pen = false;
+      for (let lo = -180; lo <= 180; lo += 3) {
+        const f = la * D, l = lo * D, c = Math.cos(f);
+        pr(c * Math.sin(l), Math.sin(f), c * Math.cos(l));
+        if (out[2] > 0) { const px = cx + R * out[0], py = cy - R * out[1]; pen ? ctx.lineTo(px, py) : ctx.moveTo(px, py); pen = true; } else pen = false;
+      }
+    }
+    ctx.stroke();
+
+    ctx.lineJoin = 'round';
+    ctx.beginPath(); for (const p of land) ringPath(p.a, cx, cy);
+    ctx.fillStyle = T.land; ctx.fill();
+    ctx.beginPath(); for (const p of water) ringPath(p.a, cx, cy);
+    ctx.fillStyle = T.ocean; ctx.fill();
+    ctx.strokeStyle = T.ocean; ctx.lineWidth = 1; ctx.beginPath(); for (const p of land) ringPath(p.a, cx, cy); ctx.stroke();
+
+    for (let n = 0; n < COUNTRIES.length; n++) {
+      const cc = COUNTRIES[n].cc, col = '#AEFF1C', sel = state.sel === cc;
+      ctx.beginPath(); let any = false;
+      for (const p of nations[n]) any = ringPath(p.a, cx, cy) || any;
+      if (!any) continue;
+      /* 톤온톤: 같은 연두 하나를 온도에 따라 진하게/연하게 */
+      const tier = HEAT[cc].tier, al = sel ? 1 : tier === 'blaze' ? 1 : tier === 'warm' ? .6 : .3;
+      if (tier === 'blaze' && !sel) { ctx.save(); ctx.shadowColor = col; ctx.shadowBlur = 10 + 14 * breath; ctx.fillStyle = hexA(col, al); ctx.fill(); ctx.restore(); }
+      ctx.fillStyle = hexA(col, al); ctx.fill();
+      ctx.save(); ctx.globalAlpha = sel || tier === 'blaze' ? 1 : tier === 'warm' ? .6 : .35;
+      ctx.strokeStyle = sel ? T.ink || '#111' : T.edge || '#5E9400'; ctx.lineWidth = sel ? 2.2 : tier === 'blaze' ? 1.6 : 1; ctx.stroke(); ctx.restore();
+    }
+    ctx.restore();
+
+    let gr = ctx.createRadialGradient(cx - R * .4, cy - R * .45, 0, cx - R * .4, cy - R * .45, R * 1.15);
+    gr.addColorStop(0, T.s0); gr.addColorStop(1, clear(T.s0));
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.fillStyle = gr; ctx.fill();
+    gr = ctx.createRadialGradient(cx - R * .15, cy - R * .2, R * .55, cx - R * .15, cy - R * .2, R * 1.05);
+    gr.addColorStop(0, clear(T.s1)); gr.addColorStop(1, T.s1);
+    ctx.fillStyle = gr; ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.strokeStyle = T.rim; ctx.lineWidth = 1; ctx.stroke();
+  }
+
+  /* ---- 5. 핀 위치 + 가운데에 온 나라 ---- */
+  function updatePins() {
+    const cx = W / 2, cy = view.cy, zs = [];
+    for (let n = 0; n < pins.length; n++) {
+      const v = cvec[n]; pr(v[0], v[1], v[2]);
+      const z = out[2], el = pins[n], px = cx + R * out[0], py = cy - R * out[1];
+      const on = z > .14 && px > -20 && px < W + 20 && py > 0 && py < H;
+      if (on) {
+        el.style.transform = `translate3d(${px.toFixed(1)}px,${py.toFixed(1)}px,0)`;
+        el.style.opacity = Math.min(1, (z - .14) / .25).toFixed(2);
+      } else el.style.opacity = 0;
+      el.style.pointerEvents = on ? 'auto' : 'none'; el.tabIndex = on ? 0 : -1; el.setAttribute('aria-hidden', on ? 'false' : 'true');
+      zs.push(on ? z : 0);
+    }
+    /* 화면 한가운데에 가장 가까운 나라 → 상단 큰 제목 */
+    { let bn = -1, bzz = .82;
+      for (let n = 0; n < zs.length; n++) if (zs[n] > bzz) { bzz = zs[n]; bn = n; }
+      if (tN >= 0 && bn !== tN && zs[tN] > .8 && Math.acos(Math.min(1, zs[tN])) <= Math.acos(Math.min(1, bzz)) + .05) bn = tN;
+      if (bn !== tN) { tN = bn; onFocus(bn >= 0 ? COUNTRIES[bn].cc : null); } }
+    /* 키워드 말풍선은 한가운데에 가장 가까운 나라 하나에만. 나라를 골라둔 뒤에는 시트가 대신 보여준다. */
+    let best = -1;
+    if (!state.sel) {
+      let bz = .955;
+      for (let n = 0; n < zs.length; n++) if (zs[n] > bz) { bz = zs[n]; best = n; }
+      if (focusN >= 0 && best !== focusN && zs[focusN] > .94 && Math.acos(Math.min(1, zs[focusN])) <= Math.acos(Math.min(1, bz)) + .035) best = focusN;
+    }
+    if (best !== focusN) { if (focusN >= 0) pins[focusN].classList.remove('focus'); if (best >= 0) pins[best].classList.add('focus'); focusN = best; }
+    for (const el of pins) el.classList.toggle('sel', el.dataset.cc === state.sel);
+  }
+
+  /* ---- 6. 애니메이션 루프 ---- */
+  function frame(t) {
+    if (!running) return;
+    raf = requestAnimationFrame(frame);
+    const dt = Math.min(.05, (t - last) / 1000 || 0); last = t;
+    const k = reduced ? 1 : 1 - Math.exp(-8 * dt);
+    view.R += (goal.R - view.R) * k; view.cy += (goal.cy - view.cy) * k;
+    if (Math.abs(goal.R - view.R) < .2) view.R = goal.R; if (Math.abs(goal.cy - view.cy) < .2) view.cy = goal.cy;
+    if (tween) {
+      const p = Math.min(1, (t - tween.t0) / tween.dur), e = tween.ease(p);
+      lon = tween.lon0 + tween.dl * e; lat = tween.lat0 + tween.dp * e;
+      if (p >= 1) { const d = tween.done; tween = null; if (d) d(); }
+    } else if (!dragging && !pinch) {
+      if (Math.abs(vlon) > .4 || Math.abs(vlat) > .4) {
+        lon += vlon * dt; lat = clamp(lat + vlat * dt, -70, 70);
+        const kk = Math.exp(-3 * dt); vlon *= kk; vlat *= kk; idle = 0;
+      } else { idle += dt; if (!state.sel && idle > 2.2 && !reduced) lon += 3.4 * dt; }
+    }
+    lon = ((lon + 540) % 360) - 180;
+    draw(); updatePins();
+  }
+  function rotateTo(center, o = {}) {
+    const tl = center[0], tp = clamp(center[1], -55, 55);
+    let dl = ((tl - lon + 540) % 360) - 180; if (o.turns) dl += 360 * o.turns;
+    if (reduced) { lon = tl; lat = tp; vlon = vlat = 0; draw(); updatePins(); if (o.done) o.done(); return; }
+    tween = { t0: performance.now(), dur: o.dur || 1000, lon0: lon, lat0: lat, dl, dp: tp - lat, ease: o.fast ? easeOut : easeInOut, done: o.done };
+    vlon = vlat = 0; start();
+  }
+  function start() { if (running) return; running = true; last = performance.now(); raf = requestAnimationFrame(frame); }
+  function stop() { running = false; cancelAnimationFrame(raf); }
+
+  /* ---- 7. 한 손가락: 돌리기 / 두 손가락: 확대·축소 ---- */
+  const ptrs = new Map(); let pinch = null;
+  let pid = null, sx = 0, sy = 0, px0 = 0, py0 = 0, pt = 0, moved = false, suppress = false;
+  const quiet = () => { suppress = true; setTimeout(() => { suppress = false; }, 0); };
+  stage.addEventListener('pointerdown', e => {
+    if (e.button) return;
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (ptrs.size === 2 && !selMode) {
+      const [a, b] = [...ptrs.values()];
+      pinch = { d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, z0: zoom };
+      dragging = false; moved = false; pid = null; stage.classList.remove('drag'); return;
+    }
+    if (ptrs.size > 1) return;
+    pid = e.pointerId; sx = px0 = e.clientX; sy = py0 = e.clientY; pt = performance.now(); moved = false;
+  });
+  stage.addEventListener('pointermove', e => {
+    if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch) {
+      if (ptrs.size < 2) return;
+      const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
+      zoom = clamp(pinch.z0 + (d / pinch.d0 - 1) * 1.2, 0, 1); setGoal(); start(); return;
+    }
+    if (e.pointerId !== pid) return;
+    if (!moved) {
+      if (Math.hypot(e.clientX - sx, e.clientY - sy) < 7) return;
+      moved = true; dragging = true; tween = null; stage.classList.add('drag');
+      try { stage.setPointerCapture(pid); } catch (_) {}
+      px0 = e.clientX; py0 = e.clientY; pt = performance.now(); return;
+    }
+    const kdeg = 57.3 / R, now = performance.now(), dt = Math.max(.008, (now - pt) / 1000), dx = e.clientX - px0, dy = e.clientY - py0;
+    lon -= dx * kdeg; lat = clamp(lat + dy * kdeg, -70, 70);
+    vlon = clamp(.7 * vlon + .3 * (-dx * kdeg / dt), -420, 420); vlat = clamp(.7 * vlat + .3 * (dy * kdeg / dt), -300, 300);
+    px0 = e.clientX; py0 = e.clientY; pt = now; idle = 0;
+    if (!running) { draw(); updatePins(); }
+  });
+  const end = e => {
+    ptrs.delete(e.pointerId);
+    if (pinch) {
+      if (ptrs.size < 2) { zoom = zoom > .5 ? 1 : 0; setGoal(); start(); onZoom(zoom); pinch = null; quiet(); }
+      return;
+    }
+    if (e.pointerId !== pid) return; pid = null;
+    if (moved) { dragging = false; stage.classList.remove('drag'); quiet(); if (performance.now() - pt > 90) vlon = vlat = 0; }
+  };
+  stage.addEventListener('pointerup', end); stage.addEventListener('pointercancel', end);
+  stage.addEventListener('click', e => { if (suppress) { e.stopPropagation(); e.preventDefault(); } }, true);
+  /* 마우스/트랙패드: 휠이나 핀치 제스처로도 전환 */
+  stage.addEventListener('wheel', e => { if (selMode) return; e.preventDefault(); const z = e.deltaY < 0 ? 1 : 0; if (z !== zoom) setZoom(z); }, { passive: false });
+  pinsEl.addEventListener('click', e => { const b = e.target.closest('.pin'); if (b) onPick(b.dataset.cc, b.classList.contains('focus')); });
+  cv.addEventListener('click', () => onPick(null));
+
+  return {
+    layout, start, stop, rotateTo, readTheme, setSel, setZoom, toggleZoom: () => setZoom(zoom > .5 ? 0 : 1),
+    setPick: f => { onPick = f; }, setFocus: f => { onFocus = f; }, setZoomCb: f => { onZoom = f; },
+    redraw: () => { draw(); updatePins(); }
+  };
+})();
+
+
+/* =====================================================================
+   RENDER · 화면별 HTML 만들기 (데이터 → 문자열)
+   ===================================================================== */
+const keepCount = key => { let h = 7; for (const c of String(key)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return 18 + (h % 460) + (state.user && state.keep.has(key) ? 1 : 0); };
+const keepBtn = (id, sm) => {
+  const on = state.keep.has(kwKey(id));
+  return `<button class="keep-btn${on ? ' on' : ''}${sm ? ' sm' : ''}" data-act="keep" data-id="${id}" aria-pressed="${on}"><span class="plus">+</span><span class="lab">${on ? 'Kept' : 'Keep'}</span><span class="kc">${keepCount(kwKey(id))}</span></button>`;
+};
+const metaLine = t => `<span>${esc(CO[t.countryCode].name)}</span><span>·</span><span>${esc(t.city)}</span><span>·</span><span>${CATEGORIES[t.category]}</span>`;
+
+/* ---------- 키워드(나라가 여러 곳일 수 있음) ---------- */
+const kwMembers = k => TRENDS.filter(t => t.kw === k).sort((a, b) => latest(b).localeCompare(latest(a)));
+const daysAgo = iso => Math.round((new Date(todayISO()) - new Date(iso)) / 864e5);
+const whenLabel = t => { const d = daysAgo(latest(t)); return d <= 14 ? '지금' : d <= 45 ? '지난달' : `${+latest(t).slice(5, 7)}월`; };
+const kwChips = k => kwMembers(k).map(t => `<span class="kw-chip${whenLabel(t) === '지금' ? ' now' : ''}"><b>${esc(CO[t.countryCode].name)}</b>${whenLabel(t)} · ${STATUS[t.status]}</span>`).join('');
+const feedOrder = [...TRENDS].sort((a, b) => latest(b).localeCompare(latest(a)) || hash(a.id) - hash(b.id));
+
+function related(t, n) {
+  return TRENDS.filter(x => x.category === t.category && x.id !== t.id)
+    .sort((a, b) => ((a.countryCode === t.countryCode) - (b.countryCode === t.countryCode)) || (hash(a.id + t.id) - hash(b.id + t.id))).slice(0, n);
+}
+const miniRow = t => `<button class="mini" data-act="open" data-id="${t.id}"><span><b>${esc(t.trendTitle)} ${tag(t.status)}</b><span class="eyebrow" style="display:block;margin-top:6px">${esc(CO[t.countryCode].name)} · ${esc(t.city)}</span></span><span class="go">→</span></button>`;
+
+/* ---------- 피드 카드: 큰 포스터형 / 가로형 번갈아 ---------- */
+function feedItem(t, i, big) {
+  const cc = t.countryCode;
+  const img = `<div class="fi-img" style="${ccVars(cc)}">${poster(t.image.pattern, cc, t.id)}${big ? tag(t.status) : ''}</div>`;
+  if (big) return `<article class="fi" role="link" tabindex="0" data-act="open" data-id="${t.id}" style="--i:${i}">${img}
+    <div class="fi-meta">${metaLine(t)}</div><h3 class="fi-title">${esc(t.trendTitle)}</h3><p class="fi-desc">${esc(t.shortDescription)}</p>
+    <div class="fi-foot"><span class="eyebrow">${esc(t.titleEn)}</span>${keepBtn(t.id, true)}</div></article>`;
+  return `<article class="fi fi-row" role="link" tabindex="0" data-act="open" data-id="${t.id}" style="--i:${i}"><div>
+    <div class="fi-meta">${metaLine(t)}</div><h3 class="fi-title">${esc(t.trendTitle)}</h3><p class="fi-desc">${esc(t.shortDescription)}</p></div>${img}
+    <div class="fi-foot">${tag(t.status)}${keepBtn(t.id, true)}</div></article>`;
+}
+
+const matchQ = (t, q) => {
+  const hay = [t.trendTitle, t.titleEn, t.shortDescription, t.city, t.country, CO[t.countryCode].ko, CATEGORIES[t.category], ...t.whyTrending].join(' ').toLowerCase();
+  return q.toLowerCase().split(/\s+/).filter(Boolean).every(w => hay.includes(w));
+};
+const catName = k => k === 'all' ? '' : CATEGORIES[k];
+function filterChips() {
+  const c = [];
+  if (state.dc && state.dc !== 'all') c.push(['dc', CO[state.dc].name]);
+  if (state.cat && state.cat !== 'all') c.push(['cat', catName(state.cat)]);
+  return c.map(([k, v]) => `<button class="fchip" data-act="fclear" data-v="${k}">${esc(v)} <span aria-hidden="true">✕</span></button>`).join('');
+}
+function filterSheetHTML() {
+  const dc = state.dc || 'all';
+  return `<div class="fs-scrim" data-act="fclose"></div><div class="fs-panel" role="dialog" aria-label="필터">
+    <div class="fs-grip"></div><div class="fs-head"><b>필터</b><button data-act="freset">초기화</button></div>
+    <div class="fs-lab">나라</div><div class="fs-pills">${[['all', '전체 나라'], ...COUNTRIES.filter(c => c.cc !== 'KR').map(c => [c.cc, c.name])].map(([k, v]) => `<button class="pill${dc === k ? ' on' : ''}" data-act="dcountry" data-v="${k}">${esc(v)}</button>`).join('')}</div>
+    <div class="fs-lab">카테고리</div><div class="fs-pills">${[['all', '전체'], ...Object.entries(CATEGORIES)].map(([k, v]) => `<button class="pill${state.cat === k ? ' on' : ''}" data-act="cat" data-v="${k}">${v}</button>`).join('')}</div>
+    <button class="fs-done" data-act="fclose">결과 보기</button></div>`;
+}
+function discoverHTML() {
+  if (!state.user && state.feedTab === 'following') state.feedTab = 'discover';
+  const kn = state.user ? state.keep.size : 0;
+  return `<div class="eyebrow">DISCOVER</div><h1 class="hd">${esc(COPY.discoverSub)}</h1>
+    ${state.user ? `<div class="seg" role="tablist"><button role="tab" aria-selected="${state.feedTab === 'discover'}" data-act="feedtab" data-v="discover">Discover</button><button role="tab" aria-selected="${state.feedTab === 'following'}" data-act="feedtab" data-v="following">Following${kn ? ' · ' + kn : ''}</button></div>` : ''}
+    ${state.feedTab === 'discover' ? `<label class="srch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/></svg><input id="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="나라, 도시, 키워드로 찾아보기" value="${esc(state.q || '')}"></label>` : ''}
+    ${state.feedTab === 'discover' ? `<div class="fbar"><button class="fbtn" data-act="fopen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>필터</button><div id="fchips">${filterChips()}</div></div>` : ''}
+    <div id="dl">${discoverList()}</div>`;
+}
+function discoverList() {
+  const kn = state.user ? state.keep.size : 0;
+  let h = '';
+  if (state.feedTab === 'discover') {
+    const q = (state.q || '').trim(), list = feedOrder.filter(t => t.countryCode !== 'KR' && (!state.dc || state.dc === 'all' || t.countryCode === state.dc) && (state.cat === 'all' || t.category === state.cat) && (!q || matchQ(t, q)));
+    h += `<div class="feed">`;
+    h += list.slice(0, state.shown).map((t, i) => feedItem(t, i % 8, i % 3 === 0)).join('');
+    h += '</div>';
+    const dcPosts = state.dc && state.dc !== 'all' ? [...state.posts, ...PEOPLE].filter(p => CITY[p.city] && CITY[p.city].cc === state.dc) : [];
+    if (list.length > state.shown) h += `<button class="more" data-act="more">더 보기 · ${list.length - state.shown}</button>`;
+    if (!list.length) h += `<div class="empty"><p>${q ? `‘${esc(q)}’에 맞는 트렌드가 아직 없어요.` : '이 카테고리는 아직 비어 있어요.'}</p>${q ? '<button class="main" data-act="clearq">검색어 지우기</button>' : ''}</div>`;
+    if (dcPosts.length) h += `<div class="sec"><h2>People’s Trend</h2><span class="eyebrow">${esc(CO[state.dc].name)} · ${dcPosts.length}</span></div>${dcPosts.map(postHTML).join('')}`;
+  } else {
+    if (!state.user) return h + `<div class="empty"><p>로그인하면 Keep한 키워드의<br>새 이야기를 모아볼 수 있어요.</p><button class="main" data-act="login">로그인하기</button></div>`;
+    const kept = [...state.keep].map(k => kwMembers(k)[0]).filter(Boolean).sort((a, b) => latest(b).localeCompare(latest(a)));
+    if (!kept.length) return h + `<div class="empty"><p>${esc(COPY.followingEmpty)}</p><button class="main" data-act="tab" data-tab="home">지구본 보러 가기</button></div>`;
+    h += `<div class="feed">` + kept.map((t, i) => {
+      const n = [...t.news].sort((a, b) => b.date.localeCompare(a.date))[0];
+      return `<div class="up" style="--i:${i}"><p class="up-lead">Keep한 <em>${esc(kwTitle(t.kw))}</em>에 새로운 이야기가 올라왔어요.</p>
+        <button class="up-card" data-act="open" data-id="${t.id}"><b>${esc(n.title)}</b><span>${esc(n.source)} · ${esc(CO[t.countryCode].name)} · ${fmtDate(n.date)}</span></button></div>`;
+    }).join('') + `</div>`;
+    const rel = []; kept.forEach(t => related(t, 2).forEach(r => { if (!state.keep.has(r.kw) && !rel.includes(r)) rel.push(r); }));
+    if (rel.length) h += `<div class="divider"><span class="eyebrow">비슷한 트렌드</span></div><div class="feed">${rel.slice(0, 3).map((t, i) => feedItem(t, i, false)).join('')}</div>`;
+  }
+  return h;
+}
+
+/* ---------- LOCAL ---------- */
+function postHTML(p, i) {
+  const c = CITY[p.city], on = state.seen.has(p.id), n = (p.likes || 0) + (on ? 1 : 0);
+  const link = p.link ? `<a href="${esc(p.link)}" target="_blank" rel="noopener noreferrer" style="color:inherit">LINK ↗</a>` : '';
+  return `<article class="pp" style="--i:${i}"><div class="pp-img">${p.photo ? `<img src="${p.photo}" alt="">` : poster(p.pat || 0, c.cc, p.id)}</div>
+    <div class="pp-meta"><span>${esc(c.name)}${p.area ? ' · ' + esc(p.area) : ''}</span><span>${CATEGORIES[p.category] || ''}</span>${p.mine ? '<span class="you">YOU</span>' : ''}${link}</div>
+    <h3 class="pp-title">${esc(p.title)}</h3><p class="pp-text">${esc(p.text)}</p>
+    <div class="pp-foot"><span>${esc(authorOf(p).name)} · ${p.date === todayISO() ? '방금' : fmtDate(p.date)}</span><button class="seen${on ? ' on' : ''}" data-act="seen" data-id="${p.id}" aria-pressed="${on}">나도 봤어 <b>${n}</b></button></div></article>`;
+}
+function localHTML() {
+  const city = CITY.seoul, co = CO.KR;
+  const posts = [...state.posts.filter(p => CITY[p.city] && CITY[p.city].cc === 'KR'), ...PEOPLE.filter(p => CITY[p.city] && CITY[p.city].cc === 'KR')];
+  const list = TRENDS.filter(t => t.countryCode === 'KR');
+  return `<div class="eyebrow">LOCAL · KOREA</div><h1 class="hd">${esc(COPY.localSub)}</h1>
+    <div class="sec"><h2>KOREA NOW</h2><span class="eyebrow">${list.length} KEYWORDS</span></div>
+    <div>${list.map(miniRow).join('')}</div>
+    <div class="sec"><h2>People’s Trend</h2><span class="eyebrow">우리 동네 · ${posts.length}</span></div>
+    ${posts.length ? posts.map(postHTML).join('') : `<div class="empty"><p>우리 동네에서는 아직 올라온 게 없어요. 첫 번째로 올려볼까요?</p></div>`}
+    <div class="fab-wrap"><button class="fab" data-act="share"><span aria-hidden="true">+</span>${esc(COPY.share)}</button></div>`;
+}
+
+/* ---------- KEEP ---------- */
+function keepHTML() {
+  const list = [...state.keep].filter(k => kwMembers(k).length).reverse();
+  let h = `<div class="eyebrow">${esc(COPY.keepTitle)}</div><h1 class="hd">${esc(COPY.keepSub)}</h1>`;
+  if (!list.length) return h + `<div class="empty"><p>${esc(COPY.keepEmpty)}</p><button class="main" data-act="tab" data-tab="home">지구본 보러 가기</button></div>`;
+  h += `<div style="margin-top:20px;border-top:1px solid var(--line)">` + list.map((k, i) => { const ms = kwMembers(k), lead = ms[0]; return `<div class="kp" data-id="${k}" style="--i:${i}">
+    <div class="kp-del">Unkeep</div>
+    <div class="kp-in">
+      <button class="kp-main" data-act="open" data-id="${lead.id}"><div class="kp-title">${esc(kwTitle(k))}</div><div class="kp-where">${kwChips(k)}</div></button>
+      <button class="kp-x" data-act="unkeep" data-id="${k}" aria-label="${esc(kwTitle(k))} Keep 해제">×</button></div></div>`; }).join('') + `</div>`;
+  h += `<div class="note"><b>SOON</b><span>Keep한 키워드가 다른 나라에서 뜨기 시작하면 알려드릴게요. 옆으로 밀어서 뺄 수도 있어요.</span></div>`;
+  return h;
+}
+
+/* ---------- MY ---------- */
+/* ---------- 로그인 · 회원가입 · 개인정보 ---------- */
+const GOOGLE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.5 12.2c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 0 1-2.2 3.3v2.7h3.5c2.1-1.9 3.3-4.700 3.3-8z"/><path fill="#34A853" d="M12 23c3 0 5.500-1 7.300-2.700l-3.500-2.700c-1 .7-2.200 1-3.800 1-2.900 0-5.400-2-6.300-4.600H2.100v2.800A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.700 14c-.2-.7-.4-1.300-.4-2s.1-1.400.4-2V7.200H2.100a11 11 0 0 0 0 9.600z"/><path fill="#EA4335" d="M12 5.400c1.600 0 3.100.6 4.200 1.700l3.100-3.100A11 11 0 0 0 2.100 7.200L5.700 10c.9-2.600 3.400-4.600 6.300-4.600z"/></svg>';
+const KAKAO_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#191919" d="M12 3.500c-5.200 0-9.400 3.300-9.400 7.400 0 2.600 1.700 4.900 4.300 6.200l-1 3.700c-.1.300.3.600.6.400l4.400-2.900c.4 0 .7.100 1.100.1 5.200 0 9.400-3.300 9.400-7.400S17.200 3.500 12 3.500z"/></svg>';
+const snsButtons = () => `<div class="sns">
+  <button class="sns-btn kakao" data-act="sns" data-v="kakao">${KAKAO_SVG}<span>카카오로 계속하기</span></button>
+  <button class="sns-btn google" data-act="sns" data-v="google">${GOOGLE_SVG}<span>Google로 계속하기</span></button></div>`;
+const loginHero = reason => `<div class="lg-logo" aria-label="지구 근황">${LOGO_HTML}</div><h2 class="hd lg-hd">${reason ? esc(reason).replace(/\n/g, '<br>') : '이제, 나만의 지구로'}</h2><p class="lg-sub">세계에서 발견하고, 내 주변에서 더하세요.</p>`;
+const AUTH_BAR = '<div class="auth-bar"><button class="auth-x" data-act="authclose" aria-label="닫기">✕</button></div>';
+function authHTML() {
+  const step = authFlow.step;
+  if (step === 'profile') {
+    const pv = authFlow.provider === 'kakao' ? '카카오' : 'Google';
+    return `${AUTH_BAR}
+    <form class="form" id="signupForm" autocomplete="off">
+      <div><div class="eyebrow">${pv} 계정으로 가입 중</div><h2 class="hd">지구에서 쓸<br>이름을 정해주세요</h2></div>
+      <div class="fld"><label for="s-id">아이디 <span id="s-id-msg">영문 소문자·숫자·_ 4~16자</span></label><div class="idrow"><i>@</i><input class="in" id="s-id" maxlength="16" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="earth_lover"></div></div>
+      <div class="fld"><label for="s-nick">닉네임 <span id="s-nick-msg">2~12자</span></label><input class="in" id="s-nick" maxlength="12" placeholder="지구 여행자"></div>
+      <div class="agree">
+        <label class="chk all"><input type="checkbox" id="s-all"><span>전체 동의</span></label>
+        <label class="chk"><input type="checkbox" id="s-a1" class="req"><span><em>필수</em> 개인정보 수집·이용에 동의합니다</span><button type="button" data-act="legal">보기</button></label>
+        <label class="chk"><input type="checkbox" id="s-a2" class="req"><span><em>필수</em> 만 14세 이상입니다</span></label>
+      </div>
+      <button type="submit" class="go-btn" id="s-go" disabled>가입 완료</button>
+      <p class="sns-note">아이디와 닉네임은 ${pv}에서 가져오지 않고 지구 근황에서 따로 받아요. 가입 후 이 브라우저에 있던 Keep과 올린 글도 계정으로 옮겨져요.</p>
+    </form>`;
+  }
+  return `<div class="auth-page">${AUTH_BAR}<div class="auth-center">${loginHero(authFlow.reason)}${snsButtons()}</div></div>`;
+}
+function legalHTML() {
+  const sec = [
+    ['1. 수집하는 정보', '소셜 로그인 제공자(카카오·Google)가 알려주는 계정 식별값, 가입할 때 직접 입력하는 아이디와 닉네임, 이용자가 올린 게시물(제목·설명·사진·링크)을 수집해요. 이메일과 전화번호는 수집하지 않아요.'],
+    ['2. 이용 목적', '회원 확인과 로그인 유지, 게시물 작성·수정·삭제, Keep과 같은 개인 기능 제공, 서비스 개선을 위해 사용해요.'],
+    ['3. 보유 및 이용 기간', '회원 탈퇴 시 계정 식별값, 아이디, 닉네임, Keep 정보는 지체 없이 삭제해요. 이미 올린 게시물은 작성자 표시가 “탈퇴한 사용자”로 바뀐 채 유지돼요. 게시물 자체를 지우고 싶다면 탈퇴 전에 직접 삭제해 주세요.'],
+    ['4. 제3자 제공', '법령에 근거가 있는 경우를 제외하고 이용자의 정보를 외부에 제공하지 않아요.'],
+    ['5. 처리 위탁', '서비스 운영을 위해 클라우드 데이터베이스·인증 사업자에게 정보 처리를 맡길 수 있고, 맡기는 업체와 내용은 이 문서에 알려요.'],
+    ['6. 이용자의 권리', '언제든지 MY에서 내 글을 수정·삭제하고, 회원 탈퇴로 계정 정보를 삭제할 수 있어요.'],
+    ['7. 만 14세 미만', '만 14세 미만은 가입할 수 없어요.'],
+    ['8. 문의', '개인정보와 관련된 문의는 서비스 운영자에게 연락해 주세요. (연락처는 출시 전에 입력)']
+  ];
+  return `<div class="d-bar"><button class="back" data-act="legalclose"><span aria-hidden="true">←</span> Back</button><span class="eyebrow">PRIVACY</span></div>
+    <div class="d-body"><h1 class="d-title">개인정보<br>처리방침</h1>
+    <div class="note" style="margin-top:14px"><b>SAMPLE</b><span>프로토타입용 예시 문안이에요. 출시 전에 실제 수집 항목과 운영 정보에 맞춰 법률 검토를 받아야 해요.</span></div>
+    ${sec.map(([h, t]) => `<h2 class="d-sec">${esc(h)}</h2><p class="lg-p">${esc(t)}</p>`).join('')}
+    <p class="lg-p" style="color:var(--mute);margin-top:24px">시행일: 출시일 기준</p></div>`;
+}
+const authFlow = { step: 'login', provider: null, reason: '', after: null };
+
+function myHTML() {
+  const u = state.user;
+  if (!u) return '';
+  const mine = state.posts.filter(p => p.uid === u.id);
+  const th = [['auto', '자동'], ['light', '라이트'], ['dark', '다크']];
+  return `<div class="eyebrow">MY</div>
+    <div class="me"><div class="avatar">${esc(u.nick.charAt(0))}</div><div><b>${esc(u.nick)}</b><span class="eyebrow" style="text-transform:none">@${esc(u.id)} <span style="text-transform:uppercase">· ${u.provider === 'kakao' ? 'KAKAO' : 'GOOGLE'}</span></span></div></div>
+    <div class="stats"><div><strong>${state.keep.size}</strong><span class="eyebrow">Keep</span></div><div><strong>${mine.length}</strong><span class="eyebrow">올린 트렌드</span></div><div><strong>${state.visited.size}<small style="font-size:16px;opacity:.5">/${COUNTRIES.length}</small></strong><span class="eyebrow">가본 나라</span></div></div>
+    <div class="visited">${COUNTRIES.map(c => `<span class="${state.visited.has(c.cc) ? 'on' : ''}" style="${ccVars(c.cc)}">${c.cc}</span>`).join('')}</div>
+    <div class="sec"><h2>내가 올린 것</h2><span class="eyebrow">${mine.length}</span></div>
+    ${mine.length ? mine.map(p => `<div class="my-post"><div class="th">${p.photo ? `<img src="${p.photo}" alt="">` : poster(p.pat || 0, CITY[p.city].cc, p.id)}</div>
+      <div><b>${esc(p.title)}</b>${p.trendId && byId[p.trendId] ? `<span class="eyebrow">↳ ${esc(byId[p.trendId].trendTitle)}</span>` : ''}<span class="eyebrow">${esc(CITY[p.city].name)} · ${p.date === todayISO() ? '방금' : fmtDate(p.date)}</span></div>
+      <div class="my-act"><button class="pill sm" data-act="editpost" data-id="${p.id}">수정</button><button class="kp-x" data-act="delpost" data-id="${p.id}" aria-label="삭제">×</button></div></div>`).join('')
+      : `<div class="empty" style="padding-top:18px"><p style="font-size:17px">우리 동네에서 요즘 보이는 걸 올려보세요.</p><button class="main" data-act="share">${esc(COPY.share)}</button></div>`}
+    <div class="sec"><h2>Settings</h2></div>
+    <div class="eyebrow">화면 모드</div>
+    <div class="theme-seg">${th.map(([k, v]) => `<button class="pill${state.theme === k ? ' on' : ''}" data-act="theme" data-v="${k}">${v}</button>`).join('')}</div>
+    <div class="sec"><h2>Account</h2></div>
+    <div class="acct"><button class="row" data-act="legal"><span>개인정보 처리방침</span><i>→</i></button><button class="row" data-act="logout"><span>로그아웃</span><i>→</i></button></div>
+    ${state.wd ? `<div class="wd"><b>정말 탈퇴할까요?</b><ul><li>아이디, 닉네임, Keep 기록이 삭제돼요.</li><li>올린 글 ${mine.length}개는 “탈퇴한 사용자”로 남아요. 지우려면 먼저 직접 삭제해 주세요.</li><li>탈퇴 후에는 되돌릴 수 없어요.</li></ul><div class="wd-btns"><button class="pill" data-act="wdcancel">취소</button><button class="wd-go" data-act="withdraw">탈퇴하기</button></div></div>` : `<button class="danger" data-act="wdask">회원 탈퇴</button>`}
+    <button class="danger" data-act="reset" style="margin-left:8px">처음 상태로 되돌리기</button>
+    <div class="note"><b>PROTOTYPE</b><span>지금은 샘플 데이터로 동작해요. 뉴스와 사진은 실제 기사가 아니라 예시예요.</span></div>`;
+}
+
+/* ---------- 상세 ---------- */
+function otherCountries(t) {
+  const others = kwMembers(t.kw).filter(x => x.id !== t.id);
+  if (!others.length) return `<h2 class="d-sec">Other countries</h2><p class="oc-none">아직 다른 나라에서는 뜨지 않았어요. Keep하면 다른 나라에서 뜨기 시작할 때 함께 보여드려요.</p>`;
+  return `<h2 class="d-sec">Also trending in</h2><div>${others.map(x => `<button class="mini" data-act="open" data-id="${x.id}"><span><b>${esc(x.trendTitle)} ${tag(x.status)}</b><span class="eyebrow" style="display:block;margin-top:6px">${esc(CO[x.countryCode].name)} · ${esc(x.city)} · ${whenLabel(x)}</span></span><span class="go">→</span></button>`).join('')}</div>`;
+}
+function detailHTML(t) {
+  const cc = t.countryCode, co = CO[cc];
+  const list = TRENDS.filter(x => x.countryCode === cc), nx = list[(list.findIndex(x => x.id === t.id) + 1) % list.length];
+  return `<div class="d-xwrap"><button class="d-x" data-act="back" aria-label="닫기">✕</button></div>
+    <div class="d-poster" style="${ccVars(cc)}">${poster(t.image.pattern, cc, t.id)}<div class="d-cc">${cc}</div></div>
+    <div class="d-body">
+      <div class="d-meta"><span>${esc(co.name)}</span><span>·</span><span>${esc(t.city)}</span>${tag(t.status)}<span>${CATEGORIES[t.category]}</span></div>
+      <h1 class="d-title">${esc(t.trendTitle)}</h1><div class="d-en">${esc(t.titleEn)}</div>
+      <p class="d-short">${esc(t.shortDescription)}</p>
+      <div class="d-sec-row"><h2 class="d-sec">Why is this trending?</h2>${keepBtn(t.id)}</div>
+      <div class="why">${t.whyTrending.map(w => `<span>${esc(w)}</span>`).join('')}</div>
+      <h2 class="d-sec">What’s happening</h2>
+      <div class="what">${t.whatIsHappening.map(w => `<div><b>${esc(w.head)}</b><p>${esc(w.text)}</p></div>`).join('')}</div>
+      ${otherCountries(t)}
+      <h2 class="d-sec">People’s feed<span class="sample">${esc(COPY.sample)}</span></h2>
+      <p class="pf-sub">${esc(t.city)}에서 사람들이 ‘${esc(t.trendTitle)}’ 관련해 올린 글</p>
+      <div class="ig-list pf" id="pfList">${[...state.posts.filter(p => p.trendId === t.id), ...kwPosts(t, 6)].map(igHTML).join('')}</div>
+      <button class="pf-more" data-act="pfmore" data-id="${t.id}" data-n="6">더 보기</button>
+      <h2 class="d-sec">In the news<span class="sample">${esc(COPY.sample)}</span></h2>
+      <div>${t.news.map((n, i) => `<button class="nw" data-act="sample"><div class="th">${poster(t.image.pattern + i + 3, cc, t.id + i)}</div>
+        <div><b>${esc(n.title)}</b><div class="src">${esc(n.source)} · ${fmtDate(n.date)}</div><p>${esc(n.summary)}</p></div></button>`).join('')}</div>
+      <h2 class="d-sec">Also in ${CATEGORIES[t.category]}</h2>
+      <div>${related(t, 3).map(miniRow).join('')}</div>
+      <button class="next" data-act="open" data-id="${nx.id}"><span><small>Next in ${esc(co.name)}</small><b>${esc(nx.trendTitle)}</b></span><span class="arrow">→</span></button>
+    </div>
+    <div class="fab-wrap"><button class="fab" data-act="share" data-id="${t.id}"><span aria-hidden="true">+</span>이 이야기, 나도 올리기</button></div>`;
+}
+
+/* ---------- 올리기 ---------- */
+function composerHTML() {
+  const ed = composer.edit ? state.posts.find(p => p.id === composer.edit) : null;
+  const tr = composer.trend ? byId[composer.trend] : null, cityId = ed ? ed.city : tr ? trendCity(tr).id : state.city;
+  return `<div class="d-bar"><button class="back" data-act="closeComposer"><span aria-hidden="true">✕</span> Close</button><span class="eyebrow">${esc(COPY.shareTitle)}</span></div>
+    <form class="form" id="shareForm" autocomplete="off">
+      <div><div class="eyebrow">SHARE A TREND</div><h2 class="hd">${ed ? '올린 글 수정하기' : tr ? `‘${esc(tr.trendTitle)}’<br>이야기 올리기` : esc(COPY.share)}</h2>${tr ? `<p class="cp-link">${esc(CO[tr.countryCode].name)} · 이 키워드의 피드에 함께 보여요</p>` : ''}</div>
+      <div class="fld"><label for="f-city">지역</label><select class="in" id="f-city">${CITIES.map(c => `<option value="${c.id}"${c.id === cityId ? ' selected' : ''}>${c.name} · ${c.ko}</option>`).join('')}</select></div>
+      <div class="fld"><label for="f-area">동네 <span>선택</span></label><input class="in sm" id="f-area" maxlength="16" placeholder="예: 성수동"${ed ? ' value="' + esc(ed.area || '') + '"' : ''}></div>
+      <div class="fld"><label for="f-title">트렌드 제목</label><input class="in" id="f-title" maxlength="28" placeholder="요즘 이런 게 보여요"${ed ? ' value="' + esc(ed.title) + '"' : tr ? ' value="' + esc(tr.trendTitle) + '"' : ''}></div>
+      <div class="fld"><label for="f-text">한 줄 설명 <span id="f-count">0 / 60</span></label><textarea class="in" id="f-text" maxlength="60" placeholder="어디서 무엇이 어떻게 달라졌는지 짧게 적어주세요">${ed ? esc(ed.text) : ''}</textarea></div>
+      <div class="fld"><span class="lab">카테고리</span><div class="cats">${Object.entries(CATEGORIES).map(([k, v]) => `<button type="button" class="pill${k === composer.cat ? ' on' : ''}" data-act="pickcat" data-v="${k}">${v}</button>`).join('')}</div></div>
+      <div class="fld"><span class="lab">사진 <span>선택</span></span><label class="photo" id="f-photo"><input type="file" accept="image/*" id="f-file"><div><b>사진 올리기</b>직접 찍은 사진이면 더 좋아요</div></label></div>
+      <div class="fld"><label for="f-link">관련 링크 <span>선택</span></label><input class="in sm" id="f-link" type="url" inputmode="url" placeholder="https://"${ed && ed.link ? ' value="' + esc(ed.link) + '"' : ''}></div>
+      <button type="submit" class="go-btn" id="f-go" disabled>${ed ? '저장하기' : '올리기'}</button>
+    </form>`;
+}
+const composer = { cat: 'life', photo: null, trend: null, edit: null };
+
+/* ---------- 홈 시트 ---------- */
+/* ---------- 키워드별 피드: 트렌드 데이터에서 샘플 게시물을 만든다 ---------- */
+const SYN = {};
+const HANDLES = ['daily', 'walk', 'log', 'note', 'roll', 'now', 'lately', 'spot'];
+const trendCity = t => CITIES.find(c => c.name.toLowerCase() === String(t.city).toLowerCase()) || CITIES.find(c => c.cc === t.countryCode);
+function kwPosts(t, n = 4, from = 0) {
+  const city = trendCity(t);
+  const w = t.whatIsHappening || [];
+  return Array.from({ length: n }, (_, i) => i + from).map(i => {
+    const id = 'x-' + t.id + '-' + i, h = hash(id), it = w[i % (w.length || 1)] || { head: t.trendTitle, text: t.shortDescription };
+    const p = SYN[id] || (SYN[id] = {
+      id, city: city.id, area: '', title: it.head, text: it.text, category: t.category,
+      author: '@' + city.id + '.' + HANDLES[h % HANDLES.length], likes: 24 + (h % 170), date: '2026-10-0' + (1 + (h >> 3) % 4),
+      pat: (t.image && t.image.pattern != null ? t.image.pattern + i * 3 : h) % 8
+    });
+    return p;
+  });
+}
+function kfCard(p, t) {
+  const c = CITY[p.city], on = state.seen.has(p.id), n = (p.likes || 0) + (on ? 1 : 0), h = p.author.replace('@', '');
+  return `<article class="kf-c"><header><span class="ig-av" style="${ccVars(c.cc)}">${esc(h.charAt(0).toUpperCase())}</span><div><b>${esc(h)}</b><small>${esc(c.name)}</small></div></header>
+    <div class="kf-img">${poster(p.pat || 0, c.cc, p.id).replace("<svg", "<svg preserveAspectRatio=\"xMidYMid slice\"")}</div>
+    <div class="ig-act"><button class="seen${on ? ' on' : ''}" data-act="seen" data-id="${p.id}" aria-pressed="${on}">나도 봤어 <b>${n}</b></button><span>${fmtDate(p.date)}</span></div>
+    <p class="ig-cap"><b>${esc(p.title)}</b> ${esc(p.text)}</p></article>`;
+}
+function sheetHTML(cc) {
+  return TRENDS.filter(t => t.countryCode === cc).map((t, i) => `<div class="kwb" style="--i:${i}"><button class="kw" data-act="open" data-id="${t.id}"><span class="kw-title">${esc(t.trendTitle)}${tag(t.status)}</span><span class="kw-desc">${esc(t.shortDescription)}</span><span class="kw-go">→</span></button>
+    <div class="kf" aria-label="${esc(t.trendTitle)} 게시물">${kwPosts(t).map(p => kfCard(p, t)).join('')}</div></div>`).join('');
+}
+function surpriseHTML(t) {
+  const co = CO[t.countryCode];
+  return `<div class="sp-lead">${esc(COPY.surpriseLead(co.ko))}</div>
+    <div class="sp-city">${esc(COPY.surpriseCity(t.city))}</div>
+    <div class="sp-title">${esc(t.titleEn)}</div><div class="sp-ko">${esc(t.trendTitle)} ${tag(t.status)}</div>
+    <p class="sp-short">${esc(t.shortDescription)}</p>
+    <div class="sp-btns"><button class="main" data-act="open" data-id="${t.id}">자세히 보기</button>${keepBtn(t.id)}<button class="pill" data-act="again">다른 곳으로 ↻</button></div>${igFeed(t.countryCode)}`;
+}
+
+/* ---------- 인스타 피드 스타일: 이 나라에서 사람들이 올린 글 ---------- */
+function igHTML(p) {
+  const c = CITY[p.city], on = state.seen.has(p.id), n = (p.likes || 0) + (on ? 1 : 0), a = authorOf(p), h = a.name;
+  return `<article class="ig"><header><span class="ig-av${a.gone ? ' gone' : ''}" style="${ccVars(c.cc)}">${esc(a.init)}</span><div><b>${esc(h)}</b><small>${esc(c.name)}${p.area ? ' · ' + esc(p.area) : ''}</small></div><span class="ig-cat">${CATEGORIES[p.category] || ''}</span></header>
+    <div class="ig-img">${p.photo ? `<img src="${p.photo}" alt="">` : poster(p.pat || 0, c.cc, p.id).replace("<svg", "<svg preserveAspectRatio=\"xMidYMid slice\"")}</div>
+    <div class="ig-act"><button class="seen${on ? ' on' : ''}" data-act="seen" data-id="${p.id}" aria-pressed="${on}">나도 봤어 <b>${n}</b></button><span>${p.date === todayISO() ? '방금' : fmtDate(p.date)}</span></div>
+    <p class="ig-cap"><b>${esc(h)}</b> ${esc(p.title)}. ${esc(p.text)}</p></article>`;
+}
+function igFeed(cc) {
+  const ids = CITIES.filter(c => c.cc === cc).map(c => c.id);
+  const list = [...state.posts, ...PEOPLE].filter(p => ids.includes(p.city)).sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : (b.likes || 0) - (a.likes || 0)));
+  if (!list.length) return '';
+  return `<div class="ig-head"><span>PEOPLE’S TREND</span><small>${esc(CO[cc].ko)}에서 사람들이 올린 글 · 샘플</small></div><div class="ig-list">${list.map(igHTML).join('')}</div>`;
+}
+
+
+/* =====================================================================
+   APP · 화면 이동, 선택, Keep, 올리기, 이벤트
+   ===================================================================== */
+const App = (() => {
+  const app = $('#app'), home = $('#home');
+  const TABS = ['home', 'discover', 'local', 'keep', 'my'];
+  const bodies = { discover: $('#discoverBody'), local: $('#localBody'), keep: $('#keepBody'), my: $('#myBody') };
+  const renderers = { discover: discoverHTML, local: localHTML, keep: keepHTML, my: myHTML };
+  let curS = 0, swSuppress = false;
+
+  const ICONS = {
+    home: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/>',
+    discover: '<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/>',
+    local: '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',
+    keep: '<path d="M6.5 4h11v16.5L12 16.5 6.5 20.5z"/>',
+    my: '<circle cx="12" cy="8.5" r="3.6"/><path d="M4.8 20c.6-3.8 3.7-6 7.2-6s6.6 2.2 7.2 6"/>'
+  };
+  const renderNav = () => {
+    $('#nav').innerHTML = TABS.map(v => `<button data-act="tab" data-tab="${v}"${state.tab === v ? ' aria-current="page"' : ''}><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[v]}</svg><span>${COPY.nav[v]}</span>${v === 'keep' && state.user && state.keep.size ? `<em class="count">${state.keep.size}</em>` : ''}</button>`).join('');
+  };
+  function setFocus(cc) {
+    const ft = $('#ft'), fs = $('#fs'), co = cc && CO[cc];
+    if (co) { ft.textContent = co.en; ft.classList.remove('is-logo'); ft.removeAttribute('aria-label'); } else { ft.innerHTML = LOGO_HTML; ft.classList.add('is-logo'); ft.setAttribute('aria-label', '지구 근황'); }
+    fs.textContent = co ? `${flag(cc)} ${co.ko} · ${HEAT_LABEL[HEAT[cc].tier]}` : '';
+    [ft, fs].forEach(e => { e.classList.remove('swap'); void e.offsetWidth; e.classList.add('swap'); });
+    const rail = $('#rail'); if (!rail) return;
+    $$('.chip', rail).forEach(c => c.classList.toggle('on', c.dataset.cc === cc));
+    const on = $('.chip.on', rail); if (on && !state.sel) rail.scrollTo({ left: on.offsetLeft - (rail.clientWidth - on.offsetWidth) / 2, behavior: 'smooth' });
+  }
+  const renderTab = tab => { if (bodies[tab]) bodies[tab].innerHTML = renderers[tab](); };
+  function go(tab) {
+    if ((tab === 'my' || tab === 'keep') && !state.user) { openAuth('', null); return; }
+    state.tab = tab;
+    $$('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + tab));
+    renderNav();
+    if (tab === 'home') { requestAnimationFrame(() => { layoutHome(); if (!state.detailId) Globe.start(); }); }
+    else { Globe.stop(); renderTab(tab); }
+  }
+
+ /* ---------- Surprise 버튼: 슬쩍 말을 걸고, 누르면 나라를 슬롯머신처럼 돌린다 ---------- */
+  const TEASE = ['오늘도 한국, 일본, 미국…?', '가끔은 아무 데나 떠나보는 것도 좋잖아요.', '다음 목적지는 랜덤입니다.'];
+  let teaseI = 0, rollIv = 0;
+  function setSub(txt) { const e = $('#sbSub'); if (e) e.textContent = txt; }
+  function startTease() {
+    setSub(TEASE[0]);
+    setInterval(() => {
+      if (state.tab !== 'home' || rollIv) return;
+      const e = $('#sbSub'); if (!e) return;
+      e.classList.add('out'); setTimeout(() => { teaseI = (teaseI + 1) % TEASE.length; e.textContent = TEASE[teaseI]; e.classList.remove('out'); }, 260);
+      const b = $('#surpriseBtn'); b.classList.remove('wiggle'); void b.offsetWidth; b.classList.add('wiggle');
+    }, 3200);
+  }
+  function startRoll() {
+    const b = $('#surpriseBtn'); b.classList.add('rolling'); clearInterval(rollIv);
+    rollIv = setInterval(() => { const c = COUNTRIES[Math.floor(Math.random() * COUNTRIES.length)]; setSub(c.name); }, 85);
+  }
+  function stopRoll(cc) {
+    clearInterval(rollIv); rollIv = 0; $('#surpriseBtn').classList.remove('rolling');
+    setSub(cc ? `${CO[cc].name}!` : TEASE[teaseI]);
+    if (cc) setTimeout(() => { if (!rollIv) setSub(TEASE[teaseI]); }, 2500);
+  }
+
+  /* ---------- HOME 배치: 화면 크기에 맞춰 지구본 크기와 시트 위치 계산 ---------- */
+  function layoutHome() {
+    const W = home.clientWidth, H = home.clientHeight; if (!W || !H) return;
+    const ftH = $('#ft').offsetHeight, dockH = $('.dock').offsetHeight;
+    const discTop = 34 + ftH * .9;                       /* 지구본이 제목 아래 10%만 덮는다 */
+    const fillR = Math.round(Math.min((H - discTop - 4) / 2, W * .85));
+    const fitR = Math.round(Math.min(W * .45, (H - dockH - 24) / 2));
+    const selR = Math.round(Math.min(W * .36, H * .2));
+    home.style.setProperty('--sheetTop', Math.round(14 + selR * 2 * .98 + 2) + 'px');
+    Globe.layout({ W, H, fillR, fillCy: Math.round(discTop + fillR), fitR, fitCy: Math.round((34 + ftH + 34 + (H - dockH - 8)) / 2), selR, selCy: 14 + selR });
+  }
+
+  /* ---------- 나라 선택 / 시트 ---------- */
+  function markVisited(cc) { if (!state.visited.has(cc)) { state.visited.add(cc); LS.set('visited', [...state.visited]); } }
+  function selectCountry(cc) {
+    const co = CO[cc]; state.sel = cc; state.mode = 'country'; markVisited(cc);
+    $('#shName').textContent = co.name;
+    $('#shMeta').innerHTML = `<span>${flag(cc)} ${cc}</span><span>${esc(co.ko)}</span><span class="heat heat-${HEAT[cc].tier}">${HEAT_LABEL[HEAT[cc].tier]} · ${HEAT[cc].rank}/${COUNTRIES.length}위</span><span>LOCAL <b id="shTime">${localTime(co.tz)}</b></span><span>${fmtLL(co.center[0], co.center[1])}</span>`;
+    $('#kwList').innerHTML = sheetHTML(cc); $('#kwList').scrollTop = 0;
+    $('#sheetSurprise').classList.remove('open'); $('#sheetCountry').classList.add('open');
+    home.classList.add('has-sel'); Globe.setSel(true);
+    Globe.rotateTo(co.center, { dur: 950 });
+  }
+  function closeSheet() {
+    state.sel = null; state.mode = null;
+    $$('.sheet').forEach(s => s.classList.remove('open')); home.classList.remove('has-sel'); Globe.setSel(false); Globe.redraw();
+  }
+  function stepCountry(d) {
+    const i = COUNTRIES.findIndex(c => c.cc === state.sel), n = COUNTRIES.length;
+    selectCountry(COUNTRIES[(i + d + n) % n].cc);
+  }
+  function pickCountry(cc, onFocus) {
+    if (cc === null) { if (state.sel) closeSheet(); return; }
+    if (state.sel === cc && onFocus && state.mode === 'country') { openDetail(hotOf(cc).id); return; }
+    selectCountry(cc);
+  }
+
+  /* ---------- Surprise Me ---------- */
+  function surprise() {
+    const pool = TRENDS.filter(t => t.countryCode !== state.lastCc), t = pool[Math.floor(Math.random() * pool.length)];
+    state.lastCc = t.countryCode; state.sel = null; state.mode = null;
+    $$('.sheet').forEach(s => s.classList.remove('open')); home.classList.remove('has-sel'); Globe.setSel(false); Globe.redraw();
+    startRoll();
+    Globe.rotateTo(CO[t.countryCode].center, { turns: 1, dur: 2100, fast: true, done: () => { stopRoll(t.countryCode); openSurprise(t); } });
+  }
+  function openSurprise(t) {
+    state.sel = t.countryCode; state.mode = 'surprise'; markVisited(t.countryCode);
+    $('#spBody').innerHTML = surpriseHTML(t);
+    $('#sheetCountry').classList.remove('open'); $('#sheetSurprise').classList.add('open');
+    home.classList.add('has-sel'); Globe.setSel(true); Globe.redraw();
+  }
+
+  /* ---------- 상세 ---------- */
+  function openDetail(id) {
+    const t = byId[id]; if (!t) return;
+    state.detailId = id; markVisited(t.countryCode);
+    const el = $('#detail'); el.innerHTML = detailHTML(t); el.scrollTop = 0; el.classList.add('open');
+    if (state.tab === 'home') Globe.stop();
+  }
+  function closeDetail() {
+    state.detailId = null; $('#detail').classList.remove('open');
+    if (state.tab === 'home' && !$('#composer').classList.contains('open')) Globe.start();
+  }
+
+  /* ---------- Keep ---------- */
+  function refreshFs() { $('#fsheet').innerHTML = filterSheetHTML(); }
+  function syncKeep(id) {
+    const key = kwKey(id), on = state.keep.has(key);
+    $$('.keep-btn').filter(b => kwKey(b.dataset.id) === key).forEach(b => {
+      b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); b.querySelector('.lab').textContent = on ? 'Kept' : 'Keep'; b.querySelector('.kc').textContent = keepCount(key);
+      b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
+    });
+  }
+  function toggleKeep(id, quiet) {
+    if (!state.user) { const k = id; openAuth('Keep하려면\n로그인이 필요해요', () => toggleKeep(k, quiet)); return; }
+    id = kwKey(id);
+    const was = state.keep.has(id); was ? state.keep.delete(id) : state.keep.add(id); saveKeep();
+    syncKeep(id); renderNav();
+    if (state.tab === 'keep' || state.tab === 'my' || (state.tab === 'discover' && state.feedTab === 'following')) renderTab(state.tab);
+    if (!quiet) toast(was ? COPY.toastUnkeep : COPY.toastKeep, '취소', () => toggleKeep(id, true));
+  }
+
+  /* ---------- 트렌드 올리기 ---------- */
+  function openComposer(trendId, editId) {
+    if (!state.user) { openAuth('이야기를 올리려면\n로그인이 필요해요', () => openComposer(trendId, editId)); return; }
+    openComposerNow(trendId, editId);
+  }
+  function openComposerNow(trendId, editId) {
+    const ed = editId ? state.posts.find(p => p.id === editId) : null, tr = ed ? (ed.trendId ? byId[ed.trendId] : null) : trendId ? byId[trendId] : null;
+    composer.edit = ed ? ed.id : null; composer.trend = tr ? tr.id : null; composer.cat = ed ? ed.category : tr ? tr.category : 'life'; composer.photo = ed ? ed.photo || null : null;
+    const el = $('#composer'); el.innerHTML = composerHTML(); el.scrollTop = 0; el.classList.add('open'); if (tr || ed) validateForm();
+    if (state.tab === 'home') Globe.stop();
+  }
+  function closeComposer() { $('#composer').classList.remove('open'); if (state.tab === 'home' && !state.detailId) Globe.start(); }
+  function resizePhoto(file, cb) {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const m = Math.min(1, 900 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+        c.width = Math.round(img.width * m); c.height = Math.round(img.height * m);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); cb(c.toDataURL('image/jpeg', .74));
+      };
+      img.onerror = () => cb(null); img.src = fr.result;
+    };
+    fr.onerror = () => cb(null); fr.readAsDataURL(file);
+  }
+  function validateForm() { const ok = $('#f-title').value.trim() && $('#f-text').value.trim(); $('#f-go').disabled = !ok; $('#f-count').textContent = `${$('#f-text').value.length} / 60`; }
+  function submitPost() {
+    const title = $('#f-title').value.trim(), text = $('#f-text').value.trim(); if (!title || !text) return;
+    let link = $('#f-link').value.trim();
+    if (link) { if (!/^https?:\/\//i.test(link)) link = 'https://' + link; try { new URL(link); } catch (e) { link = ''; } }
+    if (composer.edit) {
+      const o = state.posts.find(x => x.id === composer.edit);
+      if (o) { Object.assign(o, { city: $('#f-city').value, area: $('#f-area').value.trim(), title, text, category: composer.cat, link, photo: composer.photo }); LS.set('posts', state.posts); }
+      closeComposer(); toast('수정했어요'); if (state.tab === 'my') renderTab('my'); return;
+    }
+    const p = { id: 'u' + Date.now(), city: $('#f-city').value, area: $('#f-area').value.trim(), title, text, category: composer.cat, link, photo: composer.photo, author: '@' + state.user.id, nick: state.user.nick, uid: state.user.id, likes: 0, date: todayISO(), pat: hash(title) % 8, mine: true, trendId: composer.trend || undefined };
+    state.posts.unshift(p);
+    if (!LS.set('posts', state.posts)) { p.photo = null; LS.set('posts', state.posts); }
+    state.city = p.city; LS.set('city', state.city);
+    if (composer.trend) {
+      const id = composer.trend; closeComposer(); toast('올렸어요. 이 키워드의 피드에서 보여요');
+      const el = $('#detail'); el.innerHTML = detailHTML(byId[id]); const f = $('#pfList'); if (f) el.scrollTop = Math.max(0, f.offsetTop - 120);
+      return;
+    }
+    closeComposer(); go('local'); toast(COPY.toastPosted);
+  }
+
+  /* ---------- 설정 ---------- */
+  function applyTheme(v) {
+    state.theme = v; LS.set('theme', v);
+    const r = document.documentElement; v === 'auto' ? r.removeAttribute('data-theme') : r.setAttribute('data-theme', v);
+    Globe.readTheme();
+  }
+  /* ---------- 로그인 · 가입 · 탈퇴 (프로토타입: 실제 소셜 연결 없음) ---------- */
+  const TAKEN = ['admin', 'test', 'earth', 'kakao', 'google', 'guest'];
+  function openAuth(reason, after) {
+    authFlow.step = 'login'; authFlow.reason = reason || ''; authFlow.after = after || null;
+    renderAuth(); $('#auth').classList.add('open'); if (state.tab === 'home') Globe.stop();
+  }
+  function renderAuth() { const el = $('#auth'); el.innerHTML = authHTML(); el.scrollTop = 0; }
+  function closeAuth() { $('#auth').classList.remove('open'); authFlow.after = null; if (state.tab === 'home' && !state.detailId && !$('#composer').classList.contains('open')) Globe.start(); }
+  function openLegal() { const el = $('#legal'); el.innerHTML = legalHTML(); el.scrollTop = 0; el.classList.add('open'); }
+  function validSignup() {
+    const id = $('#s-id').value, nick = $('#s-nick').value;
+    let idOk = false, idMsg = '영문 소문자·숫자·_ 4~16자', nickOk = nick.trim().length >= 2 && nick.trim().length <= 12;
+    if (id) { if (!/^[a-z0-9_]{4,16}$/.test(id)) idMsg = '영문 소문자·숫자·_ 4~16자로 써주세요'; else if (TAKEN.includes(id)) idMsg = '이미 사용 중인 아이디예요'; else { idOk = true; idMsg = '사용할 수 있어요'; } }
+    $('#s-id-msg').textContent = idMsg; $('#s-id-msg').className = id ? (idOk ? 'ok' : 'bad') : '';
+    $('#s-nick-msg').textContent = nick && !nickOk ? '2~12자로 써주세요' : '2~12자';
+    const agreed = $$('#signupForm .req').every(c => c.checked);
+    $('#s-all').checked = agreed; $('#s-go').disabled = !(idOk && nickOk && agreed);
+  }
+  function finishSignup() {
+    const id = $('#s-id').value, nick = $('#s-nick').value.trim();
+    state.user = { id, nick, provider: authFlow.provider, joined: todayISO() }; LS.set('user', state.user);
+    state.posts.forEach(p => { if (!p.uid && !p.withdrawn) { p.uid = id; p.author = '@' + id; p.nick = nick; } });
+    LS.set('posts', state.posts);
+    const next = authFlow.after; authFlow.after = null;
+    $('#auth').classList.remove('open'); renderNav(); if (state.tab === 'my' || state.tab === 'discover') renderTab(state.tab);
+    toast(`${nick}님, 환영해요`);
+    if (next) setTimeout(next, 350); else if (state.tab === 'home' && !state.detailId) Globe.start();
+  }
+  function logout() { state.user = null; state.wd = false; LS.set('user', null); renderNav(); go('home'); toast('로그아웃했어요'); }
+  function withdraw() {
+    const u = state.user; if (!u) return;
+    state.posts.forEach(p => { if (p.uid === u.id) { p.withdrawn = true; p.uid = null; p.author = '@withdrawn'; p.nick = null; p.mine = false; } });
+    LS.set('posts', state.posts);
+    state.keep = new Set(); LS.set('keep', []); state.user = null; state.wd = false; LS.set('user', null);
+    renderNav(); go('home'); toast('탈퇴가 완료됐어요');
+  }
+
+  function resetAll() {
+    LS.clear();
+    state.keep = new Set(TRENDS.filter(t => t.isFollowing).map(t => t.kw)); state.posts = []; state.seen = new Set(); state.visited = new Set(); state.city = 'seoul'; state.user = null; state.wd = false;
+    applyTheme('auto'); renderNav(); renderTab('my'); toast('처음 상태로 돌렸어요');
+  }
+
+  /* ---------- 클릭 한 곳에서 처리 ---------- */
+  app.addEventListener('click', e => {
+    const ta = e.target.closest('[data-toast-act]');
+    if (ta) { const f = toastAct; $('#toast').classList.remove('on'); if (f) f(); return; }
+    const el = e.target.closest('[data-act]'); if (!el) return;
+    const d = el.dataset;
+    switch (d.act) {
+      case 'tab': go(d.tab); break;
+      case 'pick': selectCountry(d.cc); break;
+      case 'open': openDetail(d.id); break;
+      case 'keep': case 'unkeep': toggleKeep(d.id); break;
+      case 'back': closeDetail(); break;
+      case 'prev': stepCountry(-1); break;
+      case 'next': stepCountry(1); break;
+      case 'close': closeSheet(); break;
+      case 'surprise': case 'again': surprise(); break;
+      case 'feedtab': state.feedTab = d.v; state.shown = 8; renderTab('discover'); break;
+      case 'dcountry': state.dc = d.v; state.shown = 8; renderTab('discover'); refreshFs(); break;
+      case 'cat': state.cat = d.v; state.shown = 8; renderTab('discover'); refreshFs(); break;
+      case 'fopen': refreshFs(); $('#fsheet').classList.add('open'); break;
+      case 'fclose': $('#fsheet').classList.remove('open'); break;
+      case 'freset': state.dc = 'all'; state.cat = 'all'; state.shown = 8; renderTab('discover'); refreshFs(); break;
+      case 'fclear': if (d.v === 'dc') state.dc = 'all'; else state.cat = 'all'; state.shown = 8; renderTab('discover'); break;
+      case 'more': state.shown += 8; renderTab('discover'); break;
+      case 'city': state.city = d.v; LS.set('city', d.v); renderTab('local'); break;
+      case 'share': openComposer(d.id); break;
+      case 'closeComposer': closeComposer(); break;
+      case 'pickcat': composer.cat = d.v; $$('[data-act="pickcat"]').forEach(b => b.classList.toggle('on', b.dataset.v === d.v)); break;
+      case 'pfmore': {
+        const t = byId[d.id], n = +el.dataset.n || 6;
+        $('#pfList').insertAdjacentHTML('beforeend', kwPosts(t, 6, n).map(igHTML).join(''));
+        el.dataset.n = n + 6; break;
+      }
+      case 'seen': {
+        const id = d.id; state.seen.has(id) ? state.seen.delete(id) : state.seen.add(id); LS.set('seen', [...state.seen]);
+        const p = [...state.posts, ...PEOPLE, ...Object.values(SYN)].find(x => x.id === id), on = state.seen.has(id);
+        el.classList.toggle('on', on); el.setAttribute('aria-pressed', on); el.querySelector('b').textContent = (p ? p.likes || 0 : 0) + (on ? 1 : 0);
+        el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); break;
+      }
+      case 'sample': toast(COPY.toastSample); break;
+      case 'theme': applyTheme(d.v); renderTab('my'); break;
+      case 'reset': resetAll(); break;
+      case 'sns': authFlow.provider = d.v; authFlow.step = 'profile'; if (!$('#auth').classList.contains('open')) { $('#auth').classList.add('open'); if (state.tab === 'home') Globe.stop(); } renderAuth(); break;
+      case 'login': openAuth('', null); break;
+      case 'authclose': closeAuth(); break;
+      case 'legal': openLegal(); break;
+      case 'legalclose': $('#legal').classList.remove('open'); break;
+      case 'logout': logout(); break;
+      case 'wdask': state.wd = true; renderTab('my'); break;
+      case 'wdcancel': state.wd = false; renderTab('my'); break;
+      case 'withdraw': withdraw(); break;
+      case 'editpost': openComposer(null, d.id); break;
+      case 'delpost':
+        if (!el.classList.contains('armed')) { el.classList.add('armed'); el.textContent = '삭제'; clearTimeout(el._t); el._t = setTimeout(() => { el.classList.remove('armed'); el.textContent = '×'; }, 3000); break; }
+        state.posts = state.posts.filter(p => p.id !== d.id); LS.set('posts', state.posts); renderTab('my'); toast('삭제했어요'); break;
+      case 'clearq': state.q = ''; renderTab('discover'); break;
+    }
+  });
+  /* 폼 */
+  $('#v-discover').addEventListener('input', e => {
+    if (e.target.id !== 'q') return;
+    state.q = e.target.value; state.shown = 8; $('#dl').innerHTML = discoverList();
+  });
+  $('#composer').addEventListener('input', e => { if (e.target.closest('#shareForm')) validateForm(); });
+  $('#auth').addEventListener('input', e => { if (e.target.closest('#signupForm')) { if (e.target.id === 's-all') $$('#signupForm .req').forEach(c => { c.checked = e.target.checked; }); validSignup(); } });
+  $('#auth').addEventListener('submit', e => { e.preventDefault(); if (!$('#s-go').disabled) finishSignup(); });
+  $('#composer').addEventListener('submit', e => { e.preventDefault(); submitPost(); });
+  $('#composer').addEventListener('change', e => {
+    if (e.target.id !== 'f-file' || !e.target.files[0]) return;
+    resizePhoto(e.target.files[0], url => {
+      if (!url) { toast('사진을 불러오지 못했어요. 다른 사진으로 해볼까요?'); return; }
+      composer.photo = url; const box = $('#f-photo'); const old = box.querySelector('img'); if (old) old.remove();
+      const im = document.createElement('img'); im.src = url; im.alt = ''; box.appendChild(im);
+    });
+  });
+  /* KEEP 옆으로 밀어서 빼기 */
+  let sw = null; const kb = bodies.keep;
+  kb.addEventListener('pointerdown', e => {
+    const row = e.target.closest('.kp-in'); if (!row || e.target.closest('.kp-x')) return;
+    sw = { row, id: row.parentNode.dataset.id, x: e.clientX, y: e.clientY, dx: 0, drag: false, pid: e.pointerId };
+  });
+  kb.addEventListener('pointermove', e => {
+    if (!sw || e.pointerId !== sw.pid) return;
+    const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+    if (!sw.drag) { if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.4) { sw.drag = true; sw.row.classList.add('dragging'); try { sw.row.setPointerCapture(sw.pid); } catch (_) {} } else return; }
+    sw.dx = Math.min(0, dx); sw.row.style.transform = `translateX(${sw.dx}px)`;
+  });
+  const swEnd = e => {
+    if (!sw || e.pointerId !== sw.pid) return;
+    const s = sw; sw = null; if (!s.drag) return;
+    s.row.classList.remove('dragging'); swSuppress = true; setTimeout(() => { swSuppress = false; }, 0);
+    if (s.dx < -84) { s.row.style.transform = 'translateX(-110%)'; setTimeout(() => toggleKeep(s.id), 200); } else s.row.style.transform = '';
+  };
+  kb.addEventListener('pointerup', swEnd); kb.addEventListener('pointercancel', swEnd);
+  kb.addEventListener('click', e => { if (swSuppress) { e.stopPropagation(); e.preventDefault(); } }, true);
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      if ($('#fsheet').classList.contains('open')) { $('#fsheet').classList.remove('open'); return; }
+      if ($('#legal').classList.contains('open')) $('#legal').classList.remove('open'); else if ($('#auth').classList.contains('open')) closeAuth(); else if ($('#composer').classList.contains('open')) closeComposer(); else if (state.detailId) closeDetail(); else if (state.sel) closeSheet();
+    }
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[role="link"]')) { e.preventDefault(); e.target.click(); }
+  });
+
+  /* ---------- 시작 ---------- */
+  function init() {
+    setFocus(null); Globe.setFocus(setFocus);
+    $('#rail').innerHTML = COUNTRIES.map(c => `<button class="chip t-${HEAT[c.cc].tier}" data-act="pick" data-cc="${c.cc}" style="--pc:${gcolor(c.cc)}"><span class="cf">${flag(c.cc)}</span><span class="cn">${c.name}</span><span class="ck">${esc(hotOf(c.cc).trendTitle)}</span></button>`).join('');
+    $('#surpriseBtn').innerHTML = `<span class="sb-dice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="8.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.4" fill="currentColor" stroke="none"/></svg></span><span class="sb-txt"><b>SURPRISE ME</b><em id="sbSub"></em></span><span class="sb-go" aria-hidden="true">↻</span>`;
+    startTease();
+    renderNav(); applyTheme(state.theme);
+    Globe.setPick(pickCountry);
+    $('#stage').addEventListener('dblclick', () => { if (!state.sel) Globe.toggleZoom(); });
+    new ResizeObserver(() => layoutHome()).observe(home);
+    matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => Globe.readTheme());
+    go('home');
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(layoutHome);
+    setInterval(() => { const el = $('#shTime'); if (el && state.sel) el.textContent = localTime(CO[state.sel].tz); }, 30000);
+  }
+  return { init };
+})();
+App.init();
+
+})();
+</script></body></html>
