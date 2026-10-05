@@ -637,6 +637,9 @@ body, .view, .sheet, .layer, .nav { word-break:keep-all; overflow-wrap:break-wor
 .pp-av { width:20px; height:20px; border-radius:50%; flex:none; overflow:hidden; display:inline-grid; place-items:center; background:var(--ink); color:var(--bg); font:800 10px/1 var(--f-body); font-style:normal; }
 .pp-av img { width:100%; height:100%; object-fit:cover; display:block; }
 
+.fld > label.photo { display:grid; justify-content:center; align-content:center; text-align:center; }
+.fld > label.photo > div { text-align:center; }
+
 </style></head><body>
 <div class="app" id="app">
   <main class="views">
@@ -1968,14 +1971,13 @@ function myHTML() {
   return `<div class="eyebrow">MY</div>
     <div class="me"><div class="avatar">${avatarInner(u, u.avatar)}</div><div><b>${esc(u.nick)}<button class="edit-ic" data-act="profile" aria-label="프로필 수정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="m13.5 6.5 4 4"/></svg></button></b><span class="eyebrow" style="text-transform:none">@${esc(u.id)} <span style="text-transform:uppercase">· ${u.provider === 'kakao' ? 'KAKAO' : 'GOOGLE'}</span></span></div></div>
     <div class="stats"><div><strong>${state.keep.size}</strong><span class="eyebrow">Keep</span></div><div><strong>${mine.length}</strong><span class="eyebrow">올린 트렌드</span></div><div><strong>${state.visited.size}</strong><span class="eyebrow">가본 나라</span></div><div><strong>${state.fav.size}</strong><span class="eyebrow">관심 나라</span></div></div>
-    <div class="sec"><h2>내가 올린 것</h2><span class="eyebrow">${mine.length}</span></div>
+    <div class="sec"><h2>내가 올린 트렌드</h2><span class="eyebrow">${mine.length}</span></div>
     ${mine.length ? `<div class="my-grid">${mine.slice(0, state.myShown).map(p => `<div class="mg" data-act="editpost" data-id="${p.id}" role="button" tabindex="0" aria-label="${esc(p.title)} 수정">
       <div class="mg-th">${p.photo ? `<img src="${p.photo}" alt="" loading="lazy">` : poster(p.pat || 0, CITY[p.city].cc, p.id)}</div>
       <span class="mg-t">${esc(p.title)}</span><button class="mg-x" data-act="delpost" data-id="${p.id}" aria-label="삭제">×</button></div>`).join('')}</div>
       ${mine.length > state.myShown ? `<button class="more" data-act="mymore">더 보기 · ${mine.length - state.myShown}</button>` : ''}`
       : `<div class="empty" style="padding-top:18px"><p style="font-size:17px">우리 동네에서 요즘 보이는 걸 올려보세요.</p><button class="main" data-act="share">${esc(COPY.share)}</button></div>`}
-    <div class="sec"><h2>Account</h2></div>
-    <div class="acct"><button class="row" data-act="settings"><span>설정</span><i>→</i></button><button class="row" data-act="logout"><span>로그아웃</span><i>→</i></button></div>`;
+        <div class="acct"><button class="row" data-act="settings"><span>설정</span><i>→</i></button><button class="row" data-act="logout"><span>로그아웃</span><i>→</i></button></div>`;
 }
 function settingsHTML() {
   const th = [['auto', '자동'], ['light', '라이트'], ['dark', '다크']];
@@ -2026,9 +2028,9 @@ function detailHTML(t) {
 function composerHTML() {
   const ed = composer.edit ? state.posts.find(p => p.id === composer.edit) : null;
   const tr = composer.trend ? byId[composer.trend] : null, cityId = ed ? ed.city : tr ? trendCity(tr).id : state.city;
-  return `<div class="d-bar"><button class="back" data-act="closeComposer"><span aria-hidden="true">✕</span> Close</button><span class="eyebrow">${esc(COPY.shareTitle)}</span></div>
+  return `<div class="d-bar"><button class="back" data-act="closeComposer"><span aria-hidden="true">✕</span> Close</button></div>
     <form class="form" id="shareForm" autocomplete="off">
-      <div><div class="eyebrow">SHARE A TREND</div><h2 class="hd">${ed ? '올린 글 수정하기' : tr ? `‘${esc(tr.trendTitle)}’<br>이야기 올리기` : esc(COPY.share)}</h2>${tr ? `<p class="cp-link">${esc(CO[tr.countryCode].name)} · 이 키워드의 피드에 함께 보여요</p>` : ''}</div>
+      <div><div class="eyebrow">SHARE A TREND</div><h2 class="hd">${ed ? '올린 글 수정하기' : tr ? `‘${esc(tr.trendTitle)}’<br>이야기 올리기` : '지금, 무슨 일이<br>일어나고 있나요?'}</h2>${tr ? `<p class="cp-link">${esc(CO[tr.countryCode].name)} · 이 키워드의 피드에 함께 보여요</p>` : ''}</div>
       <div class="fld"><label for="f-city">지역</label><select class="in" id="f-city">${CITIES.map(c => `<option value="${c.id}"${c.id === cityId ? ' selected' : ''}>${c.name} · ${c.ko}</option>`).join('')}</select></div>
       <div class="fld"><label for="f-area">동네 <span>선택</span></label><input class="in sm" id="f-area" maxlength="16" placeholder="예: 성수동"${ed ? ' value="' + esc(ed.area || '') + '"' : ''}></div>
       <div class="fld"><label for="f-title">트렌드 제목</label><input class="in" id="f-title" maxlength="28" placeholder="요즘 이런 게 보여요"${ed ? ' value="' + esc(ed.title) + '"' : tr ? ' value="' + esc(tr.trendTitle) + '"' : ''}></div>
