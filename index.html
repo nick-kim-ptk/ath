@@ -647,6 +647,10 @@ body, .view, .sheet, .layer, .nav { word-break:keep-all; overflow-wrap:break-wor
 .d-poster.has-img .d-cc { z-index:2; color:#fff; }
 .d-credit { position:absolute; right:10px; bottom:8px; z-index:3; font:600 10px/1 var(--f-body, system-ui); color:rgba(255,255,255,.9); text-decoration:none; text-shadow:0 1px 3px rgba(0,0,0,.5); }
 
+/* 서프라이즈 화면 아래 텍스트 목록 */
+.sp-more .kwb { opacity:1; animation:none; padding-bottom:0; border-top:0; }
+.sp-more .kw { opacity:1; animation:none; }
+
 </style></head><body>
 <div class="app" id="app">
   <main class="views">
@@ -1389,7 +1393,7 @@ const PEOPLE = [
 
 /* ---------- 화면에 보이는 문구 ---------- */
 const COPY = {
-  appName: '지구 근황',
+  appName: 'ath+',
   appSub: 'EARTH, LATELY',
   heroLine1: '요즘 여기서',
   heroLine2: '뭐가 뜨고 있을까?',
@@ -1436,6 +1440,8 @@ function postFromRow(r) {
     trendId: r.trend_id || undefined, avatar: wd ? null : (r.author_avatar || null), author: wd ? '@withdrawn' : '@' + r.username, nick: wd ? null : r.author_name, uid: wd ? null : r.username, withdrawn: wd,
     likes: Number(r.seen_count) || 0, date: String(r.created_at).slice(0, 10), pat: [...String(r.title)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % 8, mine: false };
 }
+/* 지역 칸에 나라 이름(특히 다른 나라)이 들어오면 버려요 */
+const cleanArea = (a, cc) => { a = String(a || '').trim(); return !a || COUNTRIES.some(c => c.ko === a || c.name === a || c.en === a) ? '' : a; };
 async function loadRemote() {
   if (typeof SUPABASE_URL === 'undefined' || !SUPABASE_URL) return;
   const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 6000);
@@ -1453,7 +1459,7 @@ async function loadRemote() {
       return {
         id: x.id, country: co ? co.name : x.cc, countryCode: x.cc,
         trendTitle: x.title, titleEn: x.title_en, shortDescription: x.short_desc,
-        status: x.status, category: x.category, city: x.area || cityName[x.city_id] || '',
+        status: x.status, category: x.category, city: cleanArea(x.area, x.cc) || cityName[x.city_id] || '',
         image: { pattern: x.pattern || 0, url: x.image_url || '', credit: x.image_credit || '', link: x.image_link || '' },
         whyTrending: x.why || [],
         whatIsHappening: (x.what || []).map(w => ({ head: w.head, text: w.text })),
@@ -1854,7 +1860,7 @@ const keepBtn = (id, sm) => {
   const on = state.keep.has(kwKey(id));
   return `<button class="keep-btn${on ? ' on' : ''}${sm ? ' sm' : ''}" data-act="keep" data-id="${id}" aria-pressed="${on}"><span class="plus">+</span><span class="lab">${on ? 'Kept' : 'Keep'}</span><span class="kc">${keepCount(kwKey(id))}</span></button>`;
 };
-const metaLine = t => `<span>${esc(CO[t.countryCode].name)}</span><span>·</span><span>${esc(t.city)}</span><span>·</span><span>${CATEGORIES[t.category]}</span>`;
+const metaLine = t => `<span>${esc(CO[t.countryCode].name)}</span><span>·</span>${t.city ? `<span>${esc(t.city)}</span><span>·</span>` : ''}<span>${CATEGORIES[t.category]}</span>`;
 
 /* ---------- 키워드(나라가 여러 곳일 수 있음) ---------- */
 const kwMembers = k => TRENDS.filter(t => t.kw === k).sort((a, b) => latest(b).localeCompare(latest(a)));
@@ -1986,9 +1992,8 @@ function keepHTML() {
 const GOOGLE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.5 12.2c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 0 1-2.2 3.3v2.7h3.5c2.1-1.9 3.3-4.700 3.3-8z"/><path fill="#34A853" d="M12 23c3 0 5.500-1 7.300-2.700l-3.500-2.700c-1 .7-2.200 1-3.800 1-2.900 0-5.400-2-6.300-4.600H2.100v2.800A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.700 14c-.2-.7-.4-1.300-.4-2s.1-1.400.4-2V7.200H2.100a11 11 0 0 0 0 9.600z"/><path fill="#EA4335" d="M12 5.400c1.600 0 3.100.6 4.200 1.700l3.100-3.100A11 11 0 0 0 2.100 7.200L5.700 10c.9-2.600 3.400-4.600 6.300-4.600z"/></svg>';
 const KAKAO_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#191919" d="M12 3.500c-5.200 0-9.400 3.300-9.400 7.400 0 2.600 1.700 4.900 4.300 6.200l-1 3.700c-.1.300.3.600.6.400l4.400-2.900c.4 0 .7.100 1.100.1 5.200 0 9.400-3.300 9.400-7.400S17.200 3.500 12 3.500z"/></svg>';
 const snsButtons = () => `<div class="sns">
-  <button class="sns-btn kakao" data-act="sns" data-v="kakao">${KAKAO_SVG}<span>카카오로 계속하기</span></button>
   <button class="sns-btn google" data-act="sns" data-v="google">${GOOGLE_SVG}<span>Google로 계속하기</span></button></div>`;
-const loginHero = reason => `<div class="lg-logo" aria-label="지구 근황">${LOGO_HTML}</div><h2 class="hd lg-hd">${reason ? esc(reason).replace(/\n/g, '<br>') : '이제, 나만의 지구로'}</h2><p class="lg-sub">세계에서 발견하고, 내 주변에서 더하세요.</p>`;
+const loginHero = reason => `<div class="lg-logo" aria-label="ath+">${LOGO_HTML}</div><h2 class="hd lg-hd">${reason ? esc(reason).replace(/\n/g, '<br>') : '이제, 나만의 지구로'}</h2><p class="lg-sub">세계에서 발견하고, 내 주변에서 더하세요.</p>`;
 const AUTH_BAR = '<div class="auth-bar"><button class="auth-x" data-act="authclose" aria-label="닫기">✕</button></div>';
 function authHTML() {
   const step = authFlow.step;
@@ -2005,14 +2010,14 @@ function authHTML() {
         <label class="chk"><input type="checkbox" id="s-a2" class="req"><span><em>필수</em> 만 14세 이상입니다</span></label>
       </div>
       <button type="submit" class="go-btn" id="s-go" disabled>가입 완료</button>
-      <p class="sns-note">아이디와 닉네임은 ${pv}에서 가져오지 않고 지구 근황에서 따로 받아요. 가입 후 이 브라우저에 있던 Keep과 올린 글도 계정으로 옮겨져요.</p>
+      <p class="sns-note">아이디와 닉네임은 ${pv}에서 가져오지 않고 ath+에서 따로 받아요. 가입 후 이 브라우저에 있던 Keep과 올린 글도 계정으로 옮겨져요.</p>
     </form>`;
   }
   return `<div class="auth-page">${AUTH_BAR}<div class="auth-center">${loginHero(authFlow.reason)}${snsButtons()}</div></div>`;
 }
 function legalHTML() {
   const sec = [
-    ['1. 수집하는 정보', '소셜 로그인 제공자(카카오·Google)가 알려주는 계정 식별값, 가입할 때 직접 입력하는 아이디와 닉네임, 이용자가 올린 게시물(제목·설명·사진·링크)을 수집해요. 이메일과 전화번호는 수집하지 않아요.'],
+    ['1. 수집하는 정보', '소셜 로그인 제공자(Google)가 알려주는 계정 식별값, 가입할 때 직접 입력하는 아이디와 닉네임, 이용자가 올린 게시물(제목·설명·사진·링크)을 수집해요. 이메일과 전화번호는 수집하지 않아요.'],
     ['2. 이용 목적', '회원 확인과 로그인 유지, 게시물 작성·수정·삭제, Keep과 같은 개인 기능 제공, 서비스 개선을 위해 사용해요.'],
     ['3. 보유 및 이용 기간', '회원 탈퇴 시 계정 식별값, 아이디, 닉네임, Keep 정보는 지체 없이 삭제해요. 이미 올린 게시물은 작성자 표시가 “탈퇴한 사용자”로 바뀐 채 유지돼요. 게시물 자체를 지우고 싶다면 탈퇴 전에 직접 삭제해 주세요.'],
     ['4. 제3자 제공', '법령에 근거가 있는 경우를 제외하고 이용자의 정보를 외부에 제공하지 않아요.'],
@@ -2085,7 +2090,7 @@ function detailHTML(t) {
   return `<div class="d-xwrap"><button class="d-x" data-act="back" aria-label="닫기">✕</button></div>
     <div class="d-poster${t.image && t.image.url ? ' has-img' : ''}" style="${ccVars(cc)}">${poster(t.image.pattern, cc, t.id)}${tPhoto(t)}<div class="d-cc">${cc}</div>${tCredit(t)}</div>
     <div class="d-body">
-      <div class="d-meta"><span>${esc(co.name)}</span><span>·</span><span>${esc(t.city)}</span>${tag(t.status)}<span>${CATEGORIES[t.category]}</span></div>
+      <div class="d-meta"><span>${esc(co.name)}</span>${t.city ? `<span>·</span><span>${esc(t.city)}</span>` : ''}${tag(t.status)}<span>${CATEGORIES[t.category]}</span></div>
       <h1 class="d-title">${esc(t.trendTitle)}</h1><div class="d-en">${esc(t.titleEn)}</div>
       <p class="d-short">${esc(t.shortDescription)}</p>
       <div class="d-sec-row"><h2 class="d-sec">Why is this buzzing?</h2>${keepBtn(t.id)}</div>
@@ -2145,18 +2150,28 @@ function kfCard(p, t) {
     <div class="ig-act"><button class="seen${on ? ' on' : ''}" data-act="seen" data-id="${p.id}" aria-pressed="${on}">나도 봤어 <b>${n}</b></button><span>${p.date === todayISO() ? '방금' : fmtDate(p.date)}</span></div>
     <p class="ig-cap"><b>${esc(p.title)}</b> ${esc(p.text)}</p></article>`;
 }
+/* 화제 한 줄(제목·뱃지·설명·화살표). 사람들이 올린 글이 있을 때만 아래에 글 줄을 붙여요. */
+function kwRow(t, i, withPosts = true) {
+  return `<div class="kwb" style="--i:${i}"><button class="kw" data-act="open" data-id="${t.id}"><span class="kw-title">${esc(t.trendTitle)}${tag(t.status)}</span><span class="kw-desc">${esc(t.shortDescription)}</span><span class="kw-go">→</span></button>
+    ${withPosts ? (ps => ps.length ? `<div class="kf" aria-label="${esc(t.trendTitle)} 게시물">${ps.map(p => kfCard(p, t)).join('')}</div>` : '')(trendPosts(t)) : ''}</div>`;
+}
 function sheetHTML(cc) {
   if (!TRENDS.some(t => t.countryCode === cc)) return `<div class="empty" style="padding-top:28px"><p style="font-size:18px">아직 수집된 키워드가 없어요.</p><p style="margin-top:8px;color:var(--mute);font-size:14px">곧 ${esc(CO[cc].name)}의 이야기가 채워질 예정이에요.</p></div>`;
-  return TRENDS.filter(t => t.countryCode === cc).map((t, i) => `<div class="kwb" style="--i:${i}"><button class="kw" data-act="open" data-id="${t.id}"><span class="kw-title">${esc(t.trendTitle)}${tag(t.status)}</span><span class="kw-desc">${esc(t.shortDescription)}</span><span class="kw-go">→</span></button>
-    ${(ps => ps.length ? `<div class="kf" aria-label="${esc(t.trendTitle)} 게시물">${ps.map(p => kfCard(p, t)).join('')}</div>` : '')(trendPosts(t))}</div>`).join('');
+  return TRENDS.filter(t => t.countryCode === cc).map((t, i) => kwRow(t, i)).join('');
+}
+/* 서프라이즈 화면 아래: 이 나라의 다른 화제를 텍스트 목록으로 */
+function spMore(t) {
+  const list = TRENDS.filter(x => x.countryCode === t.countryCode && x.id !== t.id);
+  if (!list.length) return '';
+  return `<div class="ig-head"><span>MORE FROM ${esc((CO[t.countryCode].en || CO[t.countryCode].name).toUpperCase())}</span><small>${esc(CO[t.countryCode].ko)}의 다른 화제</small></div><div class="sp-more">${list.map((x, i) => kwRow(x, i, false)).join('')}</div>`;
 }
 function surpriseHTML(t) {
   const co = CO[t.countryCode];
   return `<div class="sp-lead">${esc(COPY.surpriseLead(co.ko))}</div>
-    <div class="sp-city">${esc(COPY.surpriseCity(t.city))}</div>
+    <div class="sp-city">${esc(COPY.surpriseCity(t.city || co.ko))}</div>
     <div class="sp-title">${esc(t.titleEn)}</div><div class="sp-ko">${esc(t.trendTitle)} ${tag(t.status)}</div>
     <p class="sp-short">${esc(t.shortDescription)}</p>
-    <div class="sp-btns"><button class="main" data-act="open" data-id="${t.id}">자세히 보기</button>${keepBtn(t.id)}<button class="pill" data-act="again">다른 곳으로 ↻</button></div>${igFeed(t.countryCode)}`;
+    <div class="sp-btns"><button class="main" data-act="open" data-id="${t.id}">자세히 보기</button>${keepBtn(t.id)}<button class="pill" data-act="again">다른 곳으로 ↻</button></div>${spMore(t)}`;
 }
 
 /* ---------- 인스타 피드 스타일: 이 나라에서 사람들이 올린 글 ---------- */
@@ -2166,12 +2181,6 @@ function igHTML(p) {
     <div class="ig-img">${p.photo ? `<img src="${p.photo}" alt="">` : poster(p.pat || 0, c.cc, p.id).replace("<svg", "<svg preserveAspectRatio=\"xMidYMid slice\"")}</div>
     <div class="ig-act"><button class="seen${on ? ' on' : ''}" data-act="seen" data-id="${p.id}" aria-pressed="${on}">나도 봤어 <b>${n}</b></button><span>${p.date === todayISO() ? '방금' : fmtDate(p.date)}</span></div>
     <p class="ig-cap"><b>${esc(h)}</b> ${esc(p.title)}. ${esc(p.text)}</p></article>`;
-}
-function igFeed(cc) {
-  const ids = CITIES.filter(c => c.cc === cc).map(c => c.id);
-  const list = [...state.posts, ...PEOPLE].filter(p => ids.includes(p.city)).sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : (b.likes || 0) - (a.likes || 0)));
-  if (!list.length) return '';
-  return `<div class="ig-head"><span>PEOPLE’S BUZZ</span><small>${esc(CO[cc].ko)}에서 사람들이 올린 글 · 샘플</small></div><div class="ig-list">${list.map(igHTML).join('')}</div>`;
 }
 
 
@@ -2197,7 +2206,7 @@ const App = (() => {
   };
   function setFocus(cc) {
     const ft = $('#ft'), fs = $('#fs'), co = cc && CO[cc];
-    if (co) { ft.textContent = co.en; ft.classList.remove('is-logo'); ft.removeAttribute('aria-label'); } else { ft.innerHTML = LOGO_HTML; ft.classList.add('is-logo'); ft.setAttribute('aria-label', '지구 근황'); }
+    if (co) { ft.textContent = co.en; ft.classList.remove('is-logo'); ft.removeAttribute('aria-label'); } else { ft.innerHTML = LOGO_HTML; ft.classList.add('is-logo'); ft.setAttribute('aria-label', 'ath+'); }
     fs.textContent = co ? `${flag(cc)} ${co.ko} · ${HEAT_LABEL[HEAT[cc].tier]}` : '';
     [ft, fs].forEach(e => { e.classList.remove('swap'); void e.offsetWidth; e.classList.add('swap'); });
     const rail = $('#rail'); if (!rail) return;
