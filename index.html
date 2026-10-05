@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>ath+</title>
+<title>지구 근황</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Unbounded:wght@700;800;900&family=Outfit:wght@600;700&display=swap">
@@ -639,6 +639,13 @@ body, .view, .sheet, .layer, .nav { word-break:keep-all; overflow-wrap:break-wor
 
 .fld > label.photo { display:grid; justify-content:center; align-content:center; text-align:center; }
 .fld > label.photo > div { text-align:center; }
+
+/* ---------- 화제 사진 ---------- */
+.fi-img .timg, .d-poster .timg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+.fi-img .tag { z-index:2; }
+.d-poster.has-img::after { content:''; position:absolute; inset:0; background:linear-gradient(to top, rgba(10,12,20,.55), rgba(10,12,20,0) 55%); pointer-events:none; }
+.d-poster.has-img .d-cc { z-index:2; color:#fff; }
+.d-credit { position:absolute; right:10px; bottom:8px; z-index:3; font:600 10px/1 var(--f-body, system-ui); color:rgba(255,255,255,.9); text-decoration:none; text-shadow:0 1px 3px rgba(0,0,0,.5); }
 
 </style></head><body>
 <div class="app" id="app">
@@ -1449,11 +1456,11 @@ async function loadRemote() {
         id: x.id, country: co ? co.name : x.cc, countryCode: x.cc,
         trendTitle: x.title, titleEn: x.title_en, shortDescription: x.short_desc,
         status: x.status, category: x.category, city: x.area || cityName[x.city_id] || '',
-        image: { pattern: x.pattern || 0 },
+        image: { pattern: x.pattern || 0, url: x.image_url || '', credit: x.image_credit || '', link: x.image_link || '' },
         whyTrending: x.why || [],
         whatIsHappening: (x.what || []).map(w => ({ head: w.head, text: w.text })),
-        news: (x.trend_news || []).sort((a, b) => String(b.published_on).localeCompare(String(a.published_on))).map(n => ({ title: n.title, source: n.source, date: n.published_on, summary: n.summary })),
-        isFollowing: false, _kw: x.keyword_id
+        news: (x.trend_news || []).sort((a, b) => String(b.published_on).localeCompare(String(a.published_on))).map(n => ({ title: n.title, source: n.source, date: n.published_on, summary: n.summary, url: n.url || '' })),
+        isFollowing: false, sample: !!x.is_sample, _kw: x.keyword_id
       };
     }).filter(t => COUNTRIES.some(c => c.cc === t.countryCode));
     /* 같은 키워드가 2곳 이상이면 묶음으로 */
@@ -1862,10 +1869,14 @@ function related(t, n) {
 }
 const miniRow = t => `<button class="mini" data-act="open" data-id="${t.id}"><span><b>${esc(t.trendTitle)} ${tag(t.status)}</b><span class="eyebrow" style="display:block;margin-top:6px">${esc(CO[t.countryCode].name)} · ${esc(t.city)}</span></span><span class="go">→</span></button>`;
 
+/* 화제 사진: 사진이 있으면 그래픽 포스터 위에 덮고, 못 불러오면 사진만 빠져서 포스터가 보여요 */
+const tPhoto = t => t.image && t.image.url ? `<img class="timg" src="${esc(t.image.url)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : '';
+const tCredit = t => t.image && t.image.url && t.image.credit ? `<a class="d-credit" href="${esc(t.image.link || 'https://www.pexels.com')}" target="_blank" rel="noopener noreferrer">Photo by ${esc(t.image.credit)} · Pexels</a>` : '';
+
 /* ---------- 피드 카드: 큰 포스터형 / 가로형 번갈아 ---------- */
 function feedItem(t, i, big) {
   const cc = t.countryCode;
-  const img = `<div class="fi-img" style="${ccVars(cc)}">${poster(t.image.pattern, cc, t.id)}${big ? tag(t.status) : ''}</div>`;
+  const img = `<div class="fi-img" style="${ccVars(cc)}">${poster(t.image.pattern, cc, t.id)}${tPhoto(t)}${big ? tag(t.status) : ''}</div>`;
   if (big) return `<article class="fi" role="link" tabindex="0" data-act="open" data-id="${t.id}" style="--i:${i}">${img}
     <div class="fi-meta">${metaLine(t)}</div><h3 class="fi-title">${esc(t.trendTitle)}</h3><p class="fi-desc">${esc(t.shortDescription)}</p>
     <div class="fi-foot"><span class="eyebrow">${esc(t.titleEn)}</span>${keepBtn(t.id, true)}</div></article>`;
@@ -2072,7 +2083,7 @@ function detailHTML(t) {
   const cc = t.countryCode, co = CO[cc];
   const list = TRENDS.filter(x => x.countryCode === cc), nx = list[(list.findIndex(x => x.id === t.id) + 1) % list.length];
   return `<div class="d-xwrap"><button class="d-x" data-act="back" aria-label="닫기">✕</button></div>
-    <div class="d-poster" style="${ccVars(cc)}">${poster(t.image.pattern, cc, t.id)}<div class="d-cc">${cc}</div></div>
+    <div class="d-poster${t.image && t.image.url ? ' has-img' : ''}" style="${ccVars(cc)}">${poster(t.image.pattern, cc, t.id)}${tPhoto(t)}<div class="d-cc">${cc}</div>${tCredit(t)}</div>
     <div class="d-body">
       <div class="d-meta"><span>${esc(co.name)}</span><span>·</span><span>${esc(t.city)}</span>${tag(t.status)}<span>${CATEGORIES[t.category]}</span></div>
       <h1 class="d-title">${esc(t.trendTitle)}</h1><div class="d-en">${esc(t.titleEn)}</div>
@@ -2082,13 +2093,14 @@ function detailHTML(t) {
       <h2 class="d-sec">What’s happening</h2>
       <div class="what">${t.whatIsHappening.map(w => `<div><b>${esc(w.head)}</b><p>${esc(w.text)}</p></div>`).join('')}</div>
       ${otherCountries(t)}
-      <h2 class="d-sec">People’s feed<span class="sample">${esc(COPY.sample)}</span></h2>
-      <p class="pf-sub">${esc(t.city)}에서 사람들이 ‘${esc(t.trendTitle)}’ 관련해 올린 글</p>
-      <div class="ig-list pf" id="pfList">${[...state.posts.filter(p => p.trendId === t.id), ...kwPosts(t, 6)].map(igHTML).join('')}</div>
-      <button class="pf-more" data-act="pfmore" data-id="${t.id}" data-n="6">더 보기</button>
-      <h2 class="d-sec">In the news<span class="sample">${esc(COPY.sample)}</span></h2>
-      <div>${t.news.map((n, i) => `<button class="nw" data-act="sample"><div class="th">${poster(t.image.pattern + i + 3, cc, t.id + i)}</div>
-        <div><b>${esc(n.title)}</b><div class="src">${esc(n.source)} · ${fmtDate(n.date)}</div><p>${esc(n.summary)}</p></div></button>`).join('')}</div>
+      ${(ps => ps.length ? `<h2 class="d-sec">People’s feed</h2>
+      <p class="pf-sub">사람들이 ‘${esc(t.trendTitle)}’ 관련해 올린 글</p>
+      <div class="ig-list pf" id="pfList">${ps.slice(0, PF_PAGE).map(igHTML).join('')}</div>
+      ${ps.length > PF_PAGE ? `<button class="pf-more" data-act="pfmore" data-id="${t.id}" data-n="${PF_PAGE}">더 보기</button>` : ''}` : '')(trendPosts(t))}
+      <h2 class="d-sec">In the news${t.sample === false ? '' : `<span class="sample">${esc(COPY.sample)}</span>`}</h2>
+      <div>${t.news.map((n, i) => { const inner = `<div class="th">${poster(t.image.pattern + i + 3, cc, t.id + i)}</div>
+        <div><b>${esc(n.title)}</b><div class="src">${esc(n.source)} · ${fmtDate(n.date)}</div><p>${esc(n.summary)}</p></div>`;
+        return n.url && /^https?:\/\//.test(n.url) ? `<a class="nw" href="${esc(n.url)}" target="_blank" rel="noopener noreferrer" style="text-align:left;color:inherit;text-decoration:none">${inner}</a>` : `<button class="nw" data-act="sample">${inner}</button>`; }).join('')}</div>
       <h2 class="d-sec">Also in ${CATEGORIES[t.category]}</h2>
       <div>${related(t, 3).map(miniRow).join('')}</div>
       <button class="next" data-act="open" data-id="${nx.id}"><span><small>Next in ${esc(co.name)}</small><b>${esc(nx.trendTitle)}</b></span><span class="arrow">→</span></button>
@@ -2118,32 +2130,25 @@ const composer = { cat: 'life', photo: null, trend: null, edit: null };
 /* ---------- 홈 시트 ---------- */
 /* ---------- 키워드별 피드: 트렌드 데이터에서 샘플 게시물을 만든다 ---------- */
 const SYN = {};
+const PF_PAGE = 6;
 const HANDLES = ['daily', 'walk', 'log', 'note', 'roll', 'now', 'lately', 'spot'];
 const trendCity = t => CITIES.find(c => c.name.toLowerCase() === String(t.city).toLowerCase()) || CITIES.find(c => c.cc === t.countryCode);
-function kwPosts(t, n = 4, from = 0) {
-  const city = trendCity(t);
-  const w = t.whatIsHappening || [];
-  return Array.from({ length: n }, (_, i) => i + from).map(i => {
-    const id = 'x-' + t.id + '-' + i, h = hash(id), it = w[i % (w.length || 1)] || { head: t.trendTitle, text: t.shortDescription };
-    const p = SYN[id] || (SYN[id] = {
-      id, city: city.id, area: '', title: it.head, text: it.text, category: t.category,
-      author: '@' + city.id + '.' + HANDLES[h % HANDLES.length], likes: 24 + (h % 170), date: '2026-10-0' + (1 + (h >> 3) % 4),
-      pat: (t.image && t.image.pattern != null ? t.image.pattern + i * 3 : h) % 8
-    });
-    return p;
-  });
+/* 이 화제(와 같은 키워드로 묶인 화제)에 사람들이 올린 글. 더미는 만들지 않아요. */
+function trendPosts(t) {
+  return state.posts.filter(p => p.trendId && (p.trendId === t.id || kwKey(p.trendId) === t.kw))
+    .sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : (b.likes || 0) - (a.likes || 0)));
 }
 function kfCard(p, t) {
-  const c = CITY[p.city], on = state.seen.has(p.id), n = (p.likes || 0) + (on ? 1 : 0), h = p.author.replace('@', '');
-  return `<article class="kf-c"><header><span class="ig-av" style="${ccVars(c.cc)}">${esc(h.charAt(0).toUpperCase())}</span><div><b>${esc(h)}</b><small>${esc(c.name)}</small></div></header>
-    <div class="kf-img">${poster(p.pat || 0, c.cc, p.id).replace("<svg", "<svg preserveAspectRatio=\"xMidYMid slice\"")}</div>
-    <div class="ig-act"><button class="seen${on ? ' on' : ''}" data-act="seen" data-id="${p.id}" aria-pressed="${on}">나도 봤어 <b>${n}</b></button><span>${fmtDate(p.date)}</span></div>
+  const c = CITY[p.city], on = state.seen.has(p.id), n = (p.likes || 0) + (on ? 1 : 0), a = authorOf(p);
+  return `<article class="kf-c"><header><span class="ig-av${a.gone ? ' gone' : ''}" style="${ccVars(c.cc)}">${esc(a.init)}</span><div><b>${esc(a.name)}</b><small>${esc(c.name)}${p.area ? ' · ' + esc(p.area) : ''}</small></div></header>
+    <div class="kf-img">${p.photo ? `<img src="${p.photo}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block">` : poster(p.pat || 0, c.cc, p.id).replace("<svg", "<svg preserveAspectRatio=\"xMidYMid slice\"")}</div>
+    <div class="ig-act"><button class="seen${on ? ' on' : ''}" data-act="seen" data-id="${p.id}" aria-pressed="${on}">나도 봤어 <b>${n}</b></button><span>${p.date === todayISO() ? '방금' : fmtDate(p.date)}</span></div>
     <p class="ig-cap"><b>${esc(p.title)}</b> ${esc(p.text)}</p></article>`;
 }
 function sheetHTML(cc) {
   if (!TRENDS.some(t => t.countryCode === cc)) return `<div class="empty" style="padding-top:28px"><p style="font-size:18px">아직 수집된 키워드가 없어요.</p><p style="margin-top:8px;color:var(--mute);font-size:14px">곧 ${esc(CO[cc].name)}의 이야기가 채워질 예정이에요.</p></div>`;
   return TRENDS.filter(t => t.countryCode === cc).map((t, i) => `<div class="kwb" style="--i:${i}"><button class="kw" data-act="open" data-id="${t.id}"><span class="kw-title">${esc(t.trendTitle)}${tag(t.status)}</span><span class="kw-desc">${esc(t.shortDescription)}</span><span class="kw-go">→</span></button>
-    <div class="kf" aria-label="${esc(t.trendTitle)} 게시물">${kwPosts(t).map(p => kfCard(p, t)).join('')}</div></div>`).join('');
+    ${(ps => ps.length ? `<div class="kf" aria-label="${esc(t.trendTitle)} 게시물">${ps.map(p => kfCard(p, t)).join('')}</div>` : '')(trendPosts(t))}</div>`).join('');
 }
 function surpriseHTML(t) {
   const co = CO[t.countryCode];
@@ -2625,9 +2630,9 @@ const App = (() => {
       case 'closeComposer': closeComposer(); break;
       case 'pickcat': composer.cat = d.v; $$('[data-act="pickcat"]').forEach(b => b.classList.toggle('on', b.dataset.v === d.v)); break;
       case 'pfmore': {
-        const t = byId[d.id], n = +el.dataset.n || 6;
-        $('#pfList').insertAdjacentHTML('beforeend', kwPosts(t, 6, n).map(igHTML).join(''));
-        el.dataset.n = n + 6; break;
+        const t = byId[d.id], n = +el.dataset.n || PF_PAGE, ps = trendPosts(t);
+        $('#pfList').insertAdjacentHTML('beforeend', ps.slice(n, n + PF_PAGE).map(igHTML).join(''));
+        el.dataset.n = n + PF_PAGE; if (n + PF_PAGE >= ps.length) el.remove(); break;
       }
       case 'seen': {
         const id = d.id, db = SBC && isUuid(id);
