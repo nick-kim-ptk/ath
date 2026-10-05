@@ -705,6 +705,12 @@ body, .view, .sheet, .layer, .nav { word-break:keep-all; overflow-wrap:break-wor
 .pv-del { align-self:flex-start; margin-top:18px; padding:10px 0; font:700 13.5px var(--f-body); color:var(--hot); }
 .pv-del.armed { font-weight:800; }
 
+.sbar { display:flex; align-items:center; gap:8px; margin-top:16px; }
+.sbar .srch { flex:1; min-width:0; margin-top:0; height:42px; }
+.sbar .fbtn { flex:none; height:42px; }
+#fchips:empty { display:none; }
+#fchips { margin-top:10px; }
+
 </style></head><body>
 <div class="app" id="app">
   <main class="views">
@@ -1975,8 +1981,7 @@ function discoverHTML() {
   state.feedTab = 'discover';
   const kn = state.user ? keepN() : 0;
   return `<div class="eyebrow">DISCOVER</div><h1 class="hd">${esc(COPY.discoverSub)}</h1><p class="upd">${esc(updCaption())}</p>
-    ${state.feedTab === 'discover' ? `<label class="srch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/></svg><input id="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="나라, 도시, 키워드로 찾아보기" value="${esc(state.q || '')}"></label>` : ''}
-    ${state.feedTab === 'discover' ? `<div class="fbar"><button class="fbtn" data-act="fopen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>필터</button><div id="fchips">${filterChips()}</div></div>` : ''}
+    <div class="sbar">    <label class="srch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/></svg><input id="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="나라, 도시, 키워드로 찾아보기" value="${esc(state.q || '')}"></label><button class="fbtn" data-act="fopen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>필터</button></div><div id="fchips">${filterChips()}</div>
     <div id="dl">${discoverList()}</div>`;
 }
 const discoverFiltered = () => { const q = (state.q || '').trim(); return feedOrder.filter(t => t.countryCode !== 'KR' && (!state.dc || state.dc === 'all' || t.countryCode === state.dc) && (state.cat === 'all' || t.category === state.cat) && (!q || matchQ(t, q))); };
@@ -2130,7 +2135,7 @@ function myHTML() {
   return `<div class="my-top"><div class="eyebrow">MY</div><button class="gear" data-act="settings" aria-label="설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div>
     <div class="me"><div class="avatar">${avatarInner(u, u.avatar)}</div><div><b>${esc(u.nick)}<button class="edit-ic" data-act="profile" aria-label="프로필 수정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="m13.5 6.5 4 4"/></svg></button></b><span class="eyebrow" style="text-transform:none">@${esc(u.id)} <span style="text-transform:uppercase">· ${u.provider === 'kakao' ? 'KAKAO' : 'GOOGLE'}</span></span></div></div>
     <div class="stats"><div><strong>${keepN()}</strong><span class="eyebrow">Keep</span></div><div><strong>${mine.length}</strong><span class="eyebrow">올린 화제</span></div><div><strong>${state.visited.size}</strong><span class="eyebrow">가본 나라</span></div><div><strong>${state.fav.size}</strong><span class="eyebrow">관심 나라</span></div></div>
-    <div class="sec"><h2>내가 올린 화제 <span class="eyebrow">${mine.length}</span></h2>${mine.length ? `<div class="vseg" role="group" aria-label="보기 방식">${vbtn('grid', gridIc, '썸네일로 보기')}${vbtn('list', listIc, '목록으로 보기')}</div>` : ''}</div>
+    <div class="sec"><h2>MY BUZZ <span class="eyebrow">${mine.length}</span></h2>${mine.length ? `<div class="vseg" role="group" aria-label="보기 방식">${vbtn('grid', gridIc, '썸네일로 보기')}${vbtn('list', listIc, '목록으로 보기')}</div>` : ''}</div>
     ${mine.length ? `${body}
       ${mine.length > state.myShown ? `<button class="more" data-act="mymore">더 보기 · ${mine.length - state.myShown}</button>` : ''}`
       : `<div class="empty" style="padding-top:18px"><p style="font-size:17px">우리 동네에서 요즘 보이는 걸 올려보세요.</p><button class="main" data-act="share">${esc(COPY.share)}</button></div>`}`;
