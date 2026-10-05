@@ -1,0 +1,11 @@
+name: 구글 트렌드 RSS 테스트
+on:
+  workflow_dispatch:   # Actions 탭에서 "Run workflow" 버튼으로 직접 실행해요
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node collector/probe.mjs
