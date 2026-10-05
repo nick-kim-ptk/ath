@@ -64,11 +64,13 @@ async function claude(system, user, maxTokens = 3500) {
 const SYSTEM = `너는 '지구 근황' 앱의 에디터야. 나라별 구글 트렌드 급상승 검색어와 관련 뉴스 제목을 받아서, 한국 사용자가 "지금 그 나라에서 뭐가 화제인지" 한눈에 알 수 있게 정리해.
 규칙:
 - 입력 항목 중 화제로 소개할 만한 것 3~4개만 골라. 같은 이슈를 가리키는 항목은 하나로 합쳐.
-- 제외: 복권 번호, 로그인/사이트 이름 같은 도구성 검색어, 뜻을 알 수 없는 것, 사망·범죄 피해·재난 피해자 중심 기사, 개인 사생활·가십, 선정적인 것. 정치는 사실 전달만 하고 의견은 쓰지 마.
+- 제외: 복권 번호, 로그인/사이트 이름 같은 도구성 검색어, 뜻을 알 수 없는 것, 사건·사고·범죄·구속·재판·사망 소식, 재난 피해자 중심 기사, 개인 사생활·가십·연예인 신변 이야기, 선정적인 것. 정치는 사실 전달만 하고 의견은 쓰지 마.
+- 소개할 만한 것: 제품·서비스·음식·유행·행사·날씨와 계절 이야기·경기와 대회 결과·경제와 기술 소식처럼 사람들이 함께 이야기하는 주제.
+- title은 뉴스 헤드라인이 아니라 '화제의 이름'이야. 12자 안팎의 명사형으로 짧게 (예: '스테이블코인 확산', '가을 곰 출몰'). 사건의 세부 내용은 short와 what에 써.
 - 오직 입력으로 받은 뉴스 제목에 담긴 사실만 써. 모르는 건 지어내지 말고, 근거가 부족한 항목은 고르지 마. 숫자·날짜·이름을 새로 만들지 마.
 - 기사 문장을 그대로 옮기지 말고 네 말로 짧게 요약해. 한국어, 부드러운 '~요' 체.
 - 각 화제는 이런 JSON 모양이야 (JSON만 출력, 다른 말 금지):
-{"topics":[{"items":[입력 항목 번호들],"keyword":"한국어 키워드 2~8자","slug":"english-kebab-case","title":"한국어 제목 20자 이내","en":"English Title","short":"한 줄 요약 40자 이내","status":"hot|rising|new","category":"food|tech|life|culture|fashion|wellness|travel","area":"지역(모르면 빈 문자열)","why":["왜 화제인지 짧은 구 3개"],"what":[{"head":"소제목","text":"한두 문장"},{"head":"","text":""},{"head":"","text":""}],"news":[{"ref":"항목번호:뉴스번호","title":"기사 제목을 한국어로 옮긴 것","summary":"한 줄 요약"}]}]}
+{"topics":[{"items":[입력 항목 번호들],"keyword":"한국어 키워드 2~8자","slug":"english-kebab-case","title":"화제 이름 12자 안팎","en":"English Title","short":"한 줄 요약 40자 이내","status":"hot|rising|new","category":"food|tech|life|culture|fashion|wellness|travel","area":"지역(모르면 빈 문자열)","why":["왜 화제인지 짧은 구 3개"],"what":[{"head":"소제목","text":"한두 문장"},{"head":"","text":""},{"head":"","text":""}],"news":[{"ref":"항목번호:뉴스번호","title":"기사 제목을 한국어로 옮긴 것","summary":"한 줄 요약"}]}]}
 - status: 검색량이 가장 크거나 가장 큰 화제는 hot, 나머지는 rising 또는 new. category는 어울리는 걸 고르되 스포츠·사회·날씨는 culture 또는 life.
 - news는 화제당 2개(없으면 1개). ref는 입력에 있는 번호만 써.`;
 
@@ -82,7 +84,7 @@ async function buildCountry(cc, prevSlugs) {
   const items = await fetchTrends(COUNTRIES[cc][0]);
   if (!items.length) throw new Error('항목 없음');
   const out = await claude(SYSTEM, promptFor(cc, items));
-  const topics = [];
+  const topics = [], rej = { 근거부족: 0, 뉴스없음: 0, 내용부족: 0, slug없음: 0 };
   for (const t of out.topics || []) {
     const idx = (t.items || []).filter(i => Number.isInteger(i) && items[i]);
     const news = (t.news || []).map(n => {
@@ -92,9 +94,11 @@ async function buildCountry(cc, prevSlugs) {
     }).filter(Boolean);
     const what = (t.what || []).filter(w => w && w.head && w.text).slice(0, 3);
     const why = (t.why || []).filter(Boolean).map(s => String(s).slice(0, 40)).slice(0, 3);
-    if (!idx.length || !t.title || !t.short || !news.length || what.length < 2 || why.length < 2) continue;   // 근거가 부족하면 버려요
+    if (!idx.length || !t.title || !t.short) { rej.근거부족++; continue; }   // 근거가 부족하면 버려요
+    if (!news.length) { rej.뉴스없음++; continue; }
+    if (what.length < 2 || why.length < 2) { rej.내용부족++; continue; }
     const slug = String(t.slug || '').toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
-    if (!slug) continue;
+    if (!slug) { rej.slug없음++; continue; }
     topics.push({
       slug, keyword: String(t.keyword || t.title).slice(0, 16), title: String(t.title).slice(0, 30), en: String(t.en || t.title).slice(0, 40), short: String(t.short).slice(0, 60),
       status: STATUSES.includes(t.status) ? t.status : 'rising', category: CATS.includes(t.category) ? t.category : 'life',
@@ -102,7 +106,7 @@ async function buildCountry(cc, prevSlugs) {
       traffic: Math.max(...idx.map(i => items[i].traffic))
     });
   }
-  if (!topics.length) throw new Error('쓸 만한 화제가 없어요');
+  if (!topics.length) throw new Error(`쓸 만한 화제가 없어요 (후보 ${items.length}개 중 Claude가 고른 ${(out.topics || []).length}개, 버려진 이유: ${JSON.stringify(rej)}, 상위 검색어: ${items.slice(0, 5).map(i => i.term).join(' / ')})`);
   topics.sort((a, b) => b.traffic - a.traffic);
   topics.slice(0, 4).forEach((t, i) => { if (i === 0) t.status = 'hot'; else if (t.status === 'hot') t.status = 'rising'; if (prevSlugs.has(t.slug) && i > 0) t.status = 'talked'; });
   return topics.slice(0, 4);
