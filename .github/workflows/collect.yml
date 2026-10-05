@@ -1,0 +1,30 @@
+name: 매일 화제 수집
+on:
+  schedule:
+    - cron: '0 15 * * *'    # 매일 15:00 UTC = 한국 시간 자정(00:00)
+  workflow_dispatch:         # Actions 탭에서 직접 실행할 수도 있어요
+    inputs:
+      dry_run:
+        description: '시험 실행 (저장하지 않고 결과만 보기)'
+        type: boolean
+        default: true
+      only:
+        description: '일부 나라만 (예: JP,KR). 비우면 전체'
+        type: string
+        default: ''
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node collector/collect.mjs
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '0' }}
+          ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.only || '' }}
