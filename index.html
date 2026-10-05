@@ -2198,6 +2198,16 @@ const App = (() => {
     fr.onerror = () => cb(null); fr.readAsDataURL(file);
   }
   function validateForm() { const ok = $('#f-title').value.trim() && $('#f-text').value.trim(); $('#f-go').disabled = !ok; $('#f-count').textContent = `${$('#f-text').value.length} / 60`; }
+  /* 사진 저장소(Supabase Storage). 본인 폴더(내 user id)에만 올릴 수 있어요 */
+  async function uploadPhoto(dataUrl) {
+    const blob = await (await fetch(dataUrl)).blob();
+    const path = `${state.user.uid}/${Date.now()}.jpg`;
+    const { error } = await SBC.storage.from('post-photos').upload(path, blob, { contentType: 'image/jpeg', cacheControl: '31536000' });
+    if (error) throw error;
+    return SBC.storage.from('post-photos').getPublicUrl(path).data.publicUrl;
+  }
+  function photoPath(url) { const m = String(url || '').match(/\/post-photos\/(.+)$/); return m ? decodeURIComponent(m[1]) : null; }
+  function removePhoto(url) { const k = photoPath(url); if (SBC && k) SBC.storage.from('post-photos').remove([k]); }
   async function submitPost() {
     const title = $('#f-title').value.trim(), text = $('#f-text').value.trim(); if (!title || !text) return;
     let link = $('#f-link').value.trim();
@@ -2205,20 +2215,22 @@ const App = (() => {
     const city = $('#f-city').value, area = $('#f-area').value.trim();
     const btn = $('#shareForm [type=submit]'); if (btn) btn.disabled = true;
     const fail = m => { toast(m || '저장에 실패했어요. 잠시 후 다시 시도해 주세요'); if (btn) btn.disabled = false; };
+    let photo = composer.photo;
+    if (SBC && photo && photo.startsWith('data:')) { try { photo = await uploadPhoto(photo); } catch (e) { return fail('사진을 올리지 못했어요. 다른 사진으로 해볼까요?'); } }
     if (composer.edit) {
       const o = state.posts.find(x => x.id === composer.edit);
       if (o) {
-        if (SBC) { const { error } = await SBC.from('posts').update({ city_id: city, area: area || null, title, body: text, category: composer.cat, link: link || null }).eq('id', o.id); if (error) return fail(); }
-        Object.assign(o, { city, area, title, text, category: composer.cat, link, photo: SBC ? null : composer.photo }); if (!SBC) LS.set('posts', state.posts);
+        if (SBC) { const { error } = await SBC.from('posts').update({ city_id: city, area: area || null, title, body: text, category: composer.cat, link: link || null, photo_url: photo || null }).eq('id', o.id); if (error) return fail(); if (o.photo && o.photo !== photo) removePhoto(o.photo); }
+        Object.assign(o, { city, area, title, text, category: composer.cat, link, photo }); if (!SBC) LS.set('posts', state.posts);
       }
       closeComposer(); toast('수정했어요'); if (state.tab === 'my') renderTab('my'); return;
     }
     let id = 'u' + Date.now(), date = todayISO();
     if (SBC) {
-      const { data, error } = await SBC.from('posts').insert({ user_id: state.user.uid, city_id: city, trend_id: composer.trend || null, area: area || null, title, body: text, category: composer.cat, link: link || null }).select('id,created_at').single();
+      const { data, error } = await SBC.from('posts').insert({ user_id: state.user.uid, city_id: city, trend_id: composer.trend || null, area: area || null, title, body: text, category: composer.cat, link: link || null, photo_url: photo || null }).select('id,created_at').single();
       if (error || !data) return fail(); id = data.id; date = String(data.created_at).slice(0, 10);
     }
-    const p = { id, city, area, title, text, category: composer.cat, link, photo: SBC ? null : composer.photo, author: '@' + state.user.id, nick: state.user.nick, uid: state.user.id, likes: 0, date, pat: hash(title) % 8, mine: true, trendId: composer.trend || undefined };
+    const p = { id, city, area, title, text, category: composer.cat, link, photo, author: '@' + state.user.id, nick: state.user.nick, uid: state.user.id, likes: 0, date, pat: hash(title) % 8, mine: true, trendId: composer.trend || undefined };
     state.posts.unshift(p);
     if (!SBC && !LS.set('posts', state.posts)) { p.photo = null; LS.set('posts', state.posts); }
     state.city = p.city; LS.set('city', state.city);
@@ -2361,7 +2373,7 @@ const App = (() => {
       case 'editpost': openComposer(null, d.id); break;
       case 'delpost':
         if (!el.classList.contains('armed')) { el.classList.add('armed'); el.textContent = '삭제'; clearTimeout(el._t); el._t = setTimeout(() => { el.classList.remove('armed'); el.textContent = '×'; }, 3000); break; }
-        if (SBC) { SBC.from('posts').delete().eq('id', d.id).then(({ error }) => { if (error) { toast('삭제에 실패했어요. 잠시 후 다시 시도해 주세요'); return; } state.posts = state.posts.filter(p => p.id !== d.id); renderTab('my'); toast('삭제했어요'); }); break; }
+        if (SBC) { const old = state.posts.find(p => p.id === d.id); SBC.from('posts').delete().eq('id', d.id).then(({ error }) => { if (error) { toast('삭제에 실패했어요. 잠시 후 다시 시도해 주세요'); return; } if (old) removePhoto(old.photo); state.posts = state.posts.filter(p => p.id !== d.id); renderTab('my'); toast('삭제했어요'); }); break; }
         state.posts = state.posts.filter(p => p.id !== d.id); LS.set('posts', state.posts); renderTab('my'); toast('삭제했어요'); break;
       case 'clearq': state.q = ''; renderTab('discover'); break;
     }
