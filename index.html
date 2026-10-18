@@ -1624,7 +1624,7 @@ const authorOf = p => {
 const kstOf = iso => new Date(new Date(iso).getTime() + 9 * 3600e3);
 const updAt = list => list.map(t => t.publishedAt).filter(Boolean).sort().pop() || '';
 const fmtUpd = iso => { const d = kstOf(iso), p = n => String(n).padStart(2, '0'); return `${p(d.getUTCMonth() + 1)}.${p(d.getUTCDate())} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`; };
-const updCaption = () => { const u = updAt(TRENDS); return (u ? `${kstOf(u).getUTCMonth() + 1}월 ${kstOf(u).getUTCDate()}일 기준 · ` : '') + '매일 밤 12시 업데이트'; };
+const updCaption = () => { const u = updAt(TRENDS); return (u ? `${kstOf(u).getUTCMonth() + 1}월 ${kstOf(u).getUTCDate()}일 기준` : ''); };
 const latest = t => t.news.reduce((m, n) => n.date > m ? n.date : m, '');
 
 /* ---------- 포스터: 사진 대신 쓰는 평면 그래픽 8종 ---------- */
