@@ -94,6 +94,8 @@ svg text { font-family:"Noto Sans KR",system-ui,sans-serif; }
 .rk { width:26px; height:26px; border-radius:50%; display:grid; place-items:center; font:800 13px "Plus Jakarta Sans",sans-serif; background:var(--card); }
 .t { font-weight:800; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; letter-spacing:-.02em; }
 .tr { font-size:12px; color:var(--mute); font-weight:700; }
+.hl2 { grid-column:2 / 4; font-size:13px; color:var(--ink2); line-height:1.5; }
+.orig { grid-column:2 / 4; font-size:11px; color:var(--mute); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .hl { grid-column:2 / 4; font-size:12px; color:var(--mute); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .cc { font:800 11px/1 "Plus Jakarta Sans",sans-serif; color:var(--ink2); margin-right:6px; letter-spacing:.04em; }
 
@@ -199,7 +201,7 @@ const DEMO_POS = ['월드시리즈 우승', '신형 스마트폰 출시', '가�
 const DEMO_NEG = ['폭우 경보', '대형 화재 속보', '항공편 대규모 결항', '물가 급등', '교통사고 소식', '정전 사태', '감염병 확산', '공장 파업'];
 function demoTerms(day) {
   const r = rng(day.split('-').join('') | 0), ccs = Object.keys(CC_NAME), pick = a => a[Math.floor(r() * a.length)];
-  const mk = (pool, s) => Array.from({ length:12 }, () => ({ cc:pick(ccs), term:pick(pool), traffic:Math.round(20000 + r() * 900000), sentiment:s, headline:'(샘플) 관련 기사 제목이 여기에 표시돼요' })).sort((a, b) => b.traffic - a.traffic);
+  const mk = (pool, s) => Array.from({ length:12 }, () => { const t = pick(pool); return { cc:pick(ccs), term:t, term_ko:t, traffic:Math.round(20000 + r() * 900000), sentiment:s, summary_ko:'(샘플) 한국어로 정리한 한 줄 요약이 여기에 표시돼요', headline:'Sample headline in the original language' }; }).sort((a, b) => b.traffic - a.traffic);
   return [...mk(DEMO_POS, 'positive'), ...mk(DEMO_NEG, 'negative')];
 }
 async function loadTrends() {
@@ -209,7 +211,9 @@ async function loadTrends() {
 async function termsFor(day) {
   if (S.terms[day]) return S.terms[day];
   let v = [];
-  try { v = S.mode === 'demo' ? demoTerms(day) : await sbGet(`sentiment_daily?select=cc,term,traffic,sentiment,headline&day=eq.${day}&sentiment=in.(positive,negative)&order=traffic.desc&limit=400`); } catch (e) { v = []; }
+  const q = cols => `sentiment_daily?select=${cols}&day=eq.${day}&sentiment=in.(positive,negative)&order=traffic.desc&limit=400`;
+  try { v = S.mode === 'demo' ? demoTerms(day) : await sbGet(q('cc,term,traffic,sentiment,headline,term_ko,summary_ko')); }
+  catch (e) { try { v = await sbGet(q('cc,term,traffic,sentiment,headline')); } catch (e2) { v = []; } }
   return (S.terms[day] = v);
 }
 
@@ -291,8 +295,8 @@ function countryHTML(d) {
 function termsHTML(d, v) {
   const f = v.filter(x => S.cc === 'all' || x.cc === S.cc);
   const col = (s, title, col) => { const it = f.filter(x => x.sentiment === s).slice(0, 6);
-    return `<div><div class="sec-h"><i class="sw" style="background:var(--${col})"></i>${title}</div><ul class="list">${it.map((x, i) => `<li><span class="rk num">${i + 1}</span><span class="t" title="${esc(x.term)}"><span class="cc">${x.cc}</span>${esc(x.term)}</span><span class="tr num">${fmtT(+x.traffic)}</span>${x.headline ? `<span class="hl">${esc(x.headline)}</span>` : ''}</li>`).join('') || '<li><span class="hint" style="grid-column:1/4">해당하는 검색어가 없어요.</span></li>'}</ul></div>`; };
-  return `<section><h2>${md(d)}에 많이 찾은 소식</h2><p class="cap">검색량이 큰 순서로, 근거가 된 뉴스 제목도 함께 보여줘요.</p><div class="card two">${col('positive', '반가운 소식 · 긍정', 'pos')}${col('negative', '걱정되는 소식 · 부정', 'neg')}</div></section>`;
+    return `<div><div class="sec-h"><i class="sw" style="background:var(--${col})"></i>${title}</div><ul class="list">${it.map((x, i) => { const ko = x.term_ko && x.term_ko.trim(), main = ko || x.term, orig = ko && ko.toLowerCase() !== String(x.term).toLowerCase() ? x.term : '', sum = x.summary_ko || ''; return `<li><span class="rk num">${i + 1}</span><span class="t" title="${esc(main)}"><span class="cc">${x.cc}</span>${esc(main)}</span><span class="tr num">${fmtT(+x.traffic)}</span>${sum ? `<span class="hl2">${esc(sum)}</span>` : (x.headline && !ko ? `<span class="hl">${esc(x.headline)}</span>` : '')}${orig ? `<span class="orig">원문 · ${esc(orig)}</span>` : ''}</li>`; }).join('') || '<li><span class="hint" style="grid-column:1/4">해당하는 검색어가 없어요.</span></li>'}</ul></div>`; };
+  return `<section><h2>${md(d)}에 많이 찾은 소식</h2><p class="cap">검색량이 큰 순서로, 한국어로 정리해서 보여줘요. 원문 검색어는 아래에 작게 표시돼요.</p><div class="card two">${col('positive', '반가운 소식 · 긍정', 'pos')}${col('negative', '걱정되는 소식 · 부정', 'neg')}</div></section>`;
 }
 
 function pipelineHTML(d) {
