@@ -4,129 +4,133 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>화제 분위기 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#ffffff; --card:#f5f4f1; --ink:#111111; --ink2:#5b5750; --mute:#8d887f; --line:#e6e3dc; --axis:#d6cfc2; --chip:#e9e6df;
+  --pos:#2a78d6; --neg:#e34948; --neu:#cfc9bc; --on-fill:#ffffff; --on-neu:#111111;
+  --pos-t:#dce8fd; --neg-t:#ffe1dc; --neu-t:#ece6db; --face:#ffcf3f; --lime:#aeff1c;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg:#141311; --card:#1f1e1b; --ink:#f4f1ea; --ink2:#c9c4b8; --mute:#8d887f; --line:#2c2a26; --axis:#3a3832; --chip:#2c2a26;
+  --pos:#3987e5; --neg:#e66767; --neu:#58554e; --on-neu:#f4f1ea; --pos-t:#1a2a47; --neg-t:#46211f; --neu-t:#2c2a26; color-scheme:dark; } }
+:root[data-theme="dark"] {
+  --bg:#141311; --card:#1f1e1b; --ink:#f4f1ea; --ink2:#c9c4b8; --mute:#8d887f; --line:#2c2a26; --axis:#3a3832; --chip:#2c2a26;
+  --pos:#3987e5; --neg:#e66767; --neu:#58554e; --on-neu:#f4f1ea; --pos-t:#1a2a47; --neg-t:#46211f; --neu-t:#2c2a26; color-scheme:dark; }
+
+* { box-sizing:border-box; }
+body { background:var(--bg); color:var(--ink); font:500 15px/1.55 "Noto Sans KR","Apple SD Gothic Neo",system-ui,sans-serif; padding-inline:16px; padding-block:18px 64px; -webkit-font-smoothing:antialiased; word-break:keep-all; overflow-wrap:break-word; }
+.wrap { max-width:720px; margin:0 auto; display:flex; flex-direction:column; gap:26px; }
+button { font:inherit; color:inherit; background:none; border:0; cursor:pointer; padding:0; }
+h1,h2,h3,p { margin:0; }
+.num { font-family:"Plus Jakarta Sans","Noto Sans KR",system-ui,sans-serif; font-variant-numeric:tabular-nums; }
+
+header { display:flex; flex-direction:column; gap:14px; }
+.brand { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.logo { background:#111; color:var(--lime); font:800 14px/1 "Plus Jakarta Sans",sans-serif; padding:9px 14px; border-radius:999px; }
+.badge { font:700 12px/1 "Noto Sans KR",sans-serif; padding:8px 12px; border-radius:999px; background:var(--chip); color:var(--ink2); }
+.badge.demo { background:#fff0b8; color:#5c4300; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .badge.demo { background:#4a3a08; color:#ffe9a0; } }
+:root[data-theme="dark"] .badge.demo { background:#4a3a08; color:#ffe9a0; }
+h1 { font-size:clamp(28px,7.5vw,38px); line-height:1.2; letter-spacing:-.04em; font-weight:900; text-wrap:balance; }
+.sub { color:var(--ink2); font-size:15px; }
+
+.filters { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.seg { display:inline-flex; gap:6px; }
+.seg button { height:38px; padding:0 16px; border-radius:999px; font-weight:700; font-size:14px; background:var(--card); color:var(--ink2); }
+.seg button[aria-pressed="true"] { background:var(--ink); color:var(--bg); }
+.sep { width:1px; height:22px; background:var(--axis); }
+.sel { height:38px; border-radius:999px; border:0; background:var(--card); color:var(--ink); padding:0 16px; font:700 14px "Noto Sans KR",sans-serif; }
+
+section { display:flex; flex-direction:column; gap:12px; }
+section > h2 { font-size:22px; font-weight:900; letter-spacing:-.03em; }
+.cap { color:var(--mute); font-size:13px; margin-top:-6px; }
+.card { background:var(--card); border-radius:28px; padding:22px; display:flex; flex-direction:column; gap:16px; min-width:0; }
+
+/* 오늘의 기분 */
+.mood { border-radius:32px; padding:24px 22px; display:flex; flex-direction:column; gap:18px; }
+.mood.p { background:var(--pos-t); } .mood.n { background:var(--neg-t); } .mood.u { background:var(--neu-t); }
+.mood-top { display:flex; align-items:center; gap:18px; }
+.face { width:92px; height:92px; flex:none; }
+.mood h2 { font-size:clamp(23px,6vw,29px); line-height:1.25; font-weight:900; letter-spacing:-.04em; text-wrap:balance; }
+.mood .when { font-size:13px; font-weight:700; color:var(--ink2); margin-bottom:4px; }
+.mood .stat { font-size:14px; color:var(--ink2); font-weight:700; margin-top:6px; }
+.bar { display:flex; gap:3px; height:46px; }
+.bar > div { display:flex; align-items:center; justify-content:center; font-weight:900; font-size:14px; min-width:0; white-space:nowrap; overflow:hidden; }
+.bar > div:first-child { border-radius:23px 6px 6px 23px; } .bar > div:last-child { border-radius:6px 23px 23px 6px; } .bar > div:only-child { border-radius:23px; }
+.bar .p { background:var(--pos); color:var(--on-fill); } .bar .n { background:var(--neg); color:var(--on-fill); } .bar .u { background:var(--neu); color:var(--on-neu); }
+.tiles { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.tile { border-radius:24px; padding:16px 14px; display:flex; flex-direction:column; gap:4px; min-width:0; }
+.tile.p { background:var(--pos-t); } .tile.n { background:var(--neg-t); } .tile.u { background:var(--neu-t); }
+.tile .k { font-size:13px; font-weight:800; color:var(--ink2); }
+.tile .v { font-size:clamp(28px,8vw,38px); font-weight:800; letter-spacing:-.04em; line-height:1.05; }
+.tile .d { font-size:12px; color:var(--ink2); font-weight:500; }
+.legend { display:flex; flex-wrap:wrap; gap:6px 16px; font-size:13px; font-weight:700; color:var(--ink2); }
+.legend span { display:inline-flex; align-items:center; gap:7px; }
+.sw { width:12px; height:12px; border-radius:50%; flex:none; display:inline-block; }
+
+svg text { font-family:"Noto Sans KR",system-ui,sans-serif; }
+.chart { width:100%; height:auto; display:block; touch-action:pan-y; }
+.hint { color:var(--mute); font-size:13px; }
+
+.rows { display:flex; flex-direction:column; gap:12px; }
+.row { display:grid; grid-template-columns:72px minmax(0,1fr) 46px; gap:10px; align-items:center; cursor:pointer; }
+.row .nm { font-weight:700; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.row .fig { text-align:right; font-size:14px; font-weight:800; }
+.rbar { display:flex; gap:2px; height:24px; }
+.rbar > div { min-width:0; } .rbar .n { background:var(--neg); border-radius:12px 3px 3px 12px; } .rbar .u { background:var(--neu); border-radius:3px; } .rbar .p { background:var(--pos); border-radius:3px 12px 12px 3px; }
+.rbar > div:only-child { border-radius:12px; }
+.seg.sm button { height:34px; padding:0 13px; font-size:13px; background:var(--chip); }
+.seg.sm button[aria-pressed="true"] { background:var(--ink); }
+
+.two { display:flex; flex-direction:column; gap:22px; }
+.sec-h { display:flex; align-items:center; gap:8px; font-weight:900; font-size:16px; margin-bottom:10px; letter-spacing:-.02em; }
+.list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+.list li { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:2px 12px; padding:13px 14px; border-radius:18px; background:var(--bg); align-items:center; }
+.rk { width:26px; height:26px; border-radius:50%; display:grid; place-items:center; font:800 13px "Plus Jakarta Sans",sans-serif; background:var(--card); }
+.t { font-weight:800; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; letter-spacing:-.02em; }
+.tr { font-size:12px; color:var(--mute); font-weight:700; }
+.hl { grid-column:2 / 4; font-size:12px; color:var(--mute); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cc { font:800 11px/1 "Plus Jakarta Sans",sans-serif; color:var(--ink2); margin-right:6px; letter-spacing:.04em; }
+
+details summary { cursor:pointer; font-weight:700; font-size:14px; color:var(--ink2); }
+.tablewrap { overflow-x:auto; margin-top:10px; }
+table { border-collapse:collapse; width:100%; min-width:420px; font-size:14px; }
+th,td { text-align:right; padding:9px 8px; border-bottom:1px solid var(--line); font-variant-numeric:tabular-nums; }
+th:first-child,td:first-child { text-align:left; } th { color:var(--mute); font-weight:700; font-size:12px; }
+
+.empty { text-align:center; padding:26px 8px; color:var(--ink2); display:flex; flex-direction:column; gap:12px; align-items:center; }
+.empty b { color:var(--ink); font-size:19px; font-weight:900; }
+.btn { height:46px; padding:0 26px; border-radius:999px; background:var(--ink); color:var(--bg); font-weight:800; font-size:15px; }
+.note { font-size:13px; color:var(--mute); line-height:1.7; }
+#tip { position:fixed; z-index:20; pointer-events:none; background:var(--ink); color:var(--bg); border-radius:14px; padding:10px 12px; font-size:13px; line-height:1.55; display:none; max-width:250px; box-shadow:0 8px 24px rgba(0,0,0,.22); }
+#tip b { font-weight:900; }
+[hidden] { display:none !important; }
+</style>
 </head>
 <body>
 
-<style>
-:root {
-  --bg:#f6f6f3; --surface:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --mute:#898781;
-  --line:#e1e0d9; --axis:#c3c2b7; --ring:rgba(11,11,11,.10);
-  --pos:#2a78d6; --neg:#e34948; --neu:#d4d3cb; --on-fill:#ffffff; --on-neu:#0b0b0b;
-  --lime:#aeff1c; --chip:#eceae4;
-}
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg:#0d0d0d; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --mute:#898781;
-  --line:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10);
-  --pos:#3987e5; --neg:#e66767; --neu:#55544f; --on-fill:#ffffff; --on-neu:#f0efec; --chip:#262624; color-scheme:dark; } }
-:root[data-theme="dark"] {
-  --bg:#0d0d0d; --surface:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --mute:#898781;
-  --line:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10);
-  --pos:#3987e5; --neg:#e66767; --neu:#55544f; --on-fill:#ffffff; --on-neu:#f0efec; --chip:#262624; color-scheme:dark; }
-
-* { box-sizing:border-box; }
-body { background:var(--bg); color:var(--ink); font:400 14px/1.5 system-ui,-apple-system,"Segoe UI","Apple SD Gothic Neo","Noto Sans KR",sans-serif; padding-inline:16px; padding-block:20px 56px; }
-.wrap { max-width:960px; margin:0 auto; display:flex; flex-direction:column; gap:14px; }
-button { font:inherit; color:inherit; background:none; border:0; cursor:pointer; padding:0; }
-h1,h2,h3,p { margin:0; }
-.tabnum { font-variant-numeric:tabular-nums; }
-
-header { display:flex; flex-direction:column; gap:10px; padding-block:6px 4px; }
-.brand { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-.logo { background:#0b0b0b; color:var(--lime); font:800 13px/1 system-ui,sans-serif; letter-spacing:.02em; padding:6px 10px; border-radius:999px; }
-.badge { font:700 11px/1 system-ui; letter-spacing:.06em; padding:6px 9px; border-radius:999px; background:var(--chip); color:var(--ink2); }
-.badge.demo { background:#fff3c4; color:#5c4300; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .badge.demo { background:#4a3a08; color:#ffe9a0; } }
-:root[data-theme="dark"] .badge.demo { background:#4a3a08; color:#ffe9a0; }
-h1 { font-size:clamp(26px,6vw,36px); line-height:1.15; letter-spacing:-.03em; font-weight:800; text-wrap:balance; }
-.sub { color:var(--ink2); max-width:62ch; }
-
-.filters { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; }
-.seg { display:inline-flex; padding:3px; gap:2px; border-radius:10px; background:var(--chip); }
-.seg button { height:30px; padding:0 12px; border-radius:7px; font-weight:600; font-size:13px; color:var(--ink2); }
-.seg button[aria-pressed="true"] { background:var(--surface); color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.14); }
-.sel { height:36px; border-radius:10px; border:1px solid var(--ring); background:var(--surface); color:var(--ink); padding:0 10px; font:inherit; font-size:13px; font-weight:600; }
-.fl { font-size:12px; color:var(--mute); font-weight:600; }
-
-.card { background:var(--surface); border:1px solid var(--ring); border-radius:16px; padding:18px; display:flex; flex-direction:column; gap:14px; min-width:0; }
-.card h2 { font-size:16px; font-weight:800; letter-spacing:-.02em; }
-.cap { color:var(--mute); font-size:12px; }
-.head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; }
-
-.hero { display:flex; flex-wrap:wrap; gap:6px 18px; align-items:baseline; }
-.hero .big { font-size:clamp(44px,12vw,64px); line-height:1; font-weight:800; letter-spacing:-.04em; }
-.hero .mood { font-size:17px; font-weight:700; letter-spacing:-.02em; }
-.tiles { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
-.tile { border:1px solid var(--ring); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:2px; min-width:0; }
-.tile .k { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:var(--ink2); }
-.sw { width:10px; height:10px; border-radius:3px; flex:none; }
-.tile .v { font-size:clamp(24px,6vw,32px); font-weight:800; letter-spacing:-.03em; line-height:1.1; }
-.tile .d { font-size:12px; color:var(--mute); }
-
-.bar { display:flex; gap:2px; height:44px; border-radius:10px; overflow:hidden; }
-.bar > div { display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; min-width:0; white-space:nowrap; overflow:hidden; }
-.bar .p { background:var(--pos); color:var(--on-fill); } .bar .n { background:var(--neg); color:var(--on-fill); } .bar .u { background:var(--neu); color:var(--on-neu); }
-
-.legend { display:flex; flex-wrap:wrap; gap:6px 16px; font-size:12px; font-weight:600; color:var(--ink2); }
-.legend span { display:inline-flex; align-items:center; gap:6px; }
-
-svg text { font-family:inherit; }
-.chart { width:100%; height:auto; display:block; touch-action:pan-y; }
-.hint { color:var(--mute); font-size:12px; }
-
-.rows { display:flex; flex-direction:column; gap:8px; }
-.row { display:grid; grid-template-columns:76px minmax(0,1fr) 54px; gap:10px; align-items:center; }
-.row .nm { font-weight:700; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.row .fig { text-align:right; font-size:12px; color:var(--ink2); font-weight:700; }
-.rbar { display:flex; gap:2px; height:22px; }
-.rbar > div { min-width:0; } .rbar .n { background:var(--neg); border-radius:5px 0 0 5px; } .rbar .u { background:var(--neu); } .rbar .p { background:var(--pos); border-radius:0 5px 5px 0; }
-.rbar > div:only-child { border-radius:5px; }
-
-.two { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
-@media (max-width:640px) { .two { grid-template-columns:1fr; } .tiles { gap:8px; } .tile { padding:10px; } }
-.list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; }
-.list li { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:4px 10px; padding:10px 0; border-top:1px solid var(--line); align-items:baseline; }
-.list li:first-child { border-top:0; }
-.cc { font:700 11px/1 system-ui; letter-spacing:.04em; padding:4px 6px; border-radius:6px; background:var(--chip); color:var(--ink2); }
-.t { font-weight:700; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.tr { font-size:12px; color:var(--mute); }
-.hl { grid-column:2 / 4; font-size:12px; color:var(--mute); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.sec-h { display:flex; align-items:center; gap:8px; font-weight:800; font-size:14px; }
-
-details summary { cursor:pointer; font-weight:700; font-size:13px; color:var(--ink2); }
-.tablewrap { overflow-x:auto; margin-top:10px; }
-table { border-collapse:collapse; width:100%; min-width:420px; font-size:13px; }
-th,td { text-align:right; padding:7px 8px; border-bottom:1px solid var(--line); font-variant-numeric:tabular-nums; }
-th:first-child,td:first-child { text-align:left; } th { color:var(--mute); font-weight:700; font-size:12px; }
-
-.empty { text-align:center; padding:28px 12px; color:var(--ink2); display:flex; flex-direction:column; gap:10px; align-items:center; }
-.empty b { color:var(--ink); font-size:16px; }
-.btn { height:36px; padding:0 16px; border-radius:999px; background:var(--ink); color:var(--bg); font-weight:700; font-size:13px; }
-.note { font-size:12px; color:var(--mute); line-height:1.6; }
-#tip { position:fixed; z-index:20; pointer-events:none; background:var(--ink); color:var(--bg); border-radius:10px; padding:8px 10px; font-size:12px; line-height:1.5; display:none; max-width:240px; box-shadow:0 6px 20px rgba(0,0,0,.25); }
-#tip b { font-weight:800; }
-[hidden] { display:none !important; }
-</style>
 
 <div class="wrap">
   <header>
     <div class="brand"><span class="logo">ath ✦</span><span class="badge" id="badge"></span></div>
-    <h1>지금 지구의 분위기</h1>
-    <p class="sub">매일 자정에 모은 19개국 인기 검색어를 AI가 긍정·중립·부정으로 나눠서 보여줘요.</p>
+    <h1>오늘 지구는<br>어떤 기분일까요?</h1>
+    <p class="sub">매일 자정, 19개국 사람들이 가장 많이 찾은 검색어를 모아서 분위기를 읽어요.</p>
   </header>
 
   <div class="filters" role="group" aria-label="보기 설정">
-    <span class="fl">기간</span>
     <div class="seg" id="segRange"><button data-r="7">7일</button><button data-r="14">14일</button><button data-r="30">30일</button></div>
-    <span class="fl">기준</span>
+    <span class="sep"></span>
     <div class="seg" id="segBasis"><button data-b="n">검색어 수</button><button data-b="t">검색량</button></div>
     <select class="sel" id="selCc" aria-label="나라 선택"></select>
   </div>
 
   <div id="app"></div>
 
-  <p class="note">· 화제로 뽑힌 항목만이 아니라 그날 구글 트렌드 인기 검색어 전체(나라당 최대 25개)를 분류해요. 사건·사고도 포함돼요.<br>
-  · 분위기 지수 = 긍정 비율 − 부정 비율(%p). 분류는 관련 뉴스 제목만 보고 AI가 하기 때문에 오차가 있을 수 있어요.<br>
-  · '검색량' 기준은 검색량이 큰 항목이 더 크게 반영돼요.</p>
+  <p class="note">· 화제로 뽑힌 것만이 아니라 그날 인기 검색어 전체(나라당 최대 25개)를 살펴봐요. 사건·사고 소식도 포함돼요.<br>
+  · 분위기 지수 = 긍정 비율 − 부정 비율(%p). 분류는 관련 뉴스 제목을 바탕으로 자동으로 이뤄져서 오차가 있을 수 있어요.<br>
+  · '검색량' 기준은 많이 검색된 항목이 더 크게 반영돼요.</p>
 </div>
 <div id="tip" role="tooltip"></div>
 
@@ -199,38 +203,47 @@ function showTip(html, x, y) {
 const hideTip = () => { tip.style.display = 'none'; };
 
 /* ---------- 그리기 ---------- */
-function kpiHTML(d, prev) {
-  const a = agg(d), p = prev ? agg(prev) : null;
-  const dl = (cur, old) => p ? `${cur - old >= 0.05 ? '▲' : cur - old <= -0.05 ? '▼' : '–'} 전날보다 ${Math.abs(cur - old).toFixed(1)}%p` : '비교할 전날 없음';
-  const tile = (k, cls, label, val, cur, old) => `<div class="tile"><span class="k"><i class="sw" style="background:var(--${cls})"></i>${label}</span><span class="v tabnum">${f0(val)}</span><span class="d">${dl(cur, old)}</span></div>`;
-  const seg = (cls, v, lab) => v >= 0.5 ? `<div class="${cls}" style="flex:${v}" title="${lab} ${f0(v)}">${v >= 9 ? lab + ' ' + f0(v) : v >= 5 ? f0(v) : ''}</div>` : '';
-  return `<div class="card"><div class="head"><div><h2>${md(d)} 분위기${S.cc === 'all' ? '' : ' · ' + CC_NAME[S.cc]}</h2><p class="cap">검색어 ${S.basis === 'n' ? '수' : '검색량'} 기준 · 아래 추이에서 날짜를 눌러 바꿀 수 있어요</p></div></div>
-    <div class="hero"><span class="big tabnum">${sgn(a.net)}</span><span class="mood">분위기 지수 · ${mood(a.net)}</span></div>
-    <div class="bar" role="img" aria-label="긍정 ${f0(a.P)}, 중립 ${f0(a.U)}, 부정 ${f0(a.N)}">${seg('n', a.N, '부정')}${seg('u', a.U, '중립')}${seg('p', a.P, '긍정')}</div>
-    <div class="tiles">${tile('', 'neg', '부정', a.N, a.N, p ? p.N : 0)}${tile('', 'neu', '중립', a.U, a.U, p ? p.U : 0)}${tile('', 'pos', '긍정', a.P, a.P, p ? p.P : 0)}</div></div>`;
+const josa = w => { const c = w.charCodeAt(w.length - 1); return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 ? '은' : '는'; };
+const kindOf = net => net >= 10 ? 'p' : net <= -10 ? 'n' : 'u';
+function faceSVG(k) {
+  const eyes = '<circle cx="35" cy="43" r="4.6" fill="#111"/><circle cx="65" cy="43" r="4.6" fill="#111"/>';
+  const m = { p:'<path d="M33 59 Q50 80 67 59" fill="none" stroke="#111" stroke-width="4.6" stroke-linecap="round"/><circle cx="24" cy="58" r="6" fill="#ff8f7d" opacity=".55"/><circle cx="76" cy="58" r="6" fill="#ff8f7d" opacity=".55"/>',
+    u:'<path d="M38 67 H62" fill="none" stroke="#111" stroke-width="4.6" stroke-linecap="round"/>',
+    n:'<path d="M27 37 L42 31 M73 37 L58 31" fill="none" stroke="#111" stroke-width="4" stroke-linecap="round"/><path d="M36 72 Q50 56 64 72" fill="none" stroke="#111" stroke-width="4.6" stroke-linecap="round"/>' }[k];
+  return `<svg class="face" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="var(--face)"/>${eyes}${m}</svg>`;
+}
+function kpiHTML(d, prev, latest) {
+  const a = agg(d), p = prev ? agg(prev) : null, k = kindOf(a.net), subj = S.cc === 'all' ? '지구' : CC_NAME[S.cc];
+  const title = (d === latest ? '오늘 ' : md(d) + '의 ') + subj + josa(subj) + ' ' + { p:'기분이 좋아요', u:'반반이에요', n:'조금 무거워요' }[k];
+  const dl = (cur, old) => p ? `${cur - old >= 0.05 ? '▲' : cur - old <= -0.05 ? '▼' : '–'} 전날보다 ${Math.abs(cur - old).toFixed(1)}%p` : '전날 데이터 없음';
+  const tile = (c, label, val, cur, old) => `<div class="tile ${c}"><span class="k">${label}</span><span class="v num">${f0(val)}</span><span class="d">${dl(cur, old)}</span></div>`;
+  const seg = (cls, v, lab) => v >= 0.5 ? `<div class="${cls}" title="${lab} ${f0(v)}" style="flex:${v}">${v >= 24 ? lab + ' ' + f0(v) : v >= 9 ? f0(v) : ''}</div>` : '';
+  return `<div class="mood ${k}"><div class="mood-top">${faceSVG(k)}<div><p class="when num">${md(d)} · 분위기 지수 ${sgn(a.net)}</p><h2>${title}</h2></div></div>
+      <div class="bar" role="img" aria-label="긍정 ${f0(a.P)}, 중립 ${f0(a.U)}, 부정 ${f0(a.N)}">${seg('n', a.N, '부정')}${seg('u', a.U, '중립')}${seg('p', a.P, '긍정')}</div>
+      <p class="cap" style="margin:0">${S.basis === 'n' ? '검색어 수' : '검색량'} 기준 · 아래 그래프에서 날짜를 눌러 바꿔 볼 수 있어요</p></div>
+    <div class="tiles">${tile('n', '부정', a.N, a.N, p ? p.N : 0)}${tile('u', '중립', a.U, a.U, p ? p.U : 0)}${tile('p', '긍정', a.P, a.P, p ? p.P : 0)}</div>`;
 }
 
-let TW = 720, PR = 74; const TH = 250, PL = 38, PT = 14, PB = 26;
+let TW = 720, PR = 74; const TH = 250, PL = 40, PT = 14, PB = 28;
 function trendHTML(ds) {
   const vals = ds.map(d => agg(d)), maxV = Math.max(20, Math.ceil(Math.max(...vals.map(v => Math.max(v.P, v.N))) / 10) * 10);
   const X = i => ds.length === 1 ? (PL + TW - PR) / 2 : PL + i * (TW - PL - PR) / (ds.length - 1), Y = v => PT + (1 - v / maxV) * (TH - PT - PB);
-  const grid = [0, maxV / 2, maxV].map(t => `<line x1="${PL}" x2="${TW - PR}" y1="${Y(t)}" y2="${Y(t)}" stroke="${t ? 'var(--line)' : 'var(--axis)'}" stroke-width="1"/><text x="${PL - 8}" y="${Y(t) + 4}" text-anchor="end" font-size="11" fill="var(--mute)" class="tabnum">${t}%</text>`).join('');
-  const step = Math.max(1, Math.ceil(ds.length / 6)), xl = ds.map((d, i) => ((i % step === 0 && (ds.length - 1 - i >= step || i === ds.length - 1)) || i === ds.length - 1) ? `<text x="${X(i)}" y="${TH - 6}" text-anchor="middle" font-size="11" fill="var(--mute)">${md(d)}</text>` : '').join('');
-  const line = (key, col) => ds.length > 1 ? `<polyline fill="none" stroke="var(--${col})" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="${vals.map((v, i) => X(i) + ',' + Y(v[key])).join(' ')}"/>` : '';
+  const grid = [0, maxV / 2, maxV].map(t => `<line x1="${PL}" x2="${TW - PR}" y1="${Y(t)}" y2="${Y(t)}" stroke="${t ? 'var(--line)' : 'var(--axis)'}" stroke-width="1.5" stroke-linecap="round"/><text x="${PL - 8}" y="${Y(t) + 4}" text-anchor="end" font-size="12" fill="var(--mute)" class="num">${t}%</text>`).join('');
+  const step = Math.max(1, Math.ceil(ds.length / 6)), xl = ds.map((d, i) => ((i % step === 0 && (ds.length - 1 - i >= step || i === ds.length - 1)) || i === ds.length - 1) ? `<text x="${X(i)}" y="${TH - 6}" text-anchor="middle" font-size="12" fill="var(--mute)" class="num">${md(d)}</text>` : '').join('');
+  const line = (key, col) => ds.length > 1 ? `<polyline fill="none" stroke="var(--${col})" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round" points="${vals.map((v, i) => X(i) + ',' + Y(v[key])).join(' ')}"/>` : '';
   const si = ds.indexOf(S.sel), last = vals[vals.length - 1];
-  const dot = (i, key, col) => `<circle cx="${X(i)}" cy="${Y(vals[i][key])}" r="4.5" fill="var(--${col})" stroke="var(--surface)" stroke-width="2"/>`;
-  const endLab = (key, col, name, off) => `<text x="${TW - PR + 8}" y="${Y(last[key]) + off}" font-size="12" font-weight="700" fill="var(--ink)">${name} ${f0(last[key])}</text>`;
-  const gap = Math.abs(Y(last.P) - Y(last.N)) < 14 ? 7 : 0;
-  return `<div class="card"><div class="head"><div><h2>날짜별 추이</h2><p class="cap">그래프를 누르거나 손가락으로 움직여 날짜를 고르세요</p></div>
-      <div class="legend"><span><i class="sw" style="background:var(--pos)"></i>긍정 비율</span><span><i class="sw" style="background:var(--neg)"></i>부정 비율</span></div></div>
+  const dot = (i, key, col) => `<circle cx="${X(i)}" cy="${Y(vals[i][key])}" r="6" fill="var(--${col})" stroke="var(--card)" stroke-width="3"/>`;
+  const endLab = (key, name, off) => `<text x="${TW - PR + 10}" y="${Y(last[key]) + off}" font-size="13" font-weight="800" fill="var(--ink)">${name} ${f0(last[key])}</text>`;
+  const gap = Math.abs(Y(last.P) - Y(last.N)) < 16 ? 8 : 0;
+  return `<div class="card"><div class="legend"><span><i class="sw" style="background:var(--pos)"></i>긍정 비율</span><span><i class="sw" style="background:var(--neg)"></i>부정 비율</span></div>
     <svg class="chart" id="trend" viewBox="0 0 ${TW} ${TH}" role="img" aria-label="날짜별 긍정과 부정 비율 추이">${grid}${xl}
-      ${si >= 0 ? `<line x1="${X(si)}" x2="${X(si)}" y1="${PT}" y2="${TH - PB}" stroke="var(--axis)" stroke-dasharray="3 3"/>` : ''}
+      ${si >= 0 ? `<line x1="${X(si)}" x2="${X(si)}" y1="${PT}" y2="${TH - PB}" stroke="var(--axis)" stroke-width="2" stroke-dasharray="2 6" stroke-linecap="round"/>` : ''}
       ${line('P', 'pos')}${line('N', 'neg')}
       ${ds.length === 1 ? dot(0, 'P', 'pos') + dot(0, 'N', 'neg') : si >= 0 ? dot(si, 'P', 'pos') + dot(si, 'N', 'neg') : ''}
-      ${endLab('P', 'pos', '긍정', last.P >= last.N ? -gap : gap)}${endLab('N', 'neg', '부정', last.P >= last.N ? gap + 8 : -gap + 4)}
-      <line id="xh" x1="0" x2="0" y1="${PT}" y2="${TH - PB}" stroke="var(--ink2)" stroke-width="1" style="display:none"/>
+      ${endLab('P', '긍정', last.P >= last.N ? -gap : gap + 4)}${endLab('N', '부정', last.P >= last.N ? gap + 10 : -gap + 2)}
+      <line id="xh" x1="0" x2="0" y1="${PT}" y2="${TH - PB}" stroke="var(--ink2)" stroke-width="1.5" style="display:none"/>
       <rect id="hit" x="${PL - 10}" y="0" width="${TW - PL - PR + 20}" height="${TH}" fill="transparent"/></svg>
-    ${ds.length < 3 ? '<p class="hint">데이터가 쌓이면 추이가 더 또렷하게 보여요. (지금 ' + ds.length + '일치)</p>' : ''}
+    ${ds.length < 3 ? '<p class="hint">데이터가 쌓이면 흐름이 더 또렷하게 보여요. (지금 ' + ds.length + '일치)</p>' : ''}
     <details><summary>표로 보기</summary><div class="tablewrap"><table><thead><tr><th>날짜</th><th>긍정</th><th>중립</th><th>부정</th><th>지수</th></tr></thead><tbody>
       ${[...ds].reverse().map(d => { const a = agg(d); return `<tr><td>${d}</td><td>${f0(a.P)}</td><td>${f0(a.U)}</td><td>${f0(a.N)}</td><td>${sgn(a.net)}</td></tr>`; }).join('')}</tbody></table></div></details></div>`;
 }
@@ -238,33 +251,37 @@ function trendHTML(ds) {
 function countryHTML(d) {
   const ccs = [...new Set(S.rows.filter(r => r.day === d).map(r => r.cc))];
   const list = ccs.map(cc => ({ cc, a: agg(d, cc) })).filter(x => x.a.tot).sort((x, y) => S.sort === 'neg' ? y.a.N - x.a.N : y.a.P - x.a.P);
-  return `<div class="card"><div class="head"><div><h2>나라별 분위기 · ${md(d)}</h2><p class="cap">왼쪽부터 부정 · 중립 · 긍정, 오른쪽 숫자는 ${S.sort === 'neg' ? '부정' : '긍정'} 비율 · 나라를 누르면 그 나라만 봐요</p></div>
-      <div class="seg" id="segSort"><button data-s="neg" aria-pressed="${S.sort === 'neg'}">부정 많은 순</button><button data-s="pos" aria-pressed="${S.sort === 'pos'}">긍정 많은 순</button></div></div>
+  return `<div class="card"><div class="seg sm" id="segSort"><button data-s="neg" aria-pressed="${S.sort === 'neg'}">부정 많은 순</button><button data-s="pos" aria-pressed="${S.sort === 'pos'}">긍정 많은 순</button></div>
     <div class="legend"><span><i class="sw" style="background:var(--neg)"></i>부정</span><span><i class="sw" style="background:var(--neu)"></i>중립</span><span><i class="sw" style="background:var(--pos)"></i>긍정</span></div>
-    <div class="rows">${list.map(({ cc, a }) => `<div class="row" data-cc="${cc}"><span class="nm">${CC_NAME[cc] || cc}</span><div class="rbar" role="img" aria-label="${CC_NAME[cc]} 부정 ${f0(a.N)} 중립 ${f0(a.U)} 긍정 ${f0(a.P)}">${a.N > 0 ? `<div class="n" style="flex:${a.N}"></div>` : ''}${a.U > 0 ? `<div class="u" style="flex:${a.U}"></div>` : ''}${a.P > 0 ? `<div class="p" style="flex:${a.P}"></div>` : ''}</div><span class="fig tabnum">${f0(S.sort === 'neg' ? a.N : a.P)}</span></div>`).join('') || '<p class="hint">이 날짜의 데이터가 없어요.</p>'}</div></div>`;
+    <div class="rows">${list.map(({ cc, a }) => `<div class="row" data-cc="${cc}"><span class="nm">${CC_NAME[cc] || cc}</span><div class="rbar" role="img" aria-label="${CC_NAME[cc]} 부정 ${f0(a.N)} 중립 ${f0(a.U)} 긍정 ${f0(a.P)}">${a.N > 0 ? `<div class="n" style="flex:${a.N}"></div>` : ''}${a.U > 0 ? `<div class="u" style="flex:${a.U}"></div>` : ''}${a.P > 0 ? `<div class="p" style="flex:${a.P}"></div>` : ''}</div><span class="fig num">${f0(S.sort === 'neg' ? a.N : a.P)}</span></div>`).join('') || '<p class="hint">이 날짜의 데이터가 없어요.</p>'}</div></div>`;
 }
 
 function termsHTML(d, v) {
   const f = v.filter(x => S.cc === 'all' || x.cc === S.cc);
   const col = (s, title, col) => { const it = f.filter(x => x.sentiment === s).slice(0, 6);
-    return `<div><div class="sec-h"><i class="sw" style="background:var(--${col})"></i>${title}</div><ul class="list">${it.map(x => `<li><span class="cc">${x.cc}</span><span class="t" title="${esc(x.term)}">${esc(x.term)}</span><span class="tr tabnum">${fmtT(+x.traffic)}</span>${x.headline ? `<span class="hl">${esc(x.headline)}</span>` : ''}</li>`).join('') || '<li><span class="hint" style="grid-column:1/4">해당하는 검색어가 없어요.</span></li>'}</ul></div>`; };
-  return `<div class="card"><div class="head"><div><h2>${md(d)} 대표 검색어</h2><p class="cap">검색량이 큰 순서 · 근거가 된 뉴스 제목을 함께 보여줘요</p></div></div><div class="two">${col('positive', '긍정 소식', 'pos')}${col('negative', '부정 소식', 'neg')}</div></div>`;
+    return `<div><div class="sec-h"><i class="sw" style="background:var(--${col})"></i>${title}</div><ul class="list">${it.map((x, i) => `<li><span class="rk num">${i + 1}</span><span class="t" title="${esc(x.term)}"><span class="cc">${x.cc}</span>${esc(x.term)}</span><span class="tr num">${fmtT(+x.traffic)}</span>${x.headline ? `<span class="hl">${esc(x.headline)}</span>` : ''}</li>`).join('') || '<li><span class="hint" style="grid-column:1/4">해당하는 검색어가 없어요.</span></li>'}</ul></div>`; };
+  return `<section><h2>${md(d)}에 많이 찾은 소식</h2><p class="cap">검색량이 큰 순서로, 근거가 된 뉴스 제목도 함께 보여줘요.</p><div class="card two">${col('positive', '반가운 소식 · 긍정', 'pos')}${col('negative', '걱정되는 소식 · 부정', 'neg')}</div></section>`;
 }
 
 async function render() {
   const app = $('#app');
-  { const w = Math.round($('.wrap').clientWidth - 38); TW = Math.max(300, Math.min(720, w)); PR = TW < 480 ? 62 : 74; }
+  { const w = Math.round($('.wrap').clientWidth - 46); TW = Math.max(300, Math.min(680, w)); PR = TW < 480 ? 66 : 76; }
   $('#badge').textContent = S.mode === 'demo' ? '샘플 데이터 · 미리보기' : S.mode === 'live' ? '실제 데이터' : '';
   $('#badge').className = 'badge' + (S.mode === 'demo' ? ' demo' : '');
   $('#badge').hidden = S.mode === 'loading' || S.mode === 'empty';
   document.querySelectorAll('#segRange button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.r === S.range));
   document.querySelectorAll('#segBasis button').forEach(b => b.setAttribute('aria-pressed', b.dataset.b === S.basis));
   if (S.mode === 'loading') { app.innerHTML = '<div class="card"><p class="hint">불러오는 중이에요…</p></div>'; return; }
-  if (S.mode === 'empty') { app.innerHTML = `<div class="card"><div class="empty"><b>아직 모인 데이터가 없어요</b><span>자동 수집이 한 번 돌고 나면 여기에 분위기가 나타나요.<br>(15_sentiment.sql 실행 → 수집 실행 순서예요)</span><button class="btn" id="goDemo">샘플로 미리 보기</button></div></div>`; $('#goDemo').onclick = () => { S.mode = 'demo'; S.rows = demoRows(); S.sel = null; render(); }; return; }
+  if (S.mode === 'empty') { app.innerHTML = `<div class="card"><div class="empty">${faceSVG('u')}<b>아직 모인 소식이 없어요</b><span>자동 수집이 한 번 돌고 나면 여기에 분위기가 나타나요.</span><button class="btn" id="goDemo">샘플로 미리 보기</button></div></div>`; $('#goDemo').onclick = () => { S.mode = 'demo'; S.rows = demoRows(); S.sel = null; render(); }; return; }
   const ds = days(); if (!ds.length) { app.innerHTML = '<div class="card"><p class="hint">선택한 조건의 데이터가 없어요.</p></div>'; return; }
   if (!S.sel || !ds.includes(S.sel)) S.sel = ds[ds.length - 1];
   const prev = ds[ds.indexOf(S.sel) - 1] || null, token = (S.tok = (S.tok || 0) + 1);
-  app.innerHTML = kpiHTML(S.sel, prev) + trendHTML(ds) + countryHTML(S.sel) + '<div id="termsSlot"></div>';
+  app.innerHTML = `<div style="display:flex;flex-direction:column;gap:26px">
+    <section>${kpiHTML(S.sel, prev, ds[ds.length - 1])}</section>
+    <section><h2>하루하루는 어땠을까요?</h2><p class="cap">그래프를 누르거나 손가락으로 움직여 날짜를 골라 보세요.</p>${trendHTML(ds)}</section>
+    <section><h2>나라별로 보면</h2><p class="cap">${md(S.sel)} 기준 · 왼쪽부터 부정, 중립, 긍정 · 오른쪽 숫자는 ${S.sort === 'neg' ? '부정' : '긍정'} 비율 · 나라를 누르면 그 나라만 봐요.</p>${countryHTML(S.sel)}</section>
+    <div id="termsSlot"></div></div>`;
+  document.querySelectorAll('.cc-note').forEach(e => e.remove());
   bindTrend(ds); bindRows();
   document.querySelectorAll('#segSort button').forEach(b => b.onclick = () => { S.sort = b.dataset.s; render(); });
   const v = await termsFor(S.sel); if (token === S.tok) $('#termsSlot').innerHTML = termsHTML(S.sel, v);
