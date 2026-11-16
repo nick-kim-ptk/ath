@@ -8,16 +8,19 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:#ffffff; --card:#f5f4f1; --ink:#111111; --ink2:#5b5750; --mute:#8d887f; --line:#e6e3dc; --axis:#d6cfc2; --chip:#e9e6df;
-  --pos:#2a78d6; --neg:#e34948; --neu:#cfc9bc; --on-fill:#ffffff; --on-neu:#111111;
-  --pos-t:#dce8fd; --neg-t:#ffe1dc; --neu-t:#ece6db; --face:#ffcf3f; --lime:#aeff1c;
+  --bg:#ffffff; --card:#f4f4f5; --ink:#111112; --ink2:#55555a; --mute:#8b8b92; --line:#e7e7ea; --axis:#d5d5da; --chip:#ebebee;
+  --pos:#2f5cff; --neg:#f0412b; --neu:#cdcdd3; --on-fill:#ffffff; --on-neu:#111112;
+  --pos-t:#f4f4f5; --neg-t:#f4f4f5; --neu-t:#f4f4f5; --lime:#aeff1c;
+  --sel-bg:#111112; --sel-fg:#aeff1c; --face-neu-ink:#111112; --inset:#ffffff;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg:#141311; --card:#1f1e1b; --ink:#f4f1ea; --ink2:#c9c4b8; --mute:#8d887f; --line:#2c2a26; --axis:#3a3832; --chip:#2c2a26;
-  --pos:#3987e5; --neg:#e66767; --neu:#58554e; --on-neu:#f4f1ea; --pos-t:#1a2a47; --neg-t:#46211f; --neu-t:#2c2a26; color-scheme:dark; } }
+  --bg:#0e0e10; --card:#1b1b1e; --ink:#f4f4f6; --ink2:#c4c4ca; --mute:#8b8b92; --line:#2a2a2e; --axis:#38383d; --chip:#2a2a2e;
+  --pos:#5b83ff; --neg:#f4573a; --neu:#6c6c75; --on-neu:#f4f4f6; --pos-t:#1b1b1e; --neg-t:#1b1b1e; --neu-t:#1b1b1e;
+  --sel-bg:#aeff1c; --sel-fg:#111112; --face-neu-ink:#f4f4f6; --inset:#0e0e10; color-scheme:dark; } }
 :root[data-theme="dark"] {
-  --bg:#141311; --card:#1f1e1b; --ink:#f4f1ea; --ink2:#c9c4b8; --mute:#8d887f; --line:#2c2a26; --axis:#3a3832; --chip:#2c2a26;
-  --pos:#3987e5; --neg:#e66767; --neu:#58554e; --on-neu:#f4f1ea; --pos-t:#1a2a47; --neg-t:#46211f; --neu-t:#2c2a26; color-scheme:dark; }
+  --bg:#0e0e10; --card:#1b1b1e; --ink:#f4f4f6; --ink2:#c4c4ca; --mute:#8b8b92; --line:#2a2a2e; --axis:#38383d; --chip:#2a2a2e;
+  --pos:#5b83ff; --neg:#f4573a; --neu:#6c6c75; --on-neu:#f4f4f6; --pos-t:#1b1b1e; --neg-t:#1b1b1e; --neu-t:#1b1b1e;
+  --sel-bg:#aeff1c; --sel-fg:#111112; --face-neu-ink:#f4f4f6; --inset:#0e0e10; color-scheme:dark; }
 
 * { box-sizing:border-box; }
 body { background:var(--bg); color:var(--ink); font:500 15px/1.55 "Noto Sans KR","Apple SD Gothic Neo",system-ui,sans-serif; padding-inline:16px; padding-block:18px 64px; -webkit-font-smoothing:antialiased; word-break:keep-all; overflow-wrap:break-word; }
@@ -28,7 +31,7 @@ h1,h2,h3,p { margin:0; }
 
 header { display:flex; flex-direction:column; gap:14px; }
 .brand { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-.logo { background:#111; color:var(--lime); font:800 14px/1 "Plus Jakarta Sans",sans-serif; padding:9px 14px; border-radius:999px; }
+.logo { background:var(--sel-bg); color:var(--sel-fg); font:800 14px/1 "Plus Jakarta Sans",sans-serif; padding:9px 14px; border-radius:999px; }
 .badge { font:700 12px/1 "Noto Sans KR",sans-serif; padding:8px 12px; border-radius:999px; background:var(--chip); color:var(--ink2); }
 .badge.demo { background:#fff0b8; color:#5c4300; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .badge.demo { background:#4a3a08; color:#ffe9a0; } }
@@ -39,7 +42,7 @@ h1 { font-size:clamp(28px,7.5vw,38px); line-height:1.2; letter-spacing:-.04em; f
 .filters { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
 .seg { display:inline-flex; gap:6px; }
 .seg button { height:38px; padding:0 16px; border-radius:999px; font-weight:700; font-size:14px; background:var(--card); color:var(--ink2); }
-.seg button[aria-pressed="true"] { background:var(--ink); color:var(--bg); }
+.seg button[aria-pressed="true"] { background:var(--sel-bg); color:var(--sel-fg); }
 .sep { width:1px; height:22px; background:var(--axis); }
 .sel { height:38px; border-radius:999px; border:0; background:var(--card); color:var(--ink); padding:0 16px; font:700 14px "Noto Sans KR",sans-serif; }
 
@@ -63,7 +66,7 @@ section > h2 { font-size:22px; font-weight:900; letter-spacing:-.03em; }
 .tiles { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
 .tile { border-radius:24px; padding:16px 14px; display:flex; flex-direction:column; gap:4px; min-width:0; }
 .tile.p { background:var(--pos-t); } .tile.n { background:var(--neg-t); } .tile.u { background:var(--neu-t); }
-.tile .k { font-size:13px; font-weight:800; color:var(--ink2); }
+.tile .k { display:flex; align-items:center; gap:7px; font-size:13px; font-weight:800; color:var(--ink2); }
 .tile .v { font-size:clamp(28px,8vw,38px); font-weight:800; letter-spacing:-.04em; line-height:1.05; }
 .tile .d { font-size:12px; color:var(--ink2); font-weight:500; }
 .legend { display:flex; flex-wrap:wrap; gap:6px 16px; font-size:13px; font-weight:700; color:var(--ink2); }
@@ -79,15 +82,15 @@ svg text { font-family:"Noto Sans KR",system-ui,sans-serif; }
 .row .nm { font-weight:700; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .row .fig { text-align:right; font-size:14px; font-weight:800; }
 .rbar { display:flex; gap:2px; height:24px; }
-.rbar > div { min-width:0; } .rbar .n { background:var(--neg); border-radius:12px 3px 3px 12px; } .rbar .u { background:var(--neu); border-radius:3px; } .rbar .p { background:var(--pos); border-radius:3px 12px 12px 3px; }
+.rbar > div { min-width:0; } .rbar .p { background:var(--pos); border-radius:12px 3px 3px 12px; } .rbar .u { background:var(--neu); border-radius:3px; } .rbar .n { background:var(--neg); border-radius:3px 12px 12px 3px; }
 .rbar > div:only-child { border-radius:12px; }
 .seg.sm button { height:34px; padding:0 13px; font-size:13px; background:var(--chip); }
-.seg.sm button[aria-pressed="true"] { background:var(--ink); }
+.seg.sm button[aria-pressed="true"] { background:var(--sel-bg); }
 
 .two { display:flex; flex-direction:column; gap:22px; }
 .sec-h { display:flex; align-items:center; gap:8px; font-weight:900; font-size:16px; margin-bottom:10px; letter-spacing:-.02em; }
 .list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
-.list li { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:2px 12px; padding:13px 14px; border-radius:18px; background:var(--bg); align-items:center; }
+.list li { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:2px 12px; padding:13px 14px; border-radius:18px; background:var(--inset); align-items:center; }
 .rk { width:26px; height:26px; border-radius:50%; display:grid; place-items:center; font:800 13px "Plus Jakarta Sans",sans-serif; background:var(--card); }
 .t { font-weight:800; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; letter-spacing:-.02em; }
 .tr { font-size:12px; color:var(--mute); font-weight:700; }
@@ -102,10 +105,34 @@ th:first-child,td:first-child { text-align:left; } th { color:var(--mute); font-
 
 .empty { text-align:center; padding:26px 8px; color:var(--ink2); display:flex; flex-direction:column; gap:12px; align-items:center; }
 .empty b { color:var(--ink); font-size:19px; font-weight:900; }
-.btn { height:46px; padding:0 26px; border-radius:999px; background:var(--ink); color:var(--bg); font-weight:800; font-size:15px; }
+.btn { height:46px; padding:0 26px; border-radius:999px; background:var(--sel-bg); color:var(--sel-fg); font-weight:800; font-size:15px; }
 .note { font-size:13px; color:var(--mute); line-height:1.7; }
 #tip { position:fixed; z-index:20; pointer-events:none; background:var(--ink); color:var(--bg); border-radius:14px; padding:10px 12px; font-size:13px; line-height:1.55; display:none; max-width:250px; box-shadow:0 8px 24px rgba(0,0,0,.22); }
 #tip b { font-weight:900; }
+
+/* 데이터 수집 구조 */
+.flow { display:flex; flex-wrap:wrap; align-items:center; gap:6px; font:800 13px "Plus Jakarta Sans","Noto Sans KR",sans-serif; }
+.flow span { padding:7px 12px; border-radius:999px; background:var(--inset); }
+.flow i { font-style:normal; color:var(--mute); }
+.kpis { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.kpis div { background:var(--inset); border-radius:18px; padding:14px 12px; display:flex; flex-direction:column; gap:2px; min-width:0; }
+.kpis b { font:800 clamp(24px,7vw,32px)/1.05 "Plus Jakarta Sans",sans-serif; letter-spacing:-.04em; }
+.kpis small { font-size:12px; color:var(--mute); font-weight:700; }
+.steps { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+@media (max-width:600px) { .steps { grid-template-columns:1fr; } }
+.steps li { background:var(--inset); border-radius:18px; padding:16px; display:flex; flex-direction:column; gap:6px; min-width:0; }
+.steps .no { width:28px; height:28px; border-radius:50%; background:var(--sel-bg); color:var(--sel-fg); display:grid; place-items:center; font:800 13px "Plus Jakarta Sans",sans-serif; }
+.steps h3 { font-size:16px; font-weight:900; letter-spacing:-.03em; }
+.steps p { font-size:13px; color:var(--ink2); line-height:1.6; }
+.steps em { font-style:normal; font-size:12px; font-weight:800; color:var(--mute); }
+
+.funnel { display:flex; flex-direction:column; gap:10px; background:var(--inset); border-radius:18px; padding:16px; }
+.fr { display:grid; grid-template-columns:104px minmax(0,1fr) 64px; gap:10px; align-items:center; font-size:13px; font-weight:700; }
+.fr .bar2 { height:14px; border-radius:7px; background:var(--ink); min-width:6px; }
+.fr .v { text-align:right; font:800 15px "Plus Jakarta Sans",sans-serif; }
+.fr small { display:block; color:var(--mute); font-weight:500; font-size:11px; }
+.steps .en { font:800 11px "Plus Jakarta Sans",sans-serif; letter-spacing:.12em; color:var(--mute); }
+@media (max-width:480px) { .fr { grid-template-columns:84px minmax(0,1fr) 52px; } }
 [hidden] { display:none !important; }
 </style>
 </head>
@@ -137,7 +164,7 @@ th:first-child,td:first-child { text-align:left; } th { color:var(--mute); font-
 <script>
 const SB_URL = 'https://wbmiszonrsxpjzbnppfz.supabase.co', SB_KEY = 'sb_publishable_J8EkuZW7bpB1MGXbHkz8WA_Yl26qAQX';
 const CC_NAME = { KR:'한국', JP:'일본', US:'미국', FR:'프랑스', UK:'영국', IT:'이탈리아', BR:'브라질', AU:'호주', TH:'태국', DE:'독일', ES:'스페인', TR:'튀르키예', CA:'캐나다', MX:'멕시코', IN:'인도', ID:'인도네시아', VN:'베트남', SG:'싱가포르', TW:'대만' };
-const S = { mode:'loading', rows:[], range:14, basis:'n', cc:'all', sel:null, terms:{}, sort:'neg' };
+const S = { mode:'loading', rows:[], range:14, basis:'n', cc:'all', sel:null, terms:{}, sort:'pos', trends:[] };
 const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 const pc = (n, tot) => tot ? n / tot * 100 : 0;
@@ -175,6 +202,10 @@ function demoTerms(day) {
   const mk = (pool, s) => Array.from({ length:12 }, () => ({ cc:pick(ccs), term:pick(pool), traffic:Math.round(20000 + r() * 900000), sentiment:s, headline:'(샘플) 관련 기사 제목이 여기에 표시돼요' })).sort((a, b) => b.traffic - a.traffic);
   return [...mk(DEMO_POS, 'positive'), ...mk(DEMO_NEG, 'negative')];
 }
+async function loadTrends() {
+  if (S.mode === 'demo') { const r = rng(7), ccs = Object.keys(CC_NAME), out = []; ccs.forEach(cc => { for (let i = 0; i < 4; i++) out.push({ cc, keyword_id: 'k' + (r() < .08 ? Math.floor(r() * 5) : cc + i) }); }); return out; }
+  try { return await sbGet('trends?select=cc,keyword_id&is_sample=eq.false&limit=500'); } catch (e) { return []; }
+}
 async function termsFor(day) {
   if (S.terms[day]) return S.terms[day];
   let v = [];
@@ -206,22 +237,23 @@ const hideTip = () => { tip.style.display = 'none'; };
 const josa = w => { const c = w.charCodeAt(w.length - 1); return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 ? '은' : '는'; };
 const kindOf = net => net >= 10 ? 'p' : net <= -10 ? 'n' : 'u';
 function faceSVG(k) {
-  const eyes = '<circle cx="35" cy="43" r="4.6" fill="#111"/><circle cx="65" cy="43" r="4.6" fill="#111"/>';
-  const m = { p:'<path d="M33 59 Q50 80 67 59" fill="none" stroke="#111" stroke-width="4.6" stroke-linecap="round"/><circle cx="24" cy="58" r="6" fill="#ff8f7d" opacity=".55"/><circle cx="76" cy="58" r="6" fill="#ff8f7d" opacity=".55"/>',
-    u:'<path d="M38 67 H62" fill="none" stroke="#111" stroke-width="4.6" stroke-linecap="round"/>',
-    n:'<path d="M27 37 L42 31 M73 37 L58 31" fill="none" stroke="#111" stroke-width="4" stroke-linecap="round"/><path d="M36 72 Q50 56 64 72" fill="none" stroke="#111" stroke-width="4.6" stroke-linecap="round"/>' }[k];
-  return `<svg class="face" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="var(--face)"/>${eyes}${m}</svg>`;
+  const bg = { p:'var(--pos)', u:'var(--neu)', n:'var(--neg)' }[k], ink = k === 'u' ? 'var(--face-neu-ink)' : '#ffffff';
+  const eyes = `<circle cx="35" cy="43" r="4.8" fill="${ink}"/><circle cx="65" cy="43" r="4.8" fill="${ink}"/>`;
+  const m = { p:`<path d="M33 59 Q50 80 67 59" fill="none" stroke="${ink}" stroke-width="4.8" stroke-linecap="round"/><circle cx="23" cy="58" r="6" fill="#aeff1c"/><circle cx="77" cy="58" r="6" fill="#aeff1c"/>`,
+    u:`<path d="M38 67 H62" fill="none" stroke="${ink}" stroke-width="4.8" stroke-linecap="round"/>`,
+    n:`<path d="M27 37 L42 31 M73 37 L58 31" fill="none" stroke="${ink}" stroke-width="4.2" stroke-linecap="round"/><path d="M36 72 Q50 56 64 72" fill="none" stroke="${ink}" stroke-width="4.8" stroke-linecap="round"/>` }[k];
+  return `<svg class="face" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="${bg}"/>${eyes}${m}</svg>`;
 }
 function kpiHTML(d, prev, latest) {
   const a = agg(d), p = prev ? agg(prev) : null, k = kindOf(a.net), subj = S.cc === 'all' ? '지구' : CC_NAME[S.cc];
   const title = (d === latest ? '오늘 ' : md(d) + '의 ') + subj + josa(subj) + ' ' + { p:'기분이 좋아요', u:'반반이에요', n:'조금 무거워요' }[k];
   const dl = (cur, old) => p ? `${cur - old >= 0.05 ? '▲' : cur - old <= -0.05 ? '▼' : '–'} 전날보다 ${Math.abs(cur - old).toFixed(1)}%p` : '전날 데이터 없음';
-  const tile = (c, label, val, cur, old) => `<div class="tile ${c}"><span class="k">${label}</span><span class="v num">${f0(val)}</span><span class="d">${dl(cur, old)}</span></div>`;
+  const tile = (c, label, val, cur, old) => `<div class="tile ${c}"><span class="k"><i class="sw" style="background:var(--${{ p:'pos', u:'neu', n:'neg' }[c]})"></i>${label}</span><span class="v num">${f0(val)}</span><span class="d">${dl(cur, old)}</span></div>`;
   const seg = (cls, v, lab) => v >= 0.5 ? `<div class="${cls}" title="${lab} ${f0(v)}" style="flex:${v}">${v >= 24 ? lab + ' ' + f0(v) : v >= 9 ? f0(v) : ''}</div>` : '';
   return `<div class="mood ${k}"><div class="mood-top">${faceSVG(k)}<div><p class="when num">${md(d)} · 분위기 지수 ${sgn(a.net)}</p><h2>${title}</h2></div></div>
-      <div class="bar" role="img" aria-label="긍정 ${f0(a.P)}, 중립 ${f0(a.U)}, 부정 ${f0(a.N)}">${seg('n', a.N, '부정')}${seg('u', a.U, '중립')}${seg('p', a.P, '긍정')}</div>
+      <div class="bar" role="img" aria-label="긍정 ${f0(a.P)}, 중립 ${f0(a.U)}, 부정 ${f0(a.N)}">${seg('p', a.P, '긍정')}${seg('u', a.U, '중립')}${seg('n', a.N, '부정')}</div>
       <p class="cap" style="margin:0">${S.basis === 'n' ? '검색어 수' : '검색량'} 기준 · 아래 그래프에서 날짜를 눌러 바꿔 볼 수 있어요</p></div>
-    <div class="tiles">${tile('n', '부정', a.N, a.N, p ? p.N : 0)}${tile('u', '중립', a.U, a.U, p ? p.U : 0)}${tile('p', '긍정', a.P, a.P, p ? p.P : 0)}</div>`;
+    <div class="tiles">${tile('p', '긍정', a.P, a.P, p ? p.P : 0)}${tile('u', '중립', a.U, a.U, p ? p.U : 0)}${tile('n', '부정', a.N, a.N, p ? p.N : 0)}</div>`;
 }
 
 let TW = 720, PR = 74; const TH = 250, PL = 40, PT = 14, PB = 28;
@@ -251,9 +283,9 @@ function trendHTML(ds) {
 function countryHTML(d) {
   const ccs = [...new Set(S.rows.filter(r => r.day === d).map(r => r.cc))];
   const list = ccs.map(cc => ({ cc, a: agg(d, cc) })).filter(x => x.a.tot).sort((x, y) => S.sort === 'neg' ? y.a.N - x.a.N : y.a.P - x.a.P);
-  return `<div class="card"><div class="seg sm" id="segSort"><button data-s="neg" aria-pressed="${S.sort === 'neg'}">부정 많은 순</button><button data-s="pos" aria-pressed="${S.sort === 'pos'}">긍정 많은 순</button></div>
-    <div class="legend"><span><i class="sw" style="background:var(--neg)"></i>부정</span><span><i class="sw" style="background:var(--neu)"></i>중립</span><span><i class="sw" style="background:var(--pos)"></i>긍정</span></div>
-    <div class="rows">${list.map(({ cc, a }) => `<div class="row" data-cc="${cc}"><span class="nm">${CC_NAME[cc] || cc}</span><div class="rbar" role="img" aria-label="${CC_NAME[cc]} 부정 ${f0(a.N)} 중립 ${f0(a.U)} 긍정 ${f0(a.P)}">${a.N > 0 ? `<div class="n" style="flex:${a.N}"></div>` : ''}${a.U > 0 ? `<div class="u" style="flex:${a.U}"></div>` : ''}${a.P > 0 ? `<div class="p" style="flex:${a.P}"></div>` : ''}</div><span class="fig num">${f0(S.sort === 'neg' ? a.N : a.P)}</span></div>`).join('') || '<p class="hint">이 날짜의 데이터가 없어요.</p>'}</div></div>`;
+  return `<div class="card"><div class="seg sm" id="segSort"><button data-s="pos" aria-pressed="${S.sort === 'pos'}">긍정 많은 순</button><button data-s="neg" aria-pressed="${S.sort === 'neg'}">부정 많은 순</button></div>
+    <div class="legend"><span><i class="sw" style="background:var(--pos)"></i>긍정</span><span><i class="sw" style="background:var(--neu)"></i>중립</span><span><i class="sw" style="background:var(--neg)"></i>부정</span></div>
+    <div class="rows">${list.map(({ cc, a }) => `<div class="row" data-cc="${cc}"><span class="nm">${CC_NAME[cc] || cc}</span><div class="rbar" role="img" aria-label="${CC_NAME[cc]} 긍정 ${f0(a.P)} 중립 ${f0(a.U)} 부정 ${f0(a.N)}">${a.P > 0 ? `<div class="p" style="flex:${a.P}"></div>` : ''}${a.U > 0 ? `<div class="u" style="flex:${a.U}"></div>` : ''}${a.N > 0 ? `<div class="n" style="flex:${a.N}"></div>` : ''}</div><span class="fig num">${f0(S.sort === 'neg' ? a.N : a.P)}</span></div>`).join('') || '<p class="hint">이 날짜의 데이터가 없어요.</p>'}</div></div>`;
 }
 
 function termsHTML(d, v) {
@@ -261,6 +293,26 @@ function termsHTML(d, v) {
   const col = (s, title, col) => { const it = f.filter(x => x.sentiment === s).slice(0, 6);
     return `<div><div class="sec-h"><i class="sw" style="background:var(--${col})"></i>${title}</div><ul class="list">${it.map((x, i) => `<li><span class="rk num">${i + 1}</span><span class="t" title="${esc(x.term)}"><span class="cc">${x.cc}</span>${esc(x.term)}</span><span class="tr num">${fmtT(+x.traffic)}</span>${x.headline ? `<span class="hl">${esc(x.headline)}</span>` : ''}</li>`).join('') || '<li><span class="hint" style="grid-column:1/4">해당하는 검색어가 없어요.</span></li>'}</ul></div>`; };
   return `<section><h2>${md(d)}에 많이 찾은 소식</h2><p class="cap">검색량이 큰 순서로, 근거가 된 뉴스 제목도 함께 보여줘요.</p><div class="card two">${col('positive', '반가운 소식 · 긍정', 'pos')}${col('negative', '걱정되는 소식 · 부정', 'neg')}</div></section>`;
+}
+
+function pipelineHTML(d) {
+  const day = S.rows.filter(r => r.day === d), total = day.reduce((t, r) => t + (+r.pos_n) + (+r.neu_n) + (+r.neg_n), 0);
+  const nCc = new Set(day.map(r => r.cc)).size, allDays = [...new Set(S.rows.map(r => r.day))].sort(), nDays = allDays.length, last = allDays[allDays.length - 1];
+  const tr = S.trends || [], topics = tr.length, byKw = {}; tr.forEach(t => { (byKw[t.keyword_id] = byKw[t.keyword_id] || new Set()).add(t.cc); });
+  const shared = Object.values(byKw).filter(x => x.size >= 2).length, max = Math.max(total, 1);
+  const frow = (name, sub, n, op) => `<div class="fr"><span>${name}<small>${sub}</small></span><div class="bar2" style="width:${Math.max(3, n / max * 100)}%;opacity:${op}"></div><span class="v">${n.toLocaleString()}</span></div>`;
+  const step = (n, en, t, p, em) => `<li><span class="no">${n}</span><span class="en">${en}</span><h3>${t}</h3><p>${p}</p><em>${em}</em></li>`;
+  return `<section><h2>데이터는 이렇게 모여요</h2><p class="cap">사람이 고르지 않고, 매일 같은 순서로 자동으로 쌓여요.${S.mode === 'demo' ? ' (지금 숫자는 샘플이에요)' : ''}</p>
+    <div class="card"><div class="kpis"><div><b class="num">${nCc}</b><small>대상 국가</small></div><div><b class="num">${nDays}</b><small>쌓인 날짜</small></div><div><b class="num">${md(last)}</b><small>최근 수집일</small></div></div>
+    ${topics ? `<div class="funnel"><div class="sec-h" style="margin:0">${md(d)} 처리량</div>
+      ${frow('분석한 검색어', '전체 인기 검색어', total, 1)}${frow('오늘의 화제', '앱에 노출 중', topics, .6)}${frow('공통 화제', '2개국 이상 동시', shared, .35)}</div>` : ''}
+    <ol class="steps">
+      ${step(1, 'INGEST', '수집', '구글 트렌드의 나라별 일간 인기 검색어와 연관 뉴스 제목을 가져와요.', '19개국 · 매일 00:00 (한국 시간)')}
+      ${step(2, 'CLEAN', '정제', '도구성 검색어와 중복을 걸러내고 같은 사건은 하나로 병합해요. 나라가 달라도 같은 이야기면 한 키워드로 묶어요.', '근거 없는 요약은 제외')}
+      ${step(3, 'CLASSIFY', '분석', '뉴스 제목을 근거로 검색어마다 긍정·중립·부정을 판정해요. 근거가 모호하면 중립으로 둬요.', '나라당 최대 25개 · 사건·사고 포함')}
+      ${step(4, 'STORE', '적재', '하루 단위 스냅샷으로 저장해서 날짜별 추이와 나라별 비교를 계산해요.', '앱과 대시보드가 같은 데이터를 사용')}
+    </ol>
+    <p class="hint">중국은 수집 가능한 공개 데이터가 없어 제외돼요. 분류는 자동으로 이뤄져 오차가 있을 수 있어요.</p></div></section>`;
 }
 
 async function render() {
@@ -272,15 +324,16 @@ async function render() {
   document.querySelectorAll('#segRange button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.r === S.range));
   document.querySelectorAll('#segBasis button').forEach(b => b.setAttribute('aria-pressed', b.dataset.b === S.basis));
   if (S.mode === 'loading') { app.innerHTML = '<div class="card"><p class="hint">불러오는 중이에요…</p></div>'; return; }
-  if (S.mode === 'empty') { app.innerHTML = `<div class="card"><div class="empty">${faceSVG('u')}<b>아직 모인 소식이 없어요</b><span>자동 수집이 한 번 돌고 나면 여기에 분위기가 나타나요.</span><button class="btn" id="goDemo">샘플로 미리 보기</button></div></div>`; $('#goDemo').onclick = () => { S.mode = 'demo'; S.rows = demoRows(); S.sel = null; render(); }; return; }
+  if (S.mode === 'empty') { app.innerHTML = `<div class="card"><div class="empty">${faceSVG('u')}<b>아직 모인 소식이 없어요</b><span>자동 수집이 한 번 돌고 나면 여기에 분위기가 나타나요.</span><button class="btn" id="goDemo">샘플로 미리 보기</button></div></div>`; $('#goDemo').onclick = () => { S.mode = 'demo'; S.rows = demoRows(); S.sel = null; loadTrends().then(t => { S.trends = t; render(); }); }; return; }
   const ds = days(); if (!ds.length) { app.innerHTML = '<div class="card"><p class="hint">선택한 조건의 데이터가 없어요.</p></div>'; return; }
   if (!S.sel || !ds.includes(S.sel)) S.sel = ds[ds.length - 1];
   const prev = ds[ds.indexOf(S.sel) - 1] || null, token = (S.tok = (S.tok || 0) + 1);
   app.innerHTML = `<div style="display:flex;flex-direction:column;gap:26px">
     <section>${kpiHTML(S.sel, prev, ds[ds.length - 1])}</section>
     <section><h2>하루하루는 어땠을까요?</h2><p class="cap">그래프를 누르거나 손가락으로 움직여 날짜를 골라 보세요.</p>${trendHTML(ds)}</section>
-    <section><h2>나라별로 보면</h2><p class="cap">${md(S.sel)} 기준 · 왼쪽부터 부정, 중립, 긍정 · 오른쪽 숫자는 ${S.sort === 'neg' ? '부정' : '긍정'} 비율 · 나라를 누르면 그 나라만 봐요.</p>${countryHTML(S.sel)}</section>
-    <div id="termsSlot"></div></div>`;
+    <section><h2>나라별로 보면</h2><p class="cap">${md(S.sel)} 기준 · 왼쪽부터 긍정, 중립, 부정 · 오른쪽 숫자는 ${S.sort === 'neg' ? '부정' : '긍정'} 비율 · 나라를 누르면 그 나라만 봐요.</p>${countryHTML(S.sel)}</section>
+    <div id="termsSlot"></div>
+    ${pipelineHTML(S.sel)}</div>`;
   document.querySelectorAll('.cc-note').forEach(e => e.remove());
   bindTrend(ds); bindRows();
   document.querySelectorAll('#segSort button').forEach(b => b.onclick = () => { S.sort = b.dataset.s; render(); });
@@ -315,11 +368,11 @@ let _rw = 0; addEventListener('resize', () => { const w = $('.wrap').clientWidth
 (async () => {
   _rw = $('.wrap').clientWidth; render();
   const demo = new URLSearchParams(location.search).has('demo');
-  if (demo) { S.mode = 'demo'; S.rows = demoRows(); return render(); }
+  if (demo) { S.mode = 'demo'; S.rows = demoRows(); S.trends = await loadTrends(); return render(); }
   try {
     const rows = await sbGet(`sentiment_daily_stats?select=*&day=gte.${addDays(kstToday(), -35)}&order=day.asc&limit=1000`);
-    if (!rows.length) { S.mode = 'empty'; } else { S.mode = 'live'; S.rows = rows; }
-  } catch (e) { S.mode = 'demo'; S.rows = demoRows(); }   // 연결이 안 되면(미리보기·표 미생성) 샘플로 보여줘요
+    if (!rows.length) { S.mode = 'empty'; } else { S.mode = 'live'; S.rows = rows; S.trends = await loadTrends(); }
+  } catch (e) { S.mode = 'demo'; S.rows = demoRows(); S.trends = await loadTrends(); }   // 연결이 안 되면(미리보기·표 미생성) 샘플로 보여줘요
   render();
 })();
 </script>
