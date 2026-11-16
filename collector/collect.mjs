@@ -39,6 +39,7 @@ export function parseRss(xml) {
     news: it.split('<ht:news_item>').slice(1).map(n => ({ title: tag(n, 'ht:news_item_title'), source: tag(n, 'ht:news_item_source'), url: tag(n, 'ht:news_item_url') })).filter(n => n.title)
   })).filter(i => i.term);
 }
+const RAW = {};   // 나라별 원본 검색어 (감정 통계용)
 async function fetchTrends(geo) {
   const r = await fetch(`https://trends.google.com/trending/rss?geo=${geo}`, { headers: { 'user-agent': 'Mozilla/5.0 (compatible; earth-lately-collector)' } });
   if (!r.ok) throw new Error('RSS ' + r.status);
@@ -91,6 +92,7 @@ function promptFor(cc, items) {
 async function buildCountry(cc, prevSlugs) {
   const items = await fetchTrends(COUNTRIES[cc][0]);
   if (!items.length) throw new Error('항목 없음');
+  RAW[cc] = items;
   const out = await claude(SYSTEM, promptFor(cc, items));
   const topics = [], rej = { 근거부족: 0, 뉴스없음: 0, 내용부족: 0, slug없음: 0 };
   for (const t of out.topics || []) {
@@ -125,6 +127,25 @@ async function buildCountry(cc, prevSlugs) {
   return topics.slice(0, 4);
 }
 
+
+/* ---------- 감정 통계 (대시보드용) ----------
+   화제로 뽑힌 것만이 아니라 그날 나라별 인기 검색어 전체를 긍정/중립/부정으로 나눠요.
+   (화제 선별은 사건·사고를 걸러내서, 그것만 세면 늘 긍정으로 쏠려요)
+   실패해도 화제 수집은 그대로 진행돼요. */
+const SENT_SYSTEM = `너는 뉴스 분위기 분류기야. 나라별 인기 검색어와 관련 뉴스 제목을 받아서, 각 검색어가 사람들에게 주는 '소식의 분위기'를 분류해.
+- positive: 우승·성과·출시·축제·경사·호재처럼 대체로 반가운 소식
+- negative: 사고·사망·범죄·재난·전쟁·갈등·논란·악재·패배·가격 급등 같은 걱정스럽거나 안 좋은 소식
+- neutral: 날씨·일정·경기 예고·단순 정보·도구성 검색어(로그인, 복권 번호 등)처럼 어느 쪽도 아닌 것
+판단 근거는 입력의 뉴스 제목뿐이야. 모르겠으면 neutral. JSON만 출력해: {"s":[{"i":0,"v":"positive|neutral|negative"}]}  (모든 번호를 빠짐없이)`;
+async function classifySentiment(cc) {
+  const items = (RAW[cc] || []).slice(0, 25);
+  if (!items.length) return [];
+  const body = items.map((it, i) => `#${i} ${it.term}${it.news[0] ? ' | ' + it.news[0].title : ''}`).join('\n');
+  const out = await claude(SENT_SYSTEM, `나라: ${COUNTRIES[cc][1]}\n\n${body}`, 1500);
+  const ok = new Set(['positive', 'neutral', 'negative']);
+  const seen = new Map((out.s || []).filter(x => Number.isInteger(x.i) && items[x.i] && ok.has(x.v)).map(x => [x.i, x.v]));
+  return items.map((it, i) => ({ day: TODAY, cc, term: it.term.slice(0, 80), traffic: it.traffic || 0, sentiment: seen.get(i) || 'neutral', headline: it.news[0] ? it.news[0].title.slice(0, 140) : null }));
+}
 
 /* ---------- 사진 (Pexels 무료 스톡 사진) ---------- */
 const usedPhotos = new Set();
@@ -184,6 +205,12 @@ export async function main() {
   /* 사진 찾기 (키가 없으면 건너뛰어요) */
   for (const cc of done) for (const t of results[cc]) { t.photo = await findPhoto(t.photoQuery); await sleep(300); }
 
+  /* 감정 통계 (실패해도 계속) */
+  const sentRows = [];
+  for (const cc of done) { try { sentRows.push(...await classifySentiment(cc)); } catch (e) { log(`감정 분류 건너뜀 ${cc}:`, e.message); } await sleep(800); }
+  const tally = sentRows.reduce((m, r) => (m[r.sentiment] = (m[r.sentiment] || 0) + 1, m), {});
+  log('감정 통계:', JSON.stringify(tally), `(${sentRows.length}건)`);
+
   if (DRY) {
     console.log(JSON.stringify(Object.fromEntries(done.map(cc => [cc, results[cc]])), null, 1));
   } else {
@@ -205,6 +232,10 @@ export async function main() {
       await sb('POST', 'trend_news', news, 'return=minimal');
       await sb('DELETE', `trends?cc=eq.${cc}&id=not.in.(${ids.join(',')})`);
     }
+    if (sentRows.length) {
+      try { for (let i = 0; i < sentRows.length; i += 200) await sb('POST', 'sentiment_daily?on_conflict=day,cc,term', sentRows.slice(i, i + 200), 'resolution=merge-duplicates,return=minimal'); }
+      catch (e) { log('감정 통계 저장 실패 (15_sentiment.sql 실행했는지 확인):', e.message); }
+    }
     /* 어디에도 안 쓰이고 아무도 Keep하지 않은 키워드는 정리 */
     const [allKw, used, kept] = await Promise.all([sb('GET', 'keywords?select=id'), sb('GET', 'trends?select=keyword_id'), sb('GET', 'keeps?select=keyword_id')]);
     const live = new Set([...used.map(r => r.keyword_id), ...kept.map(r => r.keyword_id)]);
@@ -212,7 +243,7 @@ export async function main() {
     for (let i = 0; i < orphan.length; i += 50) await sb('DELETE', `keywords?id=in.(${orphan.slice(i, i + 50).map(encodeURIComponent).join(',')})`);
   }
 
-  const summary = `## 수집 결과 (${TODAY}${DRY ? ', 시험 실행: 저장 안 함' : ''})\n성공 ${done.length}개국 / 실패 ${failed.length}개국\n\n` +
+  const summary = `## 수집 결과 (${TODAY}${DRY ? ', 시험 실행: 저장 안 함' : ''})\n성공 ${done.length}개국 / 실패 ${failed.length}개국 · 감정 통계 ${sentRows.length}건 (긍정 ${tally.positive || 0} / 중립 ${tally.neutral || 0} / 부정 ${tally.negative || 0})\n\n` +
     done.map(cc => `- **${cc}** ${results[cc].map(t => `${t.title}(${t.status}${t.photo ? ', 사진 있음' : ''})`).join(', ')}`).join('\n') + (failed.length ? `\n\n실패:\n${failed.map(f => '- ' + f).join('\n')}` : '') + '\n';
   console.log(summary);
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
