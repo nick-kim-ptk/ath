@@ -132,19 +132,25 @@ async function buildCountry(cc, prevSlugs) {
    화제로 뽑힌 것만이 아니라 그날 나라별 인기 검색어 전체를 긍정/중립/부정으로 나눠요.
    (화제 선별은 사건·사고를 걸러내서, 그것만 세면 늘 긍정으로 쏠려요)
    실패해도 화제 수집은 그대로 진행돼요. */
-const SENT_SYSTEM = `너는 뉴스 분위기 분류기야. 나라별 인기 검색어와 관련 뉴스 제목을 받아서, 각 검색어가 사람들에게 주는 '소식의 분위기'를 분류해.
+const SENT_SYSTEM = `너는 뉴스 분위기 분류기이자 한국어 에디터야. 나라별 인기 검색어와 관련 뉴스 제목을 받아서, 검색어마다 아래 세 가지를 만들어.
+1) v: 그 소식의 분위기
 - positive: 우승·성과·출시·축제·경사·호재처럼 대체로 반가운 소식
 - negative: 사고·사망·범죄·재난·전쟁·갈등·논란·악재·패배·가격 급등 같은 걱정스럽거나 안 좋은 소식
-- neutral: 날씨·일정·경기 예고·단순 정보·도구성 검색어(로그인, 복권 번호 등)처럼 어느 쪽도 아닌 것
-판단 근거는 입력의 뉴스 제목뿐이야. 모르겠으면 neutral. JSON만 출력해: {"s":[{"i":0,"v":"positive|neutral|negative"}]}  (모든 번호를 빠짐없이)`;
+- neutral: 날씨·일정·경기 예고·단순 정보·도구성 검색어(로그인, 복권 번호 등)처럼 어느 쪽도 아닌 것. 모르겠으면 neutral.
+2) ko: 한국 사람이 보기 쉬운 한국어 화제 이름. 12자 안팎의 명사형으로 짧게. 번역투가 아니라 한국 뉴스에서 쓰는 자연스러운 표현으로, 인명·팀·브랜드는 한국에서 쓰는 표기(없으면 원어)로.
+3) sum: 뉴스 제목이 말하는 내용을 한국어 한 줄로 요약 (40자 이내, '~요' 체).
+- 판단과 요약의 근거는 입력의 뉴스 제목뿐이야. 제목에 없는 사실·숫자·날짜는 절대 만들지 마. 뉴스 제목이 없으면 sum은 빈 문자열로.
+- 글 안에서는 큰따옴표(\")를 쓰지 말고 작은따옴표(')를 써. 줄바꿈도 넣지 마.
+JSON만 출력해: {"s":[{"i":0,"v":"positive|neutral|negative","ko":"한국어 이름","sum":"한 줄 요약"}]}  (모든 번호를 빠짐없이)`;
 async function classifySentiment(cc) {
   const items = (RAW[cc] || []).slice(0, 25);
   if (!items.length) return [];
   const body = items.map((it, i) => `#${i} ${it.term}${it.news[0] ? ' | ' + it.news[0].title : ''}`).join('\n');
-  const out = await claude(SENT_SYSTEM, `나라: ${COUNTRIES[cc][1]}\n\n${body}`, 1500);
+  const out = await claude(SENT_SYSTEM, `나라: ${COUNTRIES[cc][1]}\n\n${body}`, 4500);
   const ok = new Set(['positive', 'neutral', 'negative']);
-  const seen = new Map((out.s || []).filter(x => Number.isInteger(x.i) && items[x.i] && ok.has(x.v)).map(x => [x.i, x.v]));
-  return items.map((it, i) => ({ day: TODAY, cc, term: it.term.slice(0, 80), traffic: it.traffic || 0, sentiment: seen.get(i) || 'neutral', headline: it.news[0] ? it.news[0].title.slice(0, 140) : null }));
+  const seen = new Map((out.s || []).filter(x => Number.isInteger(x.i) && items[x.i] && ok.has(x.v)).map(x => [x.i, x]));
+  const clean = t => String(t || '').replace(/[\r\n]+/g, ' ').trim();
+  return items.map((it, i) => ({ day: TODAY, cc, term: it.term.slice(0, 80), traffic: it.traffic || 0, sentiment: seen.get(i)?.v || 'neutral', headline: it.news[0] ? it.news[0].title.slice(0, 140) : null, term_ko: clean(seen.get(i)?.ko).slice(0, 40) || null, summary_ko: clean(seen.get(i)?.sum).slice(0, 100) || null }));
 }
 
 /* ---------- 사진 (Pexels 무료 스톡 사진) ---------- */
@@ -233,8 +239,12 @@ export async function main() {
       await sb('DELETE', `trends?cc=eq.${cc}&id=not.in.(${ids.join(',')})`);
     }
     if (sentRows.length) {
-      try { for (let i = 0; i < sentRows.length; i += 200) await sb('POST', 'sentiment_daily?on_conflict=day,cc,term', sentRows.slice(i, i + 200), 'resolution=merge-duplicates,return=minimal'); }
-      catch (e) { log('감정 통계 저장 실패 (15_sentiment.sql 실행했는지 확인):', e.message); }
+      const save = rows => (async () => { for (let i = 0; i < rows.length; i += 200) await sb('POST', 'sentiment_daily?on_conflict=day,cc,term', rows.slice(i, i + 200), 'resolution=merge-duplicates,return=minimal'); })();
+      try { await save(sentRows); }
+      catch (e) {
+        log('감정 통계 저장 실패, 한국어 칸 없이 다시 시도해요 (16_sentiment_ko.sql 실행했는지 확인):', e.message);
+        try { await save(sentRows.map(({ term_ko, summary_ko, ...r }) => r)); } catch (e2) { log('감정 통계 저장 실패 (15_sentiment.sql 실행했는지 확인):', e2.message); }
+      }
     }
     /* 어디에도 안 쓰이고 아무도 Keep하지 않은 키워드는 정리 */
     const [allKw, used, kept] = await Promise.all([sb('GET', 'keywords?select=id'), sb('GET', 'trends?select=keyword_id'), sb('GET', 'keeps?select=keyword_id')]);
